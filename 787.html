@@ -1,20 +1,22 @@
+```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>B787 Transition Trainer v2.0 (ILS / IAN / VNAV Approach & MCP)</title>
+<title>보잉 787 왕초보 맞춤형 단계별 튜토리얼 (Airbus → B787 전환 가이드)</title>
 <style>
   :root {
-    --bg-cockpit: #0b0e13;
-    --panel-bg: #1b2028;
-    --panel-border: #313947;
-    --lcd-bg: #070c09;
+    --bg-cockpit: #090c12;
+    --panel-bg: #161b24;
+    --panel-border: #2c3545;
+    --lcd-bg: #050907;
     --boeing-green: #00ff66;
     --boeing-cyan: #00e5ff;
     --boeing-magenta: #ff4dff;
     --boeing-amber: #ffaa00;
-    --boeing-white: #f1f5f9;
+    --boeing-white: #f8fafc;
+    --guide-gold: #fbbf24;
   }
 
   * {
@@ -28,101 +30,294 @@
     padding: 8px;
     background: var(--bg-cockpit);
     color: var(--boeing-white);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Consolas, monospace;
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, Consolas, monospace;
     display: flex;
     flex-direction: column;
     gap: 8px;
     min-height: 100vh;
   }
 
-  /* Top Scenario & Approach Bar */
-  .top-bar {
+  /* ==================== 1. TOP TUTORIAL LESSON BAR ==================== */
+  .tutorial-header {
+    background: linear-gradient(135deg, #172030 0%, #0f1622 100%);
+    border: 2px solid #3b82f6;
+    border-radius: 10px;
+    padding: 10px 14px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    background: #131820;
-    border: 1px solid var(--panel-border);
-    border-left: 4px solid var(--boeing-cyan);
-    padding: 8px 12px;
-    border-radius: 6px;
+    gap: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
   }
 
-  .top-row {
+  .lesson-tabs-row {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    border-bottom: 1px solid #293548;
+    padding-bottom: 8px;
   }
 
-  .title-block h1 {
-    margin: 0;
-    font-size: 14px;
-    color: #fff;
-  }
-
-  .scenario-btns {
+  .lesson-tabs {
     display: flex;
-    gap: 5px;
     flex-wrap: wrap;
+    gap: 5px;
   }
 
-  .scn-btn {
-    background: #232b38;
-    color: #e2e8f0;
+  .lesson-tab {
+    background: #1e293b;
+    color: #cbd5e1;
     border: 1px solid #475569;
-    padding: 5px 9px;
-    border-radius: 4px;
-    font-size: 11.5px;
-    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.15s;
   }
 
-  .scn-btn:hover {
+  .lesson-tab:hover {
     background: #334155;
-    border-color: var(--boeing-cyan);
+    color: #fff;
   }
 
-  .scn-btn.appr {
-    background: #2e1f47;
-    border-color: #8b5cf6;
-    color: #f3e8ff;
+  .lesson-tab.active {
+    background: #2563eb;
+    border-color: #60a5fa;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
   }
 
-  .scn-btn.appr:hover {
-    background: #4c1d95;
-    border-color: var(--boeing-magenta);
+  .util-btns {
+    display: flex;
+    gap: 6px;
+    align-items: center;
   }
 
-  .scn-btn.download {
+  .util-btn {
+    background: #334155;
+    color: #f1f5f9;
+    border: 1px solid #64748b;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .util-btn.download {
     background: #059669;
     border-color: #10b981;
     color: #fff;
   }
 
-  /* ==================== MCP PANEL ==================== */
-  .mcp-panel {
-    background: linear-gradient(180deg, #2b323d 0%, #1d222a 100%);
-    border: 2px solid #3f4859;
-    border-radius: 8px;
+  /* Step Instruction Card */
+  .step-guide-card {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+
+  @media (max-width: 900px) {
+    .step-guide-card {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .step-main-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .step-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .step-pill {
+    background: var(--guide-gold);
+    color: #000;
+    font-weight: 900;
+    font-size: 12px;
+    padding: 2px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .step-action-title {
+    font-size: 15.5px;
+    font-weight: 800;
+    color: #fef08a;
+  }
+
+  .step-desc {
+    font-size: 13.5px;
+    color: #f1f5f9;
+    line-height: 1.5;
+  }
+
+  .step-desc b {
+    color: var(--boeing-cyan);
+  }
+
+  .step-side-box {
+    background: #0c121d;
+    border: 1px solid #334155;
+    border-left: 4px solid var(--boeing-magenta);
+    border-radius: 6px;
     padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .compare-line {
+    font-size: 12px;
+    line-height: 1.45;
+    color: #e2e8f0;
+  }
+
+  .tag-bus {
+    background: #0284c7;
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10.5px;
+    font-weight: bold;
+    margin-right: 4px;
+  }
+
+  .tag-b787 {
+    background: #7c3aed;
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10.5px;
+    font-weight: bold;
+    margin-right: 4px;
+  }
+
+  .step-nav-btns {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    padding-top: 4px;
+    border-top: 1px solid #1e293b;
+  }
+
+  .nav-btn {
+    background: #1e293b;
+    color: #cbd5e1;
+    border: 1px solid #475569;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .nav-btn:hover {
+    background: #334155;
+    color: #fff;
+  }
+
+  /* ==================== PULSING SPOTLIGHT HIGHLIGHTER ==================== */
+  @keyframes pulseSpotlight {
+    0% {
+      box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.95), 0 0 18px 4px rgba(251, 191, 36, 0.85);
+      border-color: #fbbf24 !important;
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(251, 191, 36, 0), 0 0 26px 8px rgba(0, 229, 255, 0.9);
+      border-color: #00e5ff !important;
+      transform: scale(1.06);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(251, 191, 36, 0), 0 0 18px 4px rgba(251, 191, 36, 0.85);
+      border-color: #fbbf24 !important;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes floatPointer {
+    0%, 100% { transform: translate(-50%, 0); }
+    50% { transform: translate(-50%, -5px); }
+  }
+
+  .tutorial-target {
+    position: relative !important;
+    z-index: 30 !important;
+    border: 2.5px solid #fbbf24 !important;
+    animation: pulseSpotlight 1.3s infinite !important;
+  }
+
+  .tutorial-target::after {
+    content: "👆 여기 클릭!";
+    position: absolute;
+    top: -26px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fbbf24;
+    color: #000;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.7);
+    pointer-events: none;
+    animation: floatPointer 0.9s ease-in-out infinite;
+    z-index: 40;
+  }
+
+  /* Feedback Toast Banner */
+  .toast-feedback {
+    background: rgba(5, 150, 105, 0.22);
+    border: 1px solid #10b981;
+    color: #a7f3d0;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toast-feedback.show {
+    display: flex;
+  }
+
+  /* ==================== 2. BOEING 787 MCP PANEL ==================== */
+  .mcp-panel {
+    background: linear-gradient(180deg, #2a313d 0%, #1a2028 100%);
+    border: 2px solid #3d4657;
+    border-radius: 8px;
+    padding: 10px 12px;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.6);
   }
 
   .mcp-group {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: rgba(0, 0, 0, 0.25);
+    background: rgba(0, 0, 0, 0.28);
     padding: 5px 8px;
     border-radius: 6px;
-    border: 1px solid #333b48;
+    border: 1px solid #323a48;
   }
 
   .mcp-col {
@@ -149,9 +344,9 @@
     font-weight: bold;
     padding: 1px 6px;
     min-width: 62px;
-    height: 26px;
+    height: 25px;
     text-align: center;
-    line-height: 20px;
+    line-height: 19px;
   }
 
   .mcp-window.blank {
@@ -168,9 +363,9 @@
     background: #384152;
     color: #fff;
     border: 1px solid #525f75;
-    border-radius: 3px;
-    width: 22px;
-    height: 22px;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
@@ -184,16 +379,11 @@
     color: var(--boeing-cyan);
     border: 1px solid var(--boeing-cyan);
     border-radius: 10px;
-    padding: 1px 6px;
-    height: 22px;
-    font-size: 9.5px;
+    padding: 2px 7px;
+    height: 24px;
+    font-size: 10px;
     font-weight: bold;
     cursor: pointer;
-  }
-
-  .knob-push:hover {
-    background: var(--boeing-cyan);
-    color: #000;
   }
 
   .mcp-btn {
@@ -227,7 +417,91 @@
     box-shadow: 0 0 8px var(--boeing-green);
   }
 
-  /* ==================== MAIN DISPLAYS GRID ==================== */
+  /* ==================== 3. THROTTLE / TOGA / FLAP / GEAR STRIP ==================== */
+  .pedestal-strip {
+    background: linear-gradient(90deg, #1b222d 0%, #242c3a 50%, #1b222d 100%);
+    border: 1px solid #3b4659;
+    border-left: 4px solid var(--boeing-amber);
+    border-radius: 6px;
+    padding: 7px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .toga-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .toga-btn {
+    background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
+    border: 2px solid #fbbf24;
+    color: #fff;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toga-badge {
+    background: #000;
+    color: var(--boeing-amber);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+    font-size: 11px;
+  }
+
+  .flap-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .flap-btn {
+    background: #28303d;
+    border: 1px solid #475569;
+    color: #cbd5e1;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .flap-btn.active {
+    background: #0284c7;
+    border-color: var(--boeing-cyan);
+    color: #fff;
+  }
+
+  .gear-btn {
+    background: #28303d;
+    border: 1px solid #475569;
+    color: var(--boeing-green);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .gear-btn.up {
+    color: var(--boeing-cyan);
+    border-color: var(--boeing-cyan);
+  }
+
+  /* ==================== 4. MAIN DISPLAYS GRID ==================== */
   .cockpit-grid {
     display: grid;
     grid-template-columns: 1.08fr 1.05fr 0.95fr;
@@ -248,10 +522,10 @@
   }
 
   .display-bezel {
-    background: #1a1f27;
-    border: 3px solid #2e3644;
+    background: #181c24;
+    border: 2px solid #2e3644;
     border-radius: 8px;
-    padding: 7px;
+    padding: 6px;
     display: flex;
     flex-direction: column;
   }
@@ -260,7 +534,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     font-size: 11px;
     color: #94a3b8;
     font-weight: bold;
@@ -268,14 +542,14 @@
 
   canvas.efis-canvas {
     width: 100%;
-    height: 390px;
+    height: 365px;
     background: #040609;
     border-radius: 4px;
     border: 1px solid #222936;
     display: block;
   }
 
-  /* ==================== FMS CDU PANEL ==================== */
+  /* ==================== 5. FMS CDU PANEL ==================== */
   .cdu-container {
     display: flex;
     flex-direction: column;
@@ -294,7 +568,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 30px 0 26px 0;
+    padding: 28px 0 24px 0;
   }
 
   .lsk-key {
@@ -312,8 +586,8 @@
     background: #05070b;
     border: 2px solid #222936;
     border-radius: 4px;
-    height: 265px;
-    padding: 6px 8px;
+    height: 245px;
+    padding: 5px 8px;
     font-family: 'Consolas', monospace;
     display: flex;
     flex-direction: column;
@@ -326,7 +600,7 @@
     align-items: center;
     border-bottom: 1px solid #1e293b;
     padding-bottom: 2px;
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: bold;
   }
 
@@ -352,7 +626,7 @@
   .cdu-line {
     display: flex;
     justify-content: space-between;
-    height: 32px;
+    height: 29px;
   }
 
   .cdu-side {
@@ -366,15 +640,15 @@
   }
 
   .cdu-lbl {
-    font-size: 9.5px;
+    font-size: 9px;
     color: var(--boeing-cyan);
     height: 11px;
   }
 
   .cdu-val {
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: bold;
-    height: 16px;
+    height: 15px;
   }
 
   .cdu-sp {
@@ -400,7 +674,7 @@
     border-radius: 4px;
     color: #fff;
     height: 29px;
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
@@ -426,83 +700,56 @@
     background: var(--boeing-green);
     box-shadow: 0 0 8px var(--boeing-green);
   }
-
-  /* ==================== AIRBUS VS BOEING COACH BAR ==================== */
-  .coach-box {
-    background: #141923;
-    border: 1px solid #2e3a4f;
-    border-left: 4px solid var(--boeing-magenta);
-    border-radius: 6px;
-    padding: 8px 12px;
-    display: grid;
-    grid-template-columns: 1.3fr 1fr;
-    gap: 12px;
-    font-size: 12.5px;
-  }
-
-  @media (max-width: 850px) {
-    .coach-box {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .coach-title {
-    font-weight: 700;
-    color: var(--boeing-cyan);
-    margin-bottom: 3px;
-  }
-
-  .airbus-compare {
-    background: #1d2432;
-    padding: 7px 10px;
-    border-radius: 5px;
-    border: 1px solid #334155;
-    color: #e2e8f0;
-    line-height: 1.45;
-  }
-
-  .tag-bus {
-    background: #0284c7;
-    color: #fff;
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-size: 10.5px;
-    font-weight: bold;
-  }
-
-  .tag-b787 {
-    background: #7c3aed;
-    color: #fff;
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-size: 10.5px;
-    font-weight: bold;
-  }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR: SCENARIOS INCLUDING APPROACH MODES -->
-<div class="top-bar">
-  <div class="top-row">
-    <div class="title-block">
-      <h1>B787 INTEGRATED TRANSITION SIMULATOR v2.0 (ILS / IAN / VNAV APPROACH & ENROUTE)</h1>
+<!-- ==================== 1. GUIDED TUTORIAL HEADER ==================== -->
+<div class="tutorial-header">
+  <div class="lesson-tabs-row">
+    <div class="lesson-tabs">
+      <button id="tabL0" class="lesson-tab active" onclick="startLesson(0)">📘 레슨 1: 기본 버튼 익히기 (Push/Pull 대체)</button>
+      <button id="tabL1" class="lesson-tab" onclick="startLesson(1)">⚠️ 레슨 2: 보잉 최대 함정 (VNAV ALT 탈출)</button>
+      <button id="tabL2" class="lesson-tab" onclick="startLesson(2)">🗺️ 레슨 3: FMS Direct-To (MOD → EXEC)</button>
+      <button id="tabL3" class="lesson-tab" onclick="startLesson(3)">🛬 레슨 4: IAN 접근 vs VNAV 접근 비교</button>
+      <button id="tabL4" class="lesson-tab" onclick="startLesson(4)">🚀 레슨 5: 착륙 복행 (TO/GA 1회 vs 2회)</button>
     </div>
-    <button class="scn-btn download" onclick="downloadSelf()">💾 단독 HTML 저장 (.html)</button>
+    <div class="util-btns">
+      <button class="util-btn" onclick="enableFreePlay()">🎮 자유 조작 모드</button>
+      <button class="util-btn download" onclick="downloadSelf()">💾 단독 HTML 다운로드</button>
+    </div>
   </div>
-  <div class="scenario-btns">
-    <!-- Enroute Scenarios -->
-    <button class="scn-btn" onclick="loadScenario('VNAV_ALT')">1. VNAV ALT & 고도개입(ALT INTV)</button>
-    <button class="scn-btn" onclick="loadScenario('SPD_INTV')">2. VNAV 속도개입(SPD INTV)</button>
-    <button class="scn-btn" onclick="loadScenario('DIR_TO')">3. Direct-To (MOD→EXEC)</button>
-    <!-- Approach Comparison Scenarios -->
-    <button class="scn-btn appr" onclick="loadScenario('APPR_ILS')">4. [ILS 접근] LOC / G/S (APP 버튼)</button>
-    <button class="scn-btn appr" onclick="loadScenario('APPR_IAN')">5. [IAN 비정밀] FAC / GP (APP 버튼)</button>
-    <button class="scn-btn appr" onclick="loadScenario('APPR_VNAV')">6. [RNP VNAV 접근] LNAV / VNAV PTH (복행고도 함정 테스트!)</button>
+
+  <!-- Step-by-Step Guide Card -->
+  <div class="step-guide-card">
+    <div class="step-main-info">
+      <div class="step-badge-row">
+        <span id="stepProgressBadge" class="step-pill">레슨 1 · STEP 1 / 4</span>
+        <span id="stepTitleText" class="step-action-title">지금 반짝이는 [HDG SEL] 버튼을 클릭해 보세요!</span>
+      </div>
+      <div id="stepDescText" class="step-desc">
+        에어버스에서는 헤딩 노브를 몸쪽으로 당겼지만(Pull), 보잉 787에서는 노브 아래의 <b>HDG SEL</b> 버튼을 직접 누릅니다.
+      </div>
+      <div id="toastBanner" class="toast-feedback">
+        <span>✅ 잘하셨습니다! 다음 단계로 이동합니다.</span>
+      </div>
+    </div>
+
+    <div class="step-side-box">
+      <div id="stepCompareText" class="compare-line">
+        <span class="tag-bus">Airbus</span> HDG 노브 <b>Pull (Selected)</b><br>
+        <span class="tag-b787">Boeing 787</span> <b>HDG SEL 버튼</b> 클릭!
+      </div>
+      <div class="step-nav-btns">
+        <button class="nav-btn" onclick="prevTutorialStep()">◀ 이전 단계</button>
+        <button class="nav-btn" onclick="restartCurrentLesson()">🔄 이 레슨 처음부터</button>
+        <button class="nav-btn" onclick="nextTutorialStep()">다음 단계 건너뛰기 ▶</button>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- ==================== BOEING 787 MCP ==================== -->
+<!-- ==================== 2. BOEING 787 MCP PANEL ==================== -->
 <div class="mcp-panel">
   <div class="mcp-group">
     <button id="btnAT" class="mcp-btn active" onclick="toggleAT()">
@@ -521,9 +768,9 @@
       <div class="mcp-label">IAS / MACH</div>
       <div id="winSpd" class="mcp-window blank">---</div>
       <div class="knob-row">
-        <button class="knob-step" onclick="changeSpd(-5)">-</button>
-        <button class="knob-push" onclick="pushSpdIntv()">PUSH (SPD INTV)</button>
-        <button class="knob-step" onclick="changeSpd(5)">+</button>
+        <button id="btnSpdMinus" class="knob-step" onclick="changeSpd(-5)">-</button>
+        <button id="btnSpdIntv" class="knob-push" onclick="pushSpdIntv()">PUSH (SPD INTV)</button>
+        <button id="btnSpdPlus" class="knob-step" onclick="changeSpd(5)">+</button>
       </div>
     </div>
     <button id="btnFLCH" class="mcp-btn" onclick="pressFLCH()">
@@ -536,11 +783,11 @@
   <div class="mcp-group">
     <div class="mcp-col">
       <div class="mcp-label">HDG / TRK</div>
-      <div id="winHdg" class="mcp-window">330</div>
+      <div id="winHdg" class="mcp-window">050</div>
       <div class="knob-row">
-        <button class="knob-step" onclick="changeHdg(-5)">◀</button>
-        <button class="knob-push" onclick="pressHdgSel()">PUSH (SEL)</button>
-        <button class="knob-step" onclick="changeHdg(5)">▶</button>
+        <button id="btnHdgLeft" class="knob-step" onclick="changeHdg(-10)">◀</button>
+        <button id="btnHdgPush" class="knob-push" onclick="pressHdgSel()">PUSH (SEL)</button>
+        <button id="btnHdgRight" class="knob-step" onclick="changeHdg(10)">▶</button>
       </div>
     </div>
     <button id="btnHDG" class="mcp-btn" onclick="pressHdgSel()">
@@ -571,9 +818,9 @@
       <div class="mcp-label">ALTITUDE (FT)</div>
       <div id="winAlt" class="mcp-window">10000</div>
       <div class="knob-row">
-        <button class="knob-step" onclick="changeAlt(-500)">-</button>
-        <button class="knob-push" onclick="pushAltIntv()">PUSH (ALT INTV)</button>
-        <button class="knob-step" onclick="changeAlt(500)">+</button>
+        <button id="btnAltMinus" class="knob-step" onclick="changeAlt(-1000)">-</button>
+        <button id="btnAltIntv" class="knob-push" onclick="pushAltIntv()">PUSH (ALT INTV)</button>
+        <button id="btnAltPlus" class="knob-step" onclick="changeAlt(1000)">+</button>
       </div>
     </div>
     <button id="btnHOLD" class="mcp-btn" onclick="pressAltHold()">
@@ -599,41 +846,63 @@
   </div>
 </div>
 
-<!-- ==================== COCKPIT DISPLAYS: PFD + ND + FMS ==================== -->
+<!-- ==================== 3. THROTTLE / TOGA / FLAP / GEAR PEDESTAL BAR ==================== -->
+<div class="pedestal-strip">
+  <div class="toga-group">
+    <button id="btnTOGA" class="toga-btn" onclick="pressTOGA()">
+      <span>🚀 PUSH TO/GA SWITCH</span>
+      <span id="togaCountBadge" class="toga-badge">READY (0회)</span>
+    </button>
+    <span style="font-size:11.5px; color:#cbd5e1;">
+      💡 <b>1회 클릭</b> = 부드러운 복행 (<b>THR</b> ~2000fpm + <b>LNAV</b> 자동결합) &nbsp;|&nbsp; <b>2회 클릭</b> = 최대 추력 (<b>THR REF</b>)
+    </span>
+  </div>
+
+  <div class="flap-group">
+    <span style="font-size:11px; font-weight:bold; color:var(--boeing-cyan);">FLAPS:</span>
+    <button id="flap30" class="flap-btn" onclick="setFlaps(30)">FLAPS 30 (착륙)</button>
+    <button id="flap20" class="flap-btn" onclick="setFlaps(20)">FLAPS 20 (복행)</button>
+    <button id="flap5" class="flap-btn active" onclick="setFlaps(5)">FLAPS 5</button>
+    <button id="flap0" class="flap-btn" onclick="setFlaps(0)">FLAPS UP</button>
+    <button id="gearBtn" class="gear-btn up" onclick="toggleGear()">GEAR UP</button>
+  </div>
+</div>
+
+<!-- ==================== 4. COCKPIT DISPLAYS: PFD + ND + FMS ==================== -->
 <div class="cockpit-grid">
-  <!-- 1. PFD -->
+  <!-- PFD -->
   <div class="display-bezel">
     <div class="bezel-header">
-      <span>PFD — FMA & APPROACH DEVIATION POINTERS</span>
-      <span id="apprTypeBadge" style="color:var(--boeing-magenta)">APPROACH: ILS RWY 33L</span>
+      <span>PFD — 상단 3열 FMA: [A/T 추력] | [ROLL 수평] | [PITCH 수직]</span>
+      <span id="apprTypeBadge" style="color:var(--boeing-green)">PHASE: CLIMB</span>
     </div>
-    <canvas id="pfdCanvas" class="efis-canvas" width="450" height="390"></canvas>
+    <canvas id="pfdCanvas" class="efis-canvas" width="450" height="365"></canvas>
   </div>
 
-  <!-- 2. ND -->
+  <!-- ND + VSD -->
   <div class="display-bezel">
     <div class="bezel-header">
-      <span>ND (MAP MODE + VSD PROFILE)</span>
-      <span><span style="color:var(--boeing-magenta)">━━ ACT</span> &nbsp; <span style="color:var(--boeing-cyan)">┅┅ MOD</span></span>
+      <span>ND (항로 지도 + 하단 VSD 수직 단면도)</span>
+      <span><span style="color:var(--boeing-magenta)">━━ 활성(ACT)</span> &nbsp; <span style="color:var(--boeing-cyan)">┅┅ 수정중(MOD)</span></span>
     </div>
-    <canvas id="ndCanvas" class="efis-canvas" width="440" height="390"></canvas>
+    <canvas id="ndCanvas" class="efis-canvas" width="440" height="365"></canvas>
   </div>
 
-  <!-- 3. FMS VIRTUAL CDU -->
+  <!-- FMS VIRTUAL CDU -->
   <div class="display-bezel">
     <div class="bezel-header">
-      <span>FMS CDU (DEP/ARR · LEGS · APPROACH REF)</span>
-      <span style="color:var(--boeing-cyan)">DEP/ARR에서 접근 종류 변경 가능</span>
+      <span>FMS CDU (컴퓨터 입력창)</span>
+      <span style="color:var(--boeing-cyan)">좌측 1L~5L 버튼으로 웨이포인트 선택</span>
     </div>
 
     <div class="cdu-container">
       <div class="cdu-screen-wrap">
         <div class="lsk-col">
-          <button class="lsk-key" onclick="cduLSK('1L')">1L</button>
-          <button class="lsk-key" onclick="cduLSK('2L')">2L</button>
-          <button class="lsk-key" onclick="cduLSK('3L')">3L</button>
-          <button class="lsk-key" onclick="cduLSK('4L')">4L</button>
-          <button class="lsk-key" onclick="cduLSK('5L')">5L</button>
+          <button id="lsk1L" class="lsk-key" onclick="cduLSK('1L')">1L</button>
+          <button id="lsk2L" class="lsk-key" onclick="cduLSK('2L')">2L</button>
+          <button id="lsk3L" class="lsk-key" onclick="cduLSK('3L')">3L</button>
+          <button id="lsk4L" class="lsk-key" onclick="cduLSK('4L')">4L</button>
+          <button id="lsk5L" class="lsk-key" onclick="cduLSK('5L')">5L</button>
         </div>
 
         <div class="cdu-lcd">
@@ -650,20 +919,19 @@
         </div>
 
         <div class="lsk-col">
-          <button class="lsk-key" onclick="cduLSK('1R')">1R</button>
-          <button class="lsk-key" onclick="cduLSK('2R')">2R</button>
-          <button class="lsk-key" onclick="cduLSK('3R')">3R</button>
-          <button class="lsk-key" onclick="cduLSK('4R')">4R</button>
-          <button class="lsk-key" onclick="cduLSK('5R')">5R</button>
+          <button id="lsk1R" class="lsk-key" onclick="cduLSK('1R')">1R</button>
+          <button id="lsk2R" class="lsk-key" onclick="cduLSK('2R')">2R</button>
+          <button id="lsk3R" class="lsk-key" onclick="cduLSK('3R')">3R</button>
+          <button id="lsk4R" class="lsk-key" onclick="cduLSK('4R')">4R</button>
+          <button id="lsk5R" class="lsk-key" onclick="cduLSK('5R')">5R</button>
         </div>
       </div>
 
-      <!-- CDU Function Keys -->
       <div class="cdu-keys">
-        <button class="cdu-k" onclick="cduPage('LEGS')">LEGS</button>
-        <button class="cdu-k" style="border-color:var(--boeing-magenta); color:var(--boeing-magenta)" onclick="cduPage('DEP_ARR')">DEP/ARR</button>
-        <button class="cdu-k" onclick="cduPage('VNAV')">VNAV</button>
-        <button class="cdu-k" onclick="cduSpPreset('160/2000A')">160/2000A</button>
+        <button id="cduBtnLEGS" class="cdu-k" onclick="cduPage('LEGS')">LEGS</button>
+        <button id="cduBtnDEPARR" class="cdu-k" style="border-color:var(--boeing-magenta); color:var(--boeing-magenta)" onclick="cduPage('DEP_ARR')">DEP/ARR</button>
+        <button class="cdu-k" onclick="cduPage('VNAV')">APPR REF</button>
+        <button class="cdu-k" onclick="cduSpPreset('250/10000A')">250/100A</button>
         <button class="cdu-k" onclick="cduSpPreset('DELETE')">DEL</button>
         <button class="cdu-k" onclick="cduClr()">CLR</button>
 
@@ -672,7 +940,7 @@
         <button class="cdu-k" onclick="cduChar('5')">5</button>
         <button class="cdu-k" onclick="cduChar('0')">0</button>
         <button class="cdu-k" onclick="cduChar('/')">/</button>
-        <button class="cdu-k exec-btn" onclick="cduExec()">
+        <button id="cduBtnEXEC" class="cdu-k exec-btn" onclick="cduExec()">
           <div id="execLamp" class="exec-lamp"></div>
           EXEC
         </button>
@@ -681,42 +949,59 @@
   </div>
 </div>
 
-<!-- ==================== REAL-TIME AIRBUS VS BOEING INSTRUCTOR BAR ==================== -->
-<div class="coach-box">
-  <div>
-    <div class="coach-title" id="coachHeadline">✈️ 현재 비행 상태 및 접근 모드(ILS / IAN / VNAV) 해설</div>
-    <div id="coachDetail" style="color:#cbd5e1; line-height:1.45;">
-      상단의 보라색 <b>4번(ILS), 5번(IAN), 6번(RNP VNAV)</b> 시나리오 버튼을 눌러 보잉 787의 3가지 접근 모드가 PFD(FMA/편차 포인터)와 MCP 고도창에서 어떻게 다르게 작동하는지 바로 비교해 보세요!
-    </div>
-  </div>
-  <div class="airbus-compare" id="coachCompare">
-    <span class="tag-bus">Airbus FINAL APP</span> 비정밀 접근 시 `APPR` 버튼을 누르면 `APP NAV | FINAL`이 켜지고 글라이드패스 진입 후 즉시 복행고도를 세팅할 수 있습니다.<br>
-    <span class="tag-b787">Boeing 787</span> <b>IAN(`FAC | GP`)</b>은 에어버스처럼 `APP` 버튼을 쓰고 즉시 복행고도 세팅이 가능하지만, <b>`LNAV | VNAV PTH`</b> 접근은 MCP 고도를 DA(MDA)로 먼저 내렸다가 FAF 통과 후 복행고도를 세팅해야 합니다!
-  </div>
-</div>
-
 <script>
-  // ==================== INTEGRATED FLIGHT & APPROACH STATE ====================
+  // ==================== WEB AUDIO API CHIME FOR TUTORIAL FEEDBACK ====================
+  let audioCtx = null;
+  function playChime(type = 'step') {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'lesson_done') {
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.12); // A5
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.38);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.38);
+      } else {
+        osc.frequency.setValueAtTime(660, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.18);
+      }
+    } catch (e) {}
+  }
+
+  // ==================== SIMULATOR CORE STATE ====================
   const sim = {
-    ias: 210,
-    alt: 6800,
+    ias: 220,
+    alt: 7000,
     vs: 1800,
-    hdg: 050,
+    hdg: 045,
     pitch: 7.0,
     bank: 0,
     acX: 0,
     acY: 0,
 
-    // MCP Selections
-    mcpSpd: 180,
+    flaps: 0,
+    gearDown: false,
+    togaCount: 0,
+    inGoAround: false,
+    vref30: 142,
+
+    mcpSpd: 250,
     spdWindowOpen: false,
-    mcpHdg: 330,
-    mcpAlt: 10000,
-    mcpVS: -800,
+    mcpHdg: 090,
+    mcpAlt: 12000,
+    mcpVS: 1500,
     atArmed: true,
     apEngaged: true,
 
-    // Active MCP Buttons
     btnLNAV: true,
     btnVNAV: true,
     btnFLCH: false,
@@ -726,17 +1011,15 @@
     btnLOC: false,
     btnAPP: false,
 
-    // Approach Configuration ('ILS', 'IAN', 'VNAV_APPR', 'NONE')
-    selectedApprType: 'ILS', // Selected in FMS DEP/ARR: 'ILS' (LOC/GS), 'IAN' (FAC/GP), 'VNAV' (LNAV/VNAV PTH)
+    selectedApprType: 'IAN',
     inApproachPhase: false,
-    distToRwy: 9.5, // NM to RWY33L
-    fafDist: 6.2,   // FAF at 6.2 NM (2000 ft)
+    distToRwy: 7.2,
+    fafDist: 6.2,
     gsTargetAlt: 2000,
-    latDev: 0.0,    // Lateral deviation dots (-2 to +2)
-    vertDev: -0.8,  // Vertical deviation dots (-2 to +2, negative = aircraft below GP/GS)
+    latDev: 0.0,
+    vertDev: 0.0,
     gsCaptured: false,
 
-    // 3-Column FMA
     fmaAT: 'THR REF',
     fmaRoll: 'LNAV',
     fmaPitch: 'VNAV SPD',
@@ -744,8 +1027,8 @@
     fmaPitchArmed: '',
     fmaChangedCol: 0,
     fmaBoxTimer: 0,
+    fmaNote: '추력(A/T) | 수평(Roll) | 수직(Pitch)',
 
-    // FMS CDU
     cduPage: 'LEGS',
     isMod: false,
     scratchpad: '',
@@ -766,24 +1049,425 @@
     return JSON.parse(JSON.stringify(arr));
   }
 
-  function highlightFMA(col) {
-    sim.fmaChangedCol = col;
-    sim.fmaBoxTimer = 95;
+  // ==================== STEP-BY-STEP GUIDED TUTORIAL CURRICULUM ====================
+  const lessons = [
+    // LESSON 0: Basic Buttons (Replacing Airbus Push/Pull)
+    {
+      name: '레슨 1: 기본기',
+      setup: () => {
+        sim.inApproachPhase = false;
+        sim.inGoAround = false;
+        sim.togaCount = 0;
+        sim.flaps = 0;
+        sim.gearDown = false;
+        sim.alt = 7000;
+        sim.mcpAlt = 14000;
+        sim.ias = 240;
+        sim.mcpSpd = 250;
+        sim.hdg = 045;
+        sim.mcpHdg = 090;
+        sim.spdWindowOpen = false;
+        sim.btnLNAV = true;
+        sim.btnVNAV = true;
+        sim.btnHDG = false;
+        sim.btnFLCH = false;
+        sim.fmaAT = 'THR REF';
+        sim.fmaRoll = 'LNAV';
+        sim.fmaPitch = 'VNAV SPD';
+        sim.fmaNote = 'FMS가 경로(LNAV)와 수직/속도(VNAV)를 모두 관리 중';
+      },
+      steps: [
+        {
+          targetId: 'btnHDG',
+          title: '1단계: 레이더 벡터를 위해 [HDG SEL] 버튼을 눌러보세요!',
+          desc: '관제사가 "Turn right heading 090"을 지시했습니다. 에어버스에서는 헤딩 노브를 몸쪽으로 당겼지만(Pull), 보잉 787에서는 노브 아래의 <b>HDG SEL</b> 버튼을 직접 클릭합니다.',
+          compare: '<span class="tag-bus">Airbus</span> HDG 노브 <b>Pull (Selected)</b><br><span class="tag-b787">Boeing 787</span> <b>HDG SEL 버튼</b> 클릭!'
+        },
+        {
+          targetId: 'btnLNAV',
+          title: '2단계: 다시 FMS 항로로 복귀하기 위해 [LNAV] 버튼을 눌러보세요!',
+          desc: '관제사가 "Resume own navigation"을 지시했습니다. 에어버스에서 노브를 밀어 넣듯(Push), 보잉에서는 <b>LNAV</b> 버튼을 눌러 마젠타색 항로를 다시 따라갑니다.',
+          compare: '<span class="tag-bus">Airbus</span> HDG 노브 <b>Push (Managed NAV)</b><br><span class="tag-b787">Boeing 787</span> <b>LNAV 버튼</b> 클릭!'
+        },
+        {
+          targetId: 'btnSpdIntv',
+          title: '3단계: VNAV를 끄지 않고 속도만 바꾸기 위해 [PUSH (SPD INTV)]를 눌러보세요!',
+          desc: '현재 VNAV가 켜져 있어 MCP 속도창이 꺼져(<b>---</b>) 있습니다. 이때 IAS 노브 가운데 <b>PUSH (SPD INTV)</b>를 누르면 <b>VNAV를 유지한 채로</b> 속도창에 숫자가 나타납니다!',
+          compare: '<span class="tag-bus">Airbus</span> Managed 비행 중 SPD 노브만 <b>Pull</b><br><span class="tag-b787">Boeing 787</span> IAS 노브 <b>PUSH (Speed Intervention)</b>!'
+        },
+        {
+          targetId: 'btnFLCH',
+          title: '4단계: 고도 제한을 모두 무시하고 올라가는 [FLCH] 버튼을 눌러보세요!',
+          desc: '<b>FLCH (Flight Level Change)</b>를 누르면 FMS의 웨이포인트 고도 제한을 모두 무시하고 오직 MCP 고도창(14,000ft)을 향해 곧바로 상승합니다.',
+          compare: '<span class="tag-bus">Airbus</span> ALT 노브 <b>Pull (OP CLB / OP DES)</b>와 100% 동일!<br><span class="tag-b787">Boeing 787</span> <b>FLCH 버튼</b> 클릭!'
+        }
+      ]
+    },
+
+    // LESSON 1: Escaping VNAV ALT Trap
+    {
+      name: '레슨 2: VNAV ALT 탈출',
+      setup: () => {
+        sim.inApproachPhase = false;
+        sim.inGoAround = false;
+        sim.alt = 10000;
+        sim.mcpAlt = 10000;
+        sim.vs = 0;
+        sim.ias = 250;
+        sim.spdWindowOpen = false;
+        sim.btnLNAV = true;
+        sim.btnVNAV = true;
+        sim.btnFLCH = false;
+        sim.fmaAT = 'SPD';
+        sim.fmaRoll = 'LNAV';
+        sim.fmaPitch = 'VNAV ALT';
+        sim.fmaNote = '⚠️ MCP 고도(10000ft)에 막혀 VNAV ALT로 수평비행 중!';
+      },
+      steps: [
+        {
+          targetId: 'btnAltPlus',
+          title: '1단계: 현재 [VNAV ALT]에 걸려 멈춰 있습니다! 먼저 고도 [+] 버튼을 눌러보세요!',
+          desc: 'PFD 상단 FMA 우측을 보면 <b>VNAV ALT</b>가 떠 있습니다. FMS는 35,000ft까지 올라가고 싶지만 MCP 고도창(10,000ft)에 가로막혀 멈춘 상태입니다. 먼저 <b>ALT [+]</b>를 눌러 고도를 <b>11000</b>으로 올려보세요.',
+          compare: '<span class="tag-b787">보잉 787 주의점!</span> 고도 숫자만 11000으로 올렸다고 해서 비행기가 저절로 올라가지 않습니다!'
+        },
+        {
+          targetId: 'btnAltIntv',
+          title: '2단계: 비행기가 안 올라가죠? 이제 [PUSH (ALT INTV)]를 눌러 상승을 깨워주세요!',
+          desc: '보잉에서 <b>VNAV ALT</b>로 한번 평평해지면, 고도를 돌린 뒤 반드시 고도 노브 가운데(<b>PUSH ALT INTV</b>)를 한번 콕 눌러줘야 <b>VNAV SPD</b>로 바뀌며 다시 상승을 시작합니다!',
+          compare: '<span class="tag-bus">Airbus</span> 고도가 ALT로 잡힌 뒤 고도를 올리고 노브를 <b>Push</b>하는 것과 똑같습니다!'
+        }
+      ]
+    },
+
+    // LESSON 2: FMS Direct-To (MOD -> EXEC)
+    {
+      name: '레슨 3: FMS Direct-To',
+      setup: () => {
+        sim.inApproachPhase = false;
+        sim.inGoAround = false;
+        sim.cduPage = 'LEGS';
+        sim.isMod = false;
+        sim.scratchpad = '';
+        sim.alt = 11500;
+        sim.mcpAlt = 16000;
+        sim.btnLNAV = true;
+        sim.btnVNAV = true;
+        sim.fmaAT = 'THR REF';
+        sim.fmaRoll = 'LNAV';
+        sim.fmaPitch = 'VNAV SPD';
+        sim.legs = [
+          { id: 'BOPTA', x: 12, y: 14, spd: 250, alt: 10000, type: 'AT' },
+          { id: 'NOPIK', x: 26, y: 32, spd: 290, alt: 16000, type: 'AT_OR_BELOW' },
+          { id: 'LANAT', x: 46, y: 45, spd: 310, alt: 24000, type: 'NONE' },
+          { id: 'NIPPI', x: 70, y: 58, spd: 310, alt: 35000, type: 'NONE' }
+        ];
+        renderCDU();
+      },
+      steps: [
+        {
+          targetId: 'lsk3L',
+          title: '1단계: 관제사가 "Direct to LANAT"을 지시했습니다. CDU의 [3L] 버튼을 눌러보세요!',
+          desc: '보잉 FMS에는 별도의 DIR 버튼이 없습니다! 대신 <b>LEGS</b> 페이지에서 가고 싶은 지점(3번째 줄 <b>LANAT</b>) 옆의 <b>3L</b> 버튼을 눌러 맨 아래 입력창(Scratchpad)으로 이름을 복사합니다.',
+          compare: '<span class="tag-bus">Airbus</span> MCDU의 전용 <b>DIR</b> 버튼 사용<br><span class="tag-b787">Boeing 787</span> LEGS에서 원하는 픽스를 눌러 복사!'
+        },
+        {
+          targetId: 'lsk1L',
+          title: '2단계: 복사된 LANAT을 맨 윗줄(현재 가는 곳)에 덮어씌우기 위해 [1L]을 눌러보세요!',
+          desc: '맨 아랫줄에 <b>LANAT</b>이 복사되어 있습니다. 이제 맨 첫 줄 왼쪽 버튼인 <b>1L</b>을 누르면 중간 지점들을 건너뛰고 LANAT으로 바로 가는 점선 경로(<b>MOD</b>)가 ND 화면에 그려집니다.',
+          compare: '<span class="tag-bus">Airbus</span> 노란색 <b>TMPY F-PLN</b> 상태와 동일합니다.'
+        },
+        {
+          targetId: 'cduBtnEXEC',
+          title: '3단계: 초록색 불이 켜진 [EXEC] 버튼을 눌러 경로를 최종 확정하세요!',
+          desc: 'ND 화면의 하늘색 점선(<b>MOD</b>)을 확인한 뒤, 초록색 램프가 켜진 <b>EXEC (Execute)</b> 버튼을 누르면 보라색 실선(<b>ACT</b>)으로 바뀌며 비행기가 즉시 LANAT으로 기수를 돌립니다!',
+          compare: '<span class="tag-bus">Airbus</span> <b>INSERT*</b> 클릭<br><span class="tag-b787">Boeing 787</span> 초록불 켜진 <b>EXEC</b> 버튼 클릭!'
+        }
+      ]
+    },
+
+    // LESSON 3: IAN vs VNAV Non-Precision Approach
+    {
+      name: '레슨 4: IAN vs VNAV 접근',
+      setup: () => {
+        setupApproachCommon('IAN');
+        sim.mcpAlt = 2000;
+        sim.gsCaptured = false;
+        sim.btnLNAV = true;
+        sim.btnVNAV = true;
+        sim.fmaAT = 'SPD';
+        sim.fmaRoll = 'LNAV';
+        sim.fmaPitch = 'ALT';
+        sim.fmaNote = '활주로 33L 비정밀(RNAV) 접근 준비 완료 (2000ft)';
+        renderCDU();
+      },
+      steps: [
+        {
+          targetId: 'btnAPP',
+          title: '1단계: 보잉의 가장 편한 비정밀 접근인 IAN을 켜기 위해 [APP] 버튼을 눌러보세요!',
+          desc: '비정밀(RNP/RNAV) 접근이지만 보잉 787의 <b>IAN(Integrated Approach Navigation)</b> 기능을 쓰면 ILS와 똑같이 <b>APP</b> 버튼을 누릅니다! FMA가 <b>FAC | GP</b>(수평코스 | 강하각)로 잡히며 내려갑니다.',
+          compare: '<span class="tag-bus">Airbus</span> <b>APPR</b> 버튼을 눌러 `FINAL APP` 또는 `FLS(F-LOC/F-G/S)`로 내려가는 것과 똑같습니다!'
+        },
+        {
+          targetId: 'btnAltPlus',
+          title: '2단계: GP(글라이드패스)가 잡혔습니다! [ALT +]를 눌러 복행고도(3000ft)로 올려보세요!',
+          desc: '<b>FAC | GP</b> 모드에서는 강하각이 이미 잡혔기 때문에, 지금 바로 MCP 고도창을 올리더라도 비행기가 멈추지 않고 끝까지 활주로로 내려갑니다.',
+          compare: '<span class="tag-b787">주의!</span> 만약 `APP` 버튼을 안 쓰는 순수 <b>LNAV/VNAV PTH</b> 접근이었다면, FAF를 지나 300ft 이상 내려간 뒤에 복행고도를 올려야 `VNAV ALT` 함정에 빠지지 않습니다!'
+        }
+      ]
+    },
+
+    // LESSON 4: Go-Around (TO/GA 1st push vs 2nd push)
+    {
+      name: '레슨 5: 착륙 복행 (Go-Around)',
+      setup: () => {
+        sim.selectedApprType = 'ILS';
+        sim.inApproachPhase = true;
+        sim.inGoAround = false;
+        sim.togaCount = 0;
+        sim.distToRwy = 2.0;
+        sim.alt = 650;
+        sim.vs = -720;
+        sim.ias = 147;
+        sim.mcpSpd = 147;
+        sim.flaps = 30;
+        sim.gearDown = true;
+        sim.spdWindowOpen = true;
+        sim.mcpAlt = 3000;
+        sim.gsCaptured = true;
+        sim.btnAPP = false;
+        sim.fmaAT = 'SPD';
+        sim.fmaRoll = 'LOC';
+        sim.fmaPitch = 'G/S';
+        sim.fmaNote = '활주로 650ft 최종 접근 중 (복행고도 3000ft 세팅됨)';
+        sim.legs = [
+          { id: 'RW33L', x: 0, y: 5, spd: 147, alt: 50, type: 'AT' },
+          { id: 'MA33L', x: 0, y: 12, spd: 195, alt: 1500, type: 'AT_OR_BELOW' },
+          { id: 'GUKDO', x: -14, y: 28, spd: 240, alt: 3000, type: 'AT' }
+        ];
+        renderCDU();
+      },
+      steps: [
+        {
+          targetId: 'btnTOGA',
+          title: '1단계: 활주로에 장애물이 있습니다! 주황색 [🚀 PUSH TO/GA SWITCH]를 1번 클릭하세요!',
+          desc: '보잉 787은 스로틀 레버를 손으로 밀지 않고 <b>TO/GA 스위치를 1번 딸깍</b> 누릅니다! 모터가 레버를 밀어 약 2,000fpm 상승 추력(<b>THR</b>)을 넣고, 50ft 이상이므로 <b>LNAV가 자동 결합</b>됩니다!',
+          compare: '<span class="tag-bus">Airbus</span> 스로틀을 끝까지 밀면 `SRS | GA TRK`(트랙 유지)가 되지만, <span class="tag-b787">Boeing 787</span>은 1번 클릭 시 부드러운 `THR` + `LNAV` 자동 결합!'
+        },
+        {
+          targetId: 'flap20',
+          title: '2단계: 복행 플랩인 [FLAPS 20 (복행)] 버튼을 클릭하세요!',
+          desc: '착륙 플랩(Flaps 30)에서 복행 플랩인 <b>FLAPS 20</b>으로 한 단계 접습니다. 플랩을 접는 순간 PFD 속도계의 목표 속도가 <b>165 KT</b>로 자동 점프합니다!',
+          compare: '<span class="tag-bus">Airbus</span> "Flaps one step"과 동일하며, 보잉은 플랩 레버 위치에 따라 목표 속도가 자동으로 올라갑니다.'
+        },
+        {
+          targetId: 'gearBtn',
+          title: '3단계: Positive Rate 확인 후 [GEAR DN] 버튼을 눌러 기어를 올리세요!',
+          desc: '상승률(VS +)이 확인되었으므로 랜딩기어를 올립니다(<b>GEAR UP</b>).',
+          compare: '<span class="tag-b787">Boeing 787</span> TO/GA → Flaps 20 → Positive Rate, Gear Up 순서!'
+        },
+        {
+          targetId: 'btnTOGA',
+          title: '4단계: 만약 급상승이 필요하다면? [🚀 PUSH TO/GA SWITCH]를 한 번 더(2회째) 눌러보세요!',
+          desc: '윈드시어나 급격한 상승이 필요할 때 <b>TO/GA 스위치를 두 번째</b> 누르면 FMA 좌측이 <b>THR → THR REF</b>로 바뀌며 엔진 최대 복행 추력(Full Go-Around Thrust)이 들어갑니다!',
+          compare: '<span class="tag-b787">핵심 요약</span> 1번 클릭 = <b>THR</b>(부드러운 2000fpm 상승), 2번 클릭 = <b>THR REF</b>(최대 추력)!'
+        },
+        {
+          targetId: 'btnVNAV',
+          title: '5단계: 가속고도 통과 후 [VNAV]를 눌러 정상 상승 모드로 전환하세요!',
+          desc: '이제 <b>VNAV</b> 버튼을 누르면 `TO/GA` 피치 모드가 끝나고 <b>VNAV SPD</b>로 전환되어 플랩을 마저 접으며 복행 고도(3,000ft)까지 자동으로 올라갑니다.',
+          compare: '<span class="tag-bus">Airbus</span> 가속고도에서 스로틀을 `CLB` 디텐트로 빼는 단계에 해당합니다.'
+        }
+      ]
+    }
+  ];
+
+  let currentLessonIdx = 0;
+  let currentStepIdx = 0;
+  let tutorialActive = true;
+
+  function clearAllHighlights() {
+    document.querySelectorAll('.tutorial-target').forEach(el => {
+      el.classList.remove('tutorial-target');
+    });
   }
 
-  function setCoach(headline, detail, compareHtml) {
-    document.getElementById('coachHeadline').innerHTML = `✈️ ${headline}`;
-    document.getElementById('coachDetail').innerHTML = detail;
-    if (compareHtml) {
-      document.getElementById('coachCompare').innerHTML = compareHtml;
+  function applyTutorialStepUI() {
+    clearAllHighlights();
+    document.querySelectorAll('.lesson-tab').forEach((btn, i) => {
+      btn.classList.toggle('active', tutorialActive && i === currentLessonIdx);
+    });
+
+    if (!tutorialActive) {
+      document.getElementById('stepProgressBadge').textContent = '자유 조작 모드 (FREE PLAY)';
+      document.getElementById('stepTitleText').textContent = '원하시는 버튼을 마음껏 눌러보며 PFD FMA와 ND 변화를 관찰하세요!';
+      document.getElementById('stepDescText').innerHTML = '다시 단계별 안내를 받으시려면 상단의 <b>레슨 1 ~ 레슨 5</b> 탭 중 하나를 클릭하시면 언제든 다시 시작됩니다.';
+      return;
+    }
+
+    const lesson = lessons[currentLessonIdx];
+    const step = lesson.steps[currentStepIdx];
+    if (!step) return;
+
+    document.getElementById('stepProgressBadge').textContent = `${lesson.name} · STEP ${currentStepIdx + 1} / ${lesson.steps.length}`;
+    document.getElementById('stepTitleText').textContent = step.title;
+    document.getElementById('stepDescText').innerHTML = step.desc;
+    document.getElementById('stepCompareText').innerHTML = step.compare;
+
+    const targetEl = document.getElementById(step.targetId);
+    if (targetEl) {
+      targetEl.classList.add('tutorial-target');
     }
   }
 
-  // ==================== MCP CONTROLS ====================
+  function startLesson(idx) {
+    tutorialActive = true;
+    currentLessonIdx = idx;
+    currentStepIdx = 0;
+    document.getElementById('toastBanner').classList.remove('show');
+    lessons[idx].setup();
+    updateMCPDOM();
+    renderCDU();
+    applyTutorialStepUI();
+  }
+
+  function restartCurrentLesson() {
+    startLesson(currentLessonIdx);
+  }
+
+  function enableFreePlay() {
+    tutorialActive = false;
+    clearAllHighlights();
+    applyTutorialStepUI();
+  }
+
+  function checkTutorialAdvance(clickedId, successMessage) {
+    if (!tutorialActive) return;
+    const lesson = lessons[currentLessonIdx];
+    const step = lesson.steps[currentStepIdx];
+    if (!step || step.targetId !== clickedId) return;
+
+    const toast = document.getElementById('toastBanner');
+    toast.innerHTML = `<span>✅ ${successMessage || '정확합니다! 다음 단계로 안내합니다.'}</span>`;
+    toast.classList.add('show');
+
+    if (currentStepIdx < lesson.steps.length - 1) {
+      playChime('step');
+      currentStepIdx++;
+      applyTutorialStepUI();
+    } else {
+      playChime('lesson_done');
+      clearAllHighlights();
+      document.getElementById('stepProgressBadge').textContent = `${lesson.name} 완료! 🎉`;
+      document.getElementById('stepTitleText').textContent = `축하합니다! [${lesson.name}]의 모든 단계를 완벽히 마스터하셨습니다!`;
+      if (currentLessonIdx < lessons.length - 1) {
+        document.getElementById('stepDescText').innerHTML =
+          `상단의 <b>레슨 ${currentLessonIdx + 2}</b> 탭을 누르거나 우측의 <b>[다음 단계 건너뛰기 ▶]</b> 버튼을 누르면 다음 레슨으로 바로 넘어갑니다!`;
+      } else {
+        document.getElementById('stepDescText').innerHTML =
+          `5가지 핵심 전환 레슨을 모두 완주하셨습니다! 이제 자유롭게 조작하거나 원하는 레슨을 다시 복습해 보세요.`;
+      }
+    }
+  }
+
+  function nextTutorialStep() {
+    if (!tutorialActive) {
+      startLesson(0);
+      return;
+    }
+    const lesson = lessons[currentLessonIdx];
+    if (currentStepIdx < lesson.steps.length - 1) {
+      currentStepIdx++;
+      applyTutorialStepUI();
+    } else if (currentLessonIdx < lessons.length - 1) {
+      startLesson(currentLessonIdx + 1);
+    }
+  }
+
+  function prevTutorialStep() {
+    if (!tutorialActive) return;
+    if (currentStepIdx > 0) {
+      currentStepIdx--;
+      applyTutorialStepUI();
+    }
+  }
+
+  function highlightFMA(col, noteText) {
+    sim.fmaChangedCol = col;
+    sim.fmaBoxTimer = 100;
+    if (noteText) sim.fmaNote = noteText;
+  }
+
+  function getFlapTargetSpeed(flapSetting) {
+    if (flapSetting === 30) return sim.vref30 + 5;
+    if (flapSetting === 20) return 165;
+    if (flapSetting === 5)  return 195;
+    return 240;
+  }
+
+  // ==================== CONTROL ACTIONS ====================
+  function pressTOGA() {
+    if (!sim.inGoAround && sim.togaCount === 0) {
+      sim.togaCount = 1;
+      sim.inGoAround = true;
+      sim.inApproachPhase = false;
+      sim.gsCaptured = false;
+      sim.spdWindowOpen = false;
+      sim.btnAPP = false;
+      sim.btnLOC = false;
+      sim.btnVNAV = false;
+      sim.btnFLCH = false;
+      sim.btnVS = false;
+      sim.btnHOLD = false;
+
+      sim.fmaAT = 'THR';
+      sim.fmaRoll = 'LNAV';
+      sim.btnLNAV = true;
+      sim.fmaPitch = 'TO/GA';
+      sim.fmaRollArmed = '';
+      sim.fmaPitchArmed = '';
+
+      sim.legs = [
+        { id: 'MA33L', x: 0, y: 12, spd: 195, alt: 1500, type: 'AT_OR_BELOW' },
+        { id: 'GUKDO', x: -14, y: 28, spd: 240, alt: 3000, type: 'AT' }
+      ];
+      sim.acX = 0;
+      sim.acY = 0;
+
+      highlightFMA(3, 'TO/GA 1회 클릭: 부드러운 복행 추력(THR) + LNAV 자동 결합!');
+      updateMCPDOM();
+      renderCDU();
+      checkTutorialAdvance('btnTOGA', 'TO/GA 1회 클릭으로 FMA가 [THR | LNAV | TO/GA]로 전환되었습니다!');
+    } else if (sim.togaCount === 1) {
+      sim.togaCount = 2;
+      sim.fmaAT = 'THR REF';
+      highlightFMA(1, 'TO/GA 2회 클릭: 최대 복행 추력(THR REF) 인가!');
+      updateMCPDOM();
+      checkTutorialAdvance('btnTOGA', 'TO/GA 2회 클릭으로 최대 추력 [THR REF]가 인가되었습니다!');
+    } else {
+      sim.togaCount = 1;
+      sim.fmaAT = 'THR';
+      highlightFMA(1, 'TO/GA 1회 추력(THR) 상태로 전환');
+      updateMCPDOM();
+    }
+  }
+
+  function setFlaps(deg) {
+    sim.flaps = deg;
+    if (sim.spdWindowOpen) sim.mcpSpd = getFlapTargetSpeed(deg);
+    updateMCPDOM();
+    checkTutorialAdvance('flap' + deg, `FLAPS ${deg} 설정 완료! PFD 목표 속도가 ${getFlapTargetSpeed(deg)}KT로 자동 상승합니다.`);
+  }
+
+  function toggleGear() {
+    sim.gearDown = !sim.gearDown;
+    updateMCPDOM();
+    checkTutorialAdvance('gearBtn', 'Positive Rate 확인 후 GEAR UP 완료!');
+  }
+
   function toggleAT() {
     sim.atArmed = !sim.atArmed;
     sim.fmaAT = sim.atArmed ? 'SPD' : '---';
-    highlightFMA(1);
+    highlightFMA(1, '오토스로틀(A/T) 상태 변경');
     updateMCPDOM();
   }
 
@@ -798,8 +1482,9 @@
     sim.btnLOC = false;
     sim.fmaRoll = 'LNAV';
     sim.fmaRollArmed = '';
-    highlightFMA(2);
+    highlightFMA(2, 'LNAV 결합: FMS 항로(마젠타 선) 자동 추적');
     updateMCPDOM();
+    checkTutorialAdvance('btnLNAV', 'LNAV가 켜져 다시 FMS 마젠타 항로를 따라갑니다!');
   }
 
   function pressHdgSel() {
@@ -807,8 +1492,10 @@
     sim.btnLNAV = false;
     sim.btnLOC = false;
     sim.fmaRoll = 'HDG SEL';
-    highlightFMA(2);
+    sim.fmaRollArmed = '';
+    highlightFMA(2, `HDG SEL 결합: 헤딩 ${String(sim.mcpHdg).padStart(3,'0')}°로 선회 중`);
     updateMCPDOM();
+    checkTutorialAdvance('btnHDG', 'HDG SEL이 켜지며 FMA 가운데가 [HDG SEL]로 바뀌었습니다!');
   }
 
   function pressVNAV() {
@@ -820,113 +1507,51 @@
     sim.gsCaptured = false;
     sim.fmaPitchArmed = '';
     if (!sim.inApproachPhase) sim.spdWindowOpen = false;
-    evaluateVnavMode();
-    highlightFMA(3);
-    updateMCPDOM();
-  }
 
-  function pressLOC() {
-    sim.btnLOC = !sim.btnLOC;
-    if (sim.btnLOC) {
-      const modeName = sim.selectedApprType === 'ILS' ? 'LOC' : 'FAC';
-      sim.fmaRoll = modeName;
-      sim.fmaRollArmed = '';
-      sim.btnLNAV = false;
-      sim.btnHDG = false;
-      highlightFMA(2);
-      setCoach(
-        `${modeName} 모드 결합 (${sim.selectedApprType === 'ILS' ? 'Localizer' : 'IAN Final Approach Course'})`,
-        `수평 경로만 먼저 포착했습니다. ILS일 때는 <b>LOC</b>, 비정밀(IAN)일 때는 <b>FAC</b>가 FMA 중앙에 표시됩니다.`,
-        '<span class="tag-bus">Airbus</span> FCU의 <b>LOC</b> 버튼과 동일합니다.'
-      );
-    }
-    updateMCPDOM();
-  }
-
-  function pressAPP() {
-    if (sim.selectedApprType === 'VNAV') {
-      setCoach(
-        '⚠️ RNP (LNAV/VNAV PTH) 접근 중에는 APP 버튼을 사용하지 않습니다!',
-        '항공사 SOP에서 IAN(FAC/GP) 옵션 대신 순수 <b>LNAV/VNAV PTH</b>로 비정밀 접근을 수행할 때는 `APP` 버튼이 아니라 <b>LNAV + VNAV 버튼</b>을 사용합니다. (FMS DEP/ARR에서 IAN 또는 ILS를 선택하면 APP 버튼이 작동합니다)',
-        '<span class="tag-bus">Airbus</span> RNP 접근 시 무조건 `APPR` 버튼을 눌러 `FINAL APP`을 켜지만, <span class="tag-b787">Boeing 787</span> LNAV/VNAV 접근은 <b>VNAV</b>로 내려갑니다!'
-      );
-      return;
-    }
-
-    sim.btnAPP = true;
-    sim.btnVNAV = false;
-    sim.btnFLCH = false;
-    sim.btnVS = false;
-    sim.spdWindowOpen = true; // In approach, MCP speed window is open for flap maneuvering speeds
-
-    const rollName = sim.selectedApprType === 'ILS' ? 'LOC' : 'FAC';
-    const pitchName = sim.selectedApprType === 'ILS' ? 'G/S' : 'GP';
-
-    sim.fmaRoll = rollName;
-    sim.fmaRollArmed = '';
-    sim.btnLNAV = false;
-
-    if (Math.abs(sim.vertDev) < 0.35) {
-      sim.gsCaptured = true;
-      sim.fmaPitch = pitchName;
-      sim.fmaPitchArmed = '';
-      sim.btnAPP = false; // On Boeing, APP button light extinguishes after G/S or GP capture!
-      highlightFMA(3);
-      setCoach(
-        `✅ ${rollName} / ${pitchName} Capture 완료! (APP 버튼 소등 & 복행고도 세팅 가능)`,
-        `FMA가 <b>SPD | ${rollName} | ${pitchName}</b>로 결합되었으며, 보잉 특성상 포착이 완료되면 <b>MCP APP 버튼의 초록 불이 꺼집니다</b>. 이제 MCP ALT 창을 복행고도(<b>3000ft</b>)로 올려도 접근이 풀리지 않고 끝까지 내려갑니다!`,
-        `<span class="tag-bus">Airbus</span> \`${sim.selectedApprType === 'ILS' ? 'LOC | G/S' : 'F-LOC | F-G/S (또는 FINAL APP)'}\`와 동일하게 작동합니다.`
-      );
+    if (sim.inGoAround) {
+      sim.inGoAround = false;
+      sim.togaCount = 0;
+      sim.fmaPitch = 'VNAV SPD';
+      sim.fmaAT = 'THR REF';
+      highlightFMA(3, '복행 가속고도 통과: VNAV SPD 상승 전환 완료!');
     } else {
-      sim.gsCaptured = false;
-      sim.fmaPitch = 'ALT';
-      sim.fmaPitchArmed = pitchName;
-      highlightFMA(2);
-      setCoach(
-        `${rollName} 포착 & ${pitchName} Armed (글라이드패스 진입 대기 중)`,
-        `FMA 하단에 흰색으로 <b>${pitchName}</b>가 무장(Armed)되었습니다. 전방에서 3.0° 강하각과 만나는 순간 <b>${pitchName}</b>로 자동 전환되며 강하를 시작합니다.`,
-        `<span class="tag-b787">Boeing 787 IAN vs ILS</span> ILS는 <b>LOC | G/S</b>, 비정밀 IAN은 <b>FAC | GP</b>가 찍히며 조종사 조작 절차는 100% 동일합니다!`
-      );
+      evaluateVnavMode();
+      highlightFMA(3, 'VNAV 결합: FMS 수직 경로 및 속도 추종');
     }
     updateMCPDOM();
+    checkTutorialAdvance('btnVNAV', 'VNAV가 결합되어 FMS가 상승 속도와 고도를 관리합니다!');
   }
 
   function pushSpdIntv() {
-    if (!sim.btnVNAV && !sim.gsCaptured) return;
     sim.spdWindowOpen = !sim.spdWindowOpen;
     if (sim.spdWindowOpen) {
       sim.mcpSpd = Math.round(sim.ias / 5) * 5;
       if (sim.btnVNAV && !sim.inApproachPhase && sim.fmaPitch === 'VNAV PTH') {
         sim.fmaPitch = 'VNAV SPD';
-        highlightFMA(3);
       }
-      setCoach(
-        'Speed Intervention 활성화 (MCP 속도창 Open)',
-        'VNAV PTH 경로를 유지하면서 플랩 전개 속도(예: 180 → 160 → Vref+5)를 MCP 다이얼로 조절할 수 있습니다.',
-        '<span class="tag-bus">Airbus</span> 접근 중 속도를 <b>Pull (Selected Speed)</b>로 빼서 감속하는 것과 동일합니다.'
-      );
+      highlightFMA(3, 'Speed Intervention: VNAV 유지 상태에서 수동 속도창 Open!');
     } else {
       evaluateVnavMode();
+      highlightFMA(3, 'Speed Intervention 해제: FMS 자동 속도로 복귀');
     }
     updateMCPDOM();
+    checkTutorialAdvance('btnSpdIntv', 'VNAV를 끄지 않고도 MCP 속도창(IAS/MACH)이 열렸습니다!');
   }
 
   function pushAltIntv() {
     if (sim.fmaPitch === 'VNAV ALT') {
       evaluateVnavMode();
-      highlightFMA(3);
-      setCoach(
-        'VNAV ALT 해제 → VNAV PTH 강하/상승 재개!',
-        `MCP 고도를 변경한 뒤 <b>ALT 노브를 PUSH</b>하여 VNAV 경로 추적을 재개했습니다.`,
-        '<span class="tag-b787">Boeing 787</span> VNAV ALT가 떴을 땐 반드시 고도 변경 후 <b>ALT PUSH</b>를 눌러야 합니다.'
-      );
+      highlightFMA(3, 'ALT INTV 클릭: VNAV ALT 해제 → 다시 상승/강하 시작!');
     } else {
       evaluateVnavMode();
     }
     updateMCPDOM();
+    checkTutorialAdvance('btnAltIntv', 'VNAV ALT가 풀리고 [VNAV SPD]로 바뀌며 다시 힘차게 상승합니다!');
   }
 
   function pressFLCH() {
+    sim.inGoAround = false;
+    sim.togaCount = 0;
     sim.btnFLCH = true;
     sim.btnVNAV = false;
     sim.btnVS = false;
@@ -936,35 +1561,70 @@
     sim.spdWindowOpen = true;
     sim.fmaPitch = 'FLCH SPD';
     sim.fmaAT = sim.mcpAlt >= sim.alt ? 'THR REF' : 'HOLD';
-    highlightFMA(3);
+    highlightFMA(3, 'FLCH SPD: 모든 고도 구속을 무시하고 MCP 고도로 직행!(Airbus OP CLB/DES)');
+    updateMCPDOM();
+    checkTutorialAdvance('btnFLCH', 'FLCH SPD(에어버스 OP CLB)가 켜지며 속도창이 함께 열렸습니다!');
+  }
+
+  function pressLOC() {
+    sim.btnLOC = !sim.btnLOC;
+    if (sim.btnLOC) {
+      const modeName = sim.selectedApprType === 'ILS' ? 'LOC' : 'FAC';
+      sim.fmaRoll = modeName;
+      sim.btnLNAV = false;
+      sim.btnHDG = false;
+      highlightFMA(2, `${modeName} 수평 접근 코스 포착`);
+    }
     updateMCPDOM();
   }
 
+  function pressAPP() {
+    sim.inGoAround = false;
+    sim.togaCount = 0;
+    sim.btnAPP = false; // Captures immediately in tutorial for instant clarity
+    sim.btnVNAV = false;
+    sim.btnFLCH = false;
+    sim.btnVS = false;
+    sim.spdWindowOpen = true;
+    sim.gsCaptured = true;
+
+    const rollName = sim.selectedApprType === 'ILS' ? 'LOC' : 'FAC';
+    const pitchName = sim.selectedApprType === 'ILS' ? 'G/S' : 'GP';
+    sim.fmaRoll = rollName;
+    sim.fmaPitch = pitchName;
+    sim.fmaRollArmed = '';
+    sim.fmaPitchArmed = '';
+    sim.btnLNAV = false;
+
+    highlightFMA(3, `${rollName} | ${pitchName} 포착 완료! 이제 복행고도를 세팅해도 계속 내려갑니다.`);
+    updateMCPDOM();
+    checkTutorialAdvance('btnAPP', '비정밀 접근이지만 IAN 덕분에 [FAC | GP]가 한 번에 잡혔습니다!');
+  }
+
   function pressVS() {
+    sim.inGoAround = false;
     sim.btnVS = true;
     sim.btnVNAV = false;
     sim.btnFLCH = false;
     sim.btnHOLD = false;
-    sim.btnAPP = false;
-    sim.gsCaptured = false;
     sim.spdWindowOpen = true;
     sim.fmaPitch = 'V/S';
     sim.fmaAT = 'SPD';
-    highlightFMA(3);
+    highlightFMA(3, 'V/S 수직속도 모드 결합');
     updateMCPDOM();
   }
 
   function pressAltHold() {
+    sim.inGoAround = false;
     sim.btnHOLD = true;
     sim.btnVNAV = false;
     sim.btnFLCH = false;
     sim.btnVS = false;
-    sim.gsCaptured = false;
     sim.spdWindowOpen = true;
     sim.mcpAlt = Math.round(sim.alt / 100) * 100;
     sim.fmaPitch = 'ALT';
     sim.fmaAT = 'SPD';
-    highlightFMA(3);
+    highlightFMA(3, 'ALT HOLD 현재 고도 유지');
     updateMCPDOM();
   }
 
@@ -986,36 +1646,11 @@
   }
 
   function changeAlt(delta) {
-    const prevAlt = sim.mcpAlt;
     sim.mcpAlt = Math.max(400, Math.min(41000, sim.mcpAlt + delta));
-
-    // Special Educational Check: Setting Missed Approach Altitude during VNAV PTH Approach!
-    if (sim.inApproachPhase && sim.selectedApprType === 'VNAV' && sim.btnVNAV && sim.mcpAlt > prevAlt) {
-      if (sim.distToRwy > sim.fafDist || sim.alt > 1700) {
-        // Pilot raised MCP Alt to Missed Approach Alt TOO EARLY before descending at least 300ft below FAF!
-        sim.fmaPitch = 'VNAV ALT';
-        highlightFMA(3);
-        setCoach(
-          '🚨 [주의!] FAF 통과 및 강하 전 복행고도(Missed Appr Alt) 조기 세팅 → VNAV ALT 걸림!',
-          `<b>LNAV/VNAV PTH</b> 접근 중 아직 강하가 충분히 이루어지기 전에 MCP 고도를 <b>${sim.mcpAlt}ft</b>로 올려버려서 항공기가 강하하지 않고 <b>VNAV ALT</b>로 수평비행을 유지해 버립니다! 다시 내려가려면 MCP 고도를 <b>500ft(DA/MDA)</b>로 내리고 <b>ALT PUSH</b>를 누르세요!`,
-          '<span class="tag-bus">Airbus FINAL APP</span>과 가장 큰 차이점입니다! 보잉 <b>VNAV PTH 접근</b>에서는 반드시 <b>FAF 통과 후 현재 고도보다 최소 300ft 이상 아래로 내려간 뒤</b>에 복행고도(3000ft)를 세팅해야 합니다!'
-        );
-      } else {
-        setCoach(
-          '✅ 정상적인 복행고도(Missed Approach Altitude) 세팅 완료!',
-          `FAF(2000ft)를 지나 충분히 강하한 상태(${Math.round(sim.alt)}ft)에서 MCP 고도를 <b>${sim.mcpAlt}ft</b>로 올렸기 때문에, <b>VNAV ALT</b>에 걸리지 않고 계속 <b>VNAV PTH</b>로 DA(500ft)까지 내려갑니다!`,
-          '<span class="tag-b787">Boeing 787 SOP</span> VNAV PTH 접근 시: ① FAF 전엔 MCP 고도를 DA/MDA(100ft 올림수)로 세팅 → ② FAF 통과 및 300ft 이상 강하 확인 후 Missed Appr Alt 세팅!'
-        );
-      }
-    } else if (sim.inApproachPhase && sim.gsCaptured && sim.mcpAlt > prevAlt) {
-      setCoach(
-        `✅ ${sim.fmaPitch} Capture 상태에서 복행고도(${sim.mcpAlt}ft) 세팅 완료!`,
-        `<b>${sim.fmaRoll} | ${sim.fmaPitch}</b> 모드에서는 이미 글라이드패스가 잡혔으므로 MCP 고도를 언제든 복행고도(3000ft)로 올려도 절대 레벨오프하지 않고 활주로까지 내려갑니다.`,
-        '<span class="tag-bus">Airbus</span> `G/S` 또는 `FINAL APP`에서 복행고도를 세팅하는 것과 똑같이 편안합니다.'
-      );
-    }
-
     updateMCPDOM();
+    if (delta > 0) {
+      checkTutorialAdvance('btnAltPlus', `MCP 고도창을 ${sim.mcpAlt}ft로 올렸습니다!`);
+    }
   }
 
   function evaluateVnavMode() {
@@ -1025,10 +1660,9 @@
       sim.fmaAT = 'SPD';
       return;
     }
-    const targetAlt = getEffectiveVnavTargetAlt();
-    const diff = targetAlt - sim.alt;
+    const diff = sim.mcpAlt - sim.alt;
     if (Math.abs(diff) < 120) {
-      sim.fmaPitch = (Math.abs(sim.mcpAlt - sim.alt) < 150 && sim.mcpAlt < sim.fmsCrzAlt) ? 'VNAV ALT' : 'VNAV PTH';
+      sim.fmaPitch = (sim.mcpAlt < sim.fmsCrzAlt) ? 'VNAV ALT' : 'VNAV PTH';
       sim.fmaAT = 'SPD';
     } else if (diff > 0) {
       sim.fmaPitch = 'VNAV SPD';
@@ -1037,14 +1671,6 @@
       sim.fmaPitch = sim.spdWindowOpen ? 'VNAV SPD' : 'VNAV PTH';
       sim.fmaAT = 'HOLD';
     }
-  }
-
-  function getEffectiveVnavTargetAlt() {
-    const activeLeg = sim.legs[0];
-    if (activeLeg && activeLeg.type !== 'NONE' && sim.alt <= activeLeg.alt + 150) {
-      return Math.min(sim.mcpAlt, activeLeg.alt);
-    }
-    return sim.mcpAlt;
   }
 
   function updateMCPDOM() {
@@ -1081,16 +1707,29 @@
     setBtn('btnAPP', sim.btnAPP);
     setBtn('btnAP', sim.apEngaged);
 
-    const badge = document.getElementById('apprTypeBadge');
-    if (sim.selectedApprType === 'ILS') {
-      badge.textContent = 'SELECTED APPR: ILS RWY 33L (LOC / G/S)';
-      badge.style.color = '#00ff66';
-    } else if (sim.selectedApprType === 'IAN') {
-      badge.textContent = 'SELECTED APPR: RNP RWY 33L [IAN: FAC / GP]';
-      badge.style.color = '#00e5ff';
+    const togaBadge = document.getElementById('togaCountBadge');
+    if (sim.togaCount === 0) {
+      togaBadge.textContent = 'READY (0회)';
+      togaBadge.style.color = '#fbbf24';
+    } else if (sim.togaCount === 1) {
+      togaBadge.textContent = '1st PUSH: THR (2000fpm)';
+      togaBadge.style.color = '#00ff66';
     } else {
-      badge.textContent = 'SELECTED APPR: RNP RWY 33L [LNAV / VNAV PTH]';
-      badge.style.color = '#ff4dff';
+      togaBadge.textContent = '2nd PUSH: THR REF (MAX)';
+      togaBadge.style.color = '#ff4dff';
+    }
+
+    [30, 20, 5, 0].forEach(f => {
+      document.getElementById('flap' + f).classList.toggle('active', sim.flaps === f);
+    });
+
+    const gearBtn = document.getElementById('gearBtn');
+    if (sim.gearDown) {
+      gearBtn.textContent = 'GEAR DN (착륙)';
+      gearBtn.className = 'gear-btn';
+    } else {
+      gearBtn.textContent = 'GEAR UP (접힘)';
+      gearBtn.className = 'gear-btn up';
     }
   }
 
@@ -1117,10 +1756,10 @@
         { lLbl: 'APPROACHES', lVal: sim.selectedApprType === 'ILS' ? '<ACT> ILS 33L' : '<ILS 33L', rLbl: 'FMA MODE', rVal: 'LOC / G/S' },
         { lLbl: 'RNP (IAN OPT)', lVal: sim.selectedApprType === 'IAN' ? '<ACT> RNAV 33L(IAN)' : '<RNAV 33L(IAN)', rLbl: 'FMA MODE', rVal: 'FAC / GP' },
         { lLbl: 'RNP (VNAV OPT)', lVal: sim.selectedApprType === 'VNAV' ? '<ACT> RNAV 33L(VNAV)' : '<RNAV 33L(VNAV)', rLbl: 'FMA MODE', rVal: 'LNAV/VNAV PTH' },
-        { lLbl: 'STAR', lVal: '<ACT> GUKDO1A', rLbl: 'TRANS', rVal: 'BOPTA' },
+        { lLbl: 'MISSED APPR', lVal: 'GUKDO 3000A', rLbl: 'GA THRUST', rVal: 'THR / THR REF' },
         { lLbl: '------------', lVal: '<LEGS', rLbl: '------------', rVal: 'APPROACH REF>' }
       ];
-      apprRows.forEach((item, idx) => {
+      apprRows.forEach(item => {
         const line = document.createElement('div');
         line.className = 'cdu-line';
         const isSel = item.lVal.includes('<ACT>');
@@ -1140,7 +1779,7 @@
     }
 
     if (sim.cduPage === 'LEGS') {
-      title.textContent = 'RTE 1 LEGS';
+      title.textContent = sim.inGoAround ? 'ACT MISSED APPR LEGS' : 'RTE 1 LEGS';
       for (let i = 0; i < 5; i++) {
         const leg = displayLegs[i];
         const line = document.createElement('div');
@@ -1156,7 +1795,7 @@
               <div class="cdu-val" style="${colorClass}">${leg.id}</div>
             </div>
             <div class="cdu-side r">
-              <div class="cdu-lbl">${i === 0 ? 'GP 3.0°' : ''}</div>
+              <div class="cdu-lbl">${i === 0 ? 'CMD SPD/ALT' : ''}</div>
               <div class="cdu-val" style="${colorClass}">${leg.spd}/${leg.alt}${suffix}</div>
             </div>
           `;
@@ -1168,10 +1807,10 @@
     } else {
       title.textContent = 'APPROACH REF';
       const lines = [
-        { lLbl: 'GROSS WT', lVal: '182.4', rLbl: 'FLAPS / VREF', rVal: '30 / 142KT' },
-        { lLbl: 'APPROACH', lVal: sim.selectedApprType + ' RWY33L', rLbl: 'VREF+5', rVal: '147KT' },
-        { lLbl: 'CRZ ALT', lVal: `FL${sim.fmsCrzAlt/100}`, rLbl: 'MINS (DA)', rVal: '500 FT' },
-        { lLbl: '', lVal: '', rLbl: '', rVal: '' },
+        { lLbl: 'GROSS WT', lVal: '182.4', rLbl: 'FLAPS 30 VREF', rVal: '142KT' },
+        { lLbl: 'FLAPS 20 (GA)', lVal: 'F20 BUG 165KT', rLbl: 'VREF+5', rVal: '147KT' },
+        { lLbl: 'FLAPS 5 / UP', lVal: '195KT / 240KT', rLbl: 'MINS (DA)', rVal: '200 FT' },
+        { lLbl: 'MISSED ALT', lVal: '3000 FT', rLbl: 'ACCEL HT', rVal: '1500 FT' },
         { lLbl: '------------', lVal: '<LEGS', rLbl: '------------', rVal: 'DEP/ARR>' }
       ];
       lines.forEach(item => {
@@ -1218,12 +1857,485 @@
 
   function cduLSK(key) {
     if (sim.cduPage === 'DEP_ARR') {
-      if (key === '1L') loadScenario('APPR_ILS');
-      if (key === '2L') loadScenario('APPR_IAN');
-      if (key === '3L') loadScenario('APPR_VNAV');
+      if (key === '1L') { sim.selectedApprType = 'ILS'; setupApproachCommon('ILS'); }
+      if (key === '2L') { sim.selectedApprType = 'IAN'; setupApproachCommon('IAN'); }
+      if (key === '3L') { sim.selectedApprType = 'VNAV'; setupApproachCommon('VNAV'); }
       if (key === '5L') cduPage('LEGS');
       if (key === '5R') cduPage('VNAV');
+      updateMCPDOM();
+      renderCDU();
       return;
     }
 
-    
+    if (sim.cduPage === 'VNAV') {
+      if (key === '5L') cduPage('LEGS');
+      if (key === '5R') cduPage('DEP_ARR');
+      return;
+    }
+
+    const idx = parseInt(key[0], 10) - 1;
+    const side = key[1];
+    const workLegs = sim.isMod && sim.modLegs ? sim.modLegs : cloneLegs(sim.legs);
+
+    if (side === 'L' && workLegs[idx]) {
+      if (sim.scratchpad === '') {
+        sim.scratchpad = workLegs[idx].id;
+        renderCDU();
+        checkTutorialAdvance('lsk' + key, `하단 스크래치패드에 [${sim.scratchpad}]가 복사되었습니다!`);
+      } else if (sim.scratchpad === 'DELETE' && workLegs.length > 1) {
+        workLegs.splice(idx, 1);
+        sim.modLegs = workLegs;
+        sim.isMod = true;
+        sim.scratchpad = '';
+        renderCDU();
+      } else {
+        const foundIdx = workLegs.findIndex(w => w.id === sim.scratchpad);
+        if (idx === 0 && foundIdx > 0) {
+          workLegs.splice(0, foundIdx);
+          sim.modLegs = workLegs;
+          sim.isMod = true;
+          sim.scratchpad = '';
+          renderCDU();
+          checkTutorialAdvance('lsk1L', '1L에 붙여넣어 하늘색 점선(MOD) 경로가 생성되었습니다! 이제 EXEC를 누르세요.');
+        }
+      }
+    }
+  }
+
+  function cduExec() {
+    if (!sim.isMod) return;
+    if (sim.modLegs) {
+      sim.legs = sim.modLegs;
+      sim.modLegs = null;
+    }
+    sim.isMod = false;
+    evaluateVnavMode();
+    highlightFMA(2, 'EXEC 실행 완료: 새로운 마젠타 항로(ACT) 추적 시작!');
+    renderCDU();
+    checkTutorialAdvance('cduBtnEXEC', 'EXEC 실행 완료! 비행기가 즉시 LANAT으로 기수를 돌립니다!');
+  }
+
+  function setupApproachCommon(type) {
+    sim.selectedApprType = type;
+    sim.inApproachPhase = true;
+    sim.inGoAround = false;
+    sim.togaCount = 0;
+    sim.distToRwy = 6.5;
+    sim.alt = 2000;
+    sim.vs = 0;
+    sim.ias = 160;
+    sim.mcpSpd = 160;
+    sim.flaps = 20;
+    sim.gearDown = true;
+    sim.spdWindowOpen = true;
+    sim.hdg = 330;
+    sim.mcpHdg = 330;
+    sim.acX = 0;
+    sim.acY = 0;
+    sim.legs = [
+      { id: 'FAF33', x: 0, y: 6, spd: 160, alt: 2000, type: 'AT' },
+      { id: 'RW33L', x: 0, y: 14, spd: 147, alt: 50, type: 'AT' },
+      { id: 'GUKDO', x: -12, y: 28, spd: 240, alt: 3000, type: 'AT' }
+    ];
+  }
+
+  // ==================== PHYSICS LOOP ====================
+  function updatePhysics() {
+    const activeLeg = sim.legs[0];
+    let targetSpd = sim.mcpSpd;
+    if (!sim.spdWindowOpen) {
+      targetSpd = (sim.inGoAround || sim.flaps > 0) ? getFlapTargetSpeed(sim.flaps) : (activeLeg ? activeLeg.spd : sim.fmsTargetSpd);
+    }
+
+    const spdErr = targetSpd - sim.ias;
+    sim.ias += Math.sign(spdErr) * Math.min(Math.abs(spdErr), 0.22);
+
+    if (sim.inGoAround) {
+      sim.distToRwy += 0.005;
+      const altDiff = sim.mcpAlt - sim.alt;
+      if (Math.abs(altDiff) < 90) {
+        sim.inGoAround = false;
+        sim.togaCount = 0;
+        sim.btnHOLD = true;
+        sim.fmaPitch = 'ALT';
+        sim.fmaAT = 'SPD';
+        sim.spdWindowOpen = true;
+        updateMCPDOM();
+      } else {
+        const gaClimbRate = sim.togaCount === 2 ? 3500 : 2000;
+        sim.vs += (gaClimbRate - sim.vs) * 0.12;
+      }
+    } else if (sim.inApproachPhase) {
+      sim.distToRwy = Math.max(0.4, sim.distToRwy - 0.0045);
+      sim.gsTargetAlt = sim.distToRwy * 310;
+      sim.vertDev = Math.max(-2.0, Math.min(2.0, (sim.gsTargetAlt - sim.alt) / 150));
+
+      if (sim.gsCaptured) {
+        const desiredVS = -700 + (sim.gsTargetAlt - sim.alt) * 3.5;
+        sim.vs += (desiredVS - sim.vs) * 0.15;
+      } else {
+        sim.vs += (0 - sim.vs) * 0.2;
+      }
+    } else {
+      const altDiff = sim.mcpAlt - sim.alt;
+      if (sim.fmaPitch === 'VNAV ALT' || sim.btnHOLD) {
+        sim.vs += (0 - sim.vs) * 0.2;
+      } else if (sim.btnVS) {
+        sim.vs += (sim.mcpVS - sim.vs) * 0.1;
+      } else if (sim.btnFLCH || sim.btnVNAV) {
+        if (Math.abs(altDiff) < 90) {
+          sim.vs += (0 - sim.vs) * 0.2;
+          sim.alt += altDiff * 0.08;
+          if (sim.btnVNAV) {
+            sim.fmaPitch = (sim.mcpAlt < sim.fmsCrzAlt) ? 'VNAV ALT' : 'VNAV PTH';
+            sim.fmaAT = 'SPD';
+          }
+        } else {
+          const desiredVS = altDiff > 0 ? 2000 : -1800;
+          sim.vs += (desiredVS - sim.vs) * 0.08;
+        }
+      }
+    }
+
+    let targetHdg = sim.mcpHdg;
+    if ((sim.btnLNAV || sim.fmaRoll === 'LOC' || sim.fmaRoll === 'FAC') && activeLeg) {
+      const dx = activeLeg.x - sim.acX;
+      const dy = activeLeg.y - sim.acY;
+      targetHdg = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+    }
+    let hdgDiff = ((targetHdg - sim.hdg + 540) % 360) - 180;
+    sim.bank = Math.max(-25, Math.min(25, hdgDiff * 1.2));
+    sim.hdg = (sim.hdg + sim.bank * 0.018 + 360) % 360;
+
+    const rad = sim.hdg * Math.PI / 180;
+    sim.acX += Math.sin(rad) * 0.01;
+    sim.acY += Math.cos(rad) * 0.01;
+
+    sim.alt = Math.max(50, sim.alt + sim.vs / 1800);
+    sim.pitch = Math.max(-5, Math.min(16, 2.2 + (sim.vs / 320)));
+    if (sim.fmaBoxTimer > 0) sim.fmaBoxTimer--;
+  }
+
+  // ==================== PFD CANVAS RENDERER ====================
+  const pfdCtx = document.getElementById('pfdCanvas').getContext('2d');
+
+  function drawPFD() {
+    const ctx = pfdCtx;
+    const W = 450, H = 365;
+    ctx.clearRect(0, 0, W, H);
+
+    const cx = 210, cy = 200, radius = 102;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(cx - radius, cy - radius, radius * 2, radius * 2, 16);
+    ctx.clip();
+
+    ctx.translate(cx, cy);
+    ctx.rotate(-sim.bank * Math.PI / 180);
+    const pitchPx = sim.pitch * 5.0;
+
+    ctx.fillStyle = '#005fa8';
+    ctx.fillRect(-200, -300 + pitchPx, 400, 300);
+    ctx.fillStyle = '#6b441e';
+    ctx.fillRect(-200, pitchPx, 400, 300);
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-200, pitchPx);
+    ctx.lineTo(200, pitchPx);
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 10px Consolas';
+    for (let p = -15; p <= 20; p += 5) {
+      if (p === 0) continue;
+      const y = pitchPx - p * 5.0;
+      const w = (p % 10 === 0) ? 24 : 12;
+      ctx.beginPath();
+      ctx.moveTo(-w, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    if (sim.alt < 2500) {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(-34, 62, 68, 20);
+      ctx.fillStyle = '#ffaa00';
+      ctx.font = 'bold 14px Consolas';
+      ctx.textAlign = 'center';
+      ctx.fillText(`RA ${Math.round(sim.alt / 10) * 10}`, 0, 77);
+    }
+    ctx.restore();
+
+    // Flight Director Bars
+    ctx.strokeStyle = '#ff4dff';
+    ctx.lineWidth = 3;
+    const cmdPitch = sim.inGoAround ? (sim.togaCount === 2 ? 15.0 : 12.5) : (sim.vs / 320 + 2.2);
+    const fdPitchY = cy - (sim.pitch - cmdPitch) * 4;
+    const fdRollX = cx + (sim.bank * 0.8);
+    ctx.beginPath();
+    ctx.moveTo(cx - 42, fdPitchY);
+    ctx.lineTo(cx + 42, fdPitchY);
+    ctx.moveTo(fdRollX, cy - 42);
+    ctx.lineTo(fdRollX, cy + 42);
+    ctx.stroke();
+
+    // Aircraft Symbol
+    ctx.fillStyle = '#000';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.fillRect(cx - 5, cy - 5, 10, 10);
+    ctx.strokeRect(cx - 5, cy - 5, 10, 10);
+
+    // Top 3-Column FMA
+    ctx.fillStyle = '#0c1118';
+    ctx.fillRect(42, 6, 355, 44);
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(42, 6, 355, 44);
+    ctx.beginPath();
+    ctx.moveTo(160, 6); ctx.lineTo(160, 50);
+    ctx.moveTo(278, 6); ctx.lineTo(278, 50);
+    ctx.stroke();
+
+    ctx.fillStyle = '#00ff66';
+    ctx.font = 'bold 15px Consolas';
+    ctx.textAlign = 'center';
+    ctx.fillText(sim.fmaAT, 101, 26);
+    ctx.fillText(sim.fmaRoll, 219, 26);
+    ctx.fillText(sim.fmaPitch, 337, 26);
+
+    if (sim.fmaBoxTimer > 0 && sim.fmaChangedCol > 0) {
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 2.5;
+      const boxX = sim.fmaChangedCol === 1 ? 46 : (sim.fmaChangedCol === 2 ? 164 : 282);
+      ctx.strokeRect(boxX, 9, 109, 23);
+    }
+
+    // Korean FMA Explanation Sub-Banner right below FMA
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 11.5px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`💡 FMA 상태: ${sim.fmaNote}`, 220, 65);
+
+    // Speed Tape
+    const stX = 12, stY = 78, stW = 60, stH = 235;
+    ctx.fillStyle = '#111722';
+    ctx.fillRect(stX, stY, stW, stH);
+    ctx.strokeStyle = '#475569';
+    ctx.strokeRect(stX, stY, stW, stH);
+
+    const activeLeg = sim.legs[0];
+    let dispTargetSpd = sim.mcpSpd;
+    if (!sim.spdWindowOpen) {
+      dispTargetSpd = (sim.inGoAround || sim.flaps > 0) ? getFlapTargetSpeed(sim.flaps) : (activeLeg ? activeLeg.spd : sim.fmsTargetSpd);
+    }
+
+    ctx.fillStyle = sim.spdWindowOpen ? '#ffffff' : '#ff4dff';
+    ctx.font = 'bold 12px Consolas';
+    ctx.fillText(dispTargetSpd + (sim.spdWindowOpen ? ' MCP' : ' FMS'), stX + 30, stY - 5);
+
+    // Flap Speed Bugs
+    const flapBugs = [
+      { spd: 142, lbl: 'REF' },
+      { spd: 165, lbl: '20' },
+      { spd: 195, lbl: '5' },
+      { spd: 240, lbl: 'UP' }
+    ];
+    ctx.fillStyle = '#00ff66';
+    ctx.font = 'bold 10px Consolas';
+    ctx.textAlign = 'left';
+    flapBugs.forEach(b => {
+      const by = cy - (b.spd - sim.ias) * 2.4;
+      if (by > stY + 8 && by < stY + stH - 8) {
+        ctx.fillText(`◀${b.lbl}`, stX + stW + 2, by + 3);
+      }
+    });
+
+    ctx.fillStyle = '#000';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.fillRect(stX + 4, cy - 12, stW - 8, 24);
+    ctx.strokeRect(stX + 4, cy - 12, stW - 8, 24);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 15px Consolas';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.round(sim.ias), stX + 30, cy + 5);
+
+    // Altitude Tape
+    const atX = 356, atY = 78, atW = 74, atH = 235;
+    ctx.fillStyle = '#111722';
+    ctx.fillRect(atX, atY, atW, atH);
+    ctx.strokeStyle = '#475569';
+    ctx.strokeRect(atX, atY, atW, atH);
+
+    ctx.fillStyle = '#ff4dff';
+    ctx.font = 'bold 13px Consolas';
+    ctx.fillText(`MCP ${sim.mcpAlt}`, atX + 37, atY - 5);
+
+    ctx.fillStyle = '#000';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.fillRect(atX + 4, cy - 12, atW - 8, 24);
+    ctx.strokeRect(atX + 4, cy - 12, atW - 8, 24);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 15px Consolas';
+    ctx.fillText(Math.round(sim.alt / 10) * 10, atX + 37, cy + 5);
+
+    ctx.fillStyle = '#00ff66';
+    ctx.font = 'bold 12px Consolas';
+    ctx.fillText(`VS ${sim.vs >= 0 ? '+' : ''}${Math.round(sim.vs/50)*50}`, atX + 37, atY + atH + 16);
+  }
+
+  // ==================== ND CANVAS RENDERER ====================
+  const ndCtx = document.getElementById('ndCanvas').getContext('2d');
+
+  function drawND() {
+    const ctx = ndCtx;
+    const W = 440, H = 365;
+    ctx.clearRect(0, 0, W, H);
+
+    const acScreenX = W / 2;
+    const acScreenY = 215;
+    const scale = 4.0;
+
+    ctx.fillStyle = '#00ff66';
+    ctx.font = 'bold 12px Consolas';
+    ctx.textAlign = 'left';
+    ctx.fillText(`GS ${Math.round(sim.ias + 15)}   HDG ${String(Math.round(sim.hdg)).padStart(3,'0')}°`, 12, 20);
+
+    const activeWpt = sim.legs[0];
+    if (activeWpt) {
+      ctx.fillStyle = '#ff4dff';
+      ctx.textAlign = 'right';
+      ctx.fillText(`NEXT: ${activeWpt.id}`, W - 12, 20);
+    }
+
+    ctx.strokeStyle = '#263244';
+    ctx.lineWidth = 1.2;
+    [65, 130].forEach(r => {
+      ctx.beginPath();
+      ctx.arc(acScreenX, acScreenY, r, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+    });
+
+    function toScreen(wx, wy) {
+      const dx = wx - sim.acX;
+      const dy = wy - sim.acY;
+      const rot = (sim.hdg * Math.PI) / 180;
+      const rx = dx * Math.cos(rot) - dy * Math.sin(rot);
+      const ry = dx * Math.sin(rot) + dy * Math.cos(rot);
+      return { x: acScreenX + rx * scale, y: acScreenY - ry * scale };
+    }
+
+    // Active Route (Magenta)
+    ctx.strokeStyle = '#ff4dff';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(acScreenX, acScreenY);
+    sim.legs.forEach(w => {
+      const pt = toScreen(w.x, w.y);
+      ctx.lineTo(pt.x, pt.y);
+    });
+    ctx.stroke();
+
+    // Modified Route (Cyan Dashed)
+    if (sim.isMod && sim.modLegs) {
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([7, 5]);
+      ctx.beginPath();
+      ctx.moveTo(acScreenX, acScreenY);
+      sim.modLegs.forEach(w => {
+        const pt = toScreen(w.x, w.y);
+        ctx.lineTo(pt.x, pt.y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    const drawList = (sim.isMod && sim.modLegs) ? sim.modLegs : sim.legs;
+    drawList.forEach((w, idx) => {
+      const pt = toScreen(w.x, w.y);
+      ctx.fillStyle = idx === 0 ? '#ff4dff' : '#ffffff';
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = 'bold 11px Consolas';
+      ctx.textAlign = 'left';
+      ctx.fillText(w.id, pt.x + 7, pt.y + 4);
+    });
+
+    // Own Aircraft Triangle
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(acScreenX, acScreenY - 10);
+    ctx.lineTo(acScreenX - 9, acScreenY + 9);
+    ctx.lineTo(acScreenX + 9, acScreenY + 9);
+    ctx.closePath();
+    ctx.stroke();
+
+    // Bottom VSD (Vertical Situation Display)
+    const vsdY = 248, vsdH = 106;
+    ctx.fillStyle = '#090d14';
+    ctx.fillRect(10, vsdY, W - 20, vsdH);
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(10, vsdY, W - 20, vsdH);
+
+    ctx.fillStyle = '#00e5ff';
+    ctx.font = 'bold 11px Consolas';
+    ctx.textAlign = 'left';
+    ctx.fillText('VSD (수직 비행 상황도 — 항공기 고도 vs MCP 목표 고도)', 18, vsdY + 14);
+
+    const gndY = vsdY + vsdH - 14;
+    const maxScaleAlt = sim.inApproachPhase || sim.inGoAround ? 3500 : 16000;
+
+    const mcpLineY = Math.max(vsdY + 22, gndY - (sim.mcpAlt / maxScaleAlt) * 72);
+    ctx.strokeStyle = '#ff4dff';
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.moveTo(20, mcpLineY);
+    ctx.lineTo(W - 20, mcpLineY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ff4dff';
+    ctx.fillText(`MCP 설정고도 (${sim.mcpAlt} FT)`, 24, mcpLineY - 4);
+
+    const acVsdY = Math.max(vsdY + 24, gndY - (sim.alt / maxScaleAlt) * 72);
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.moveTo(110, acVsdY);
+    ctx.lineTo(94, acVsdY - 6);
+    ctx.lineTo(94, acVsdY + 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillText(`현재 ${Math.round(sim.alt)} FT`, 118, acVsdY + 4);
+  }
+
+  function downloadSelf() {
+    const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'B787_Beginner_Step_by_Step_Tutorial.html';
+    a.click();
+  }
+
+  function loop() {
+    updatePhysics();
+    drawPFD();
+    drawND();
+    requestAnimationFrame(loop);
+  }
+
+  // Start immediately on Lesson 1 Step 1
+  startLesson(0);
+  requestAnimationFrame(loop);
+</script>
+</body>
+</html>
+```
