@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>B787 Transition Trainer for Airbus Pilots (MCP + PFD + ND + FMS)</title>
+<style>
+  :root {
+    --bg-cockpit: #0d1015;
+    --panel-bg: #1b2028;
+    --panel-border: #313947;
+    --mcp-bg: #262c36;
+    --lcd-bg: #080d0a;
+    --boeing-green: #00ff66;
+    --boeing-cyan: #00e5ff;
+    --boeing-magenta: #ff4dff;
+    --boeing-amber: #ffaa00;
+    --boeing-white: #f1f5f9;
+    --sky-blue: #0066b2;
+    --ground-brown: #6e4720;
+  }
+
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  body {
+    margin: 0;
+    padding: 10px;
+    background: var(--bg-cockpit);
+    color: var(--boeing-white);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Consolas, monospace;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 100vh;
+  }
+
+  /* Top Header & Scenarios */
+  .top-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    background: #141820;
+    border: 1px solid var(--panel-border);
+    border-left: 4px solid var(--boeing-cyan);
+    padding: 8px 14px;
+    border-radius: 6px;
+    gap: 10px;
+  }
+
+  .title-block h1 {
+    margin: 0;
+    font-size: 15px;
+    color: #fff;
+  }
+
+  .title-block span {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  .scenario-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .scn-btn {
+    background: #252d3a;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .scn-btn:hover {
+    background: #334155;
+    border-color: var(--boeing-cyan);
+  }
+
+  .scn-btn.download {
+    background: #059669;
+    border-color: #10b981;
+    color: #fff;
+  }
+
+  /* ==================== MCP PANEL ==================== */
+  .mcp-panel {
+    background: linear-gradient(180deg, #2b323d 0%, #1e232b 100%);
+    border: 2px solid #3f4859;
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  }
+
+  .mcp-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.22);
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #333b48;
+  }
+
+  .mcp-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .mcp-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #cbd5e1;
+    letter-spacing: 0.6px;
+  }
+
+  .mcp-window {
+    background: var(--lcd-bg);
+    border: 2px solid #111;
+    border-radius: 4px;
+    color: var(--boeing-white);
+    font-family: 'Consolas', monospace;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 2px 8px;
+    min-width: 68px;
+    height: 28px;
+    text-align: center;
+    line-height: 22px;
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.9);
+  }
+
+  .mcp-window.blank {
+    color: #1e293b;
+  }
+
+  .knob-row {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .knob-step {
+    background: #384152;
+    color: #fff;
+    border: 1px solid #525f75;
+    border-radius: 3px;
+    width: 24px;
+    height: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .knob-step:active {
+    background: #4f5b73;
+  }
+
+  .knob-push {
+    background: #1e293b;
+    color: var(--boeing-cyan);
+    border: 1px solid var(--boeing-cyan);
+    border-radius: 12px;
+    padding: 2px 8px;
+    height: 24px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+
+  .knob-push:hover {
+    background: var(--boeing-cyan);
+    color: #000;
+  }
+
+  /* MCP Mode Pushbutton with Green Light Bar */
+  .mcp-btn {
+    background: #2c3442;
+    border: 2px solid #475266;
+    border-radius: 5px;
+    width: 58px;
+    height: 40px;
+    color: #e2e8f0;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 3px;
+  }
+
+  .mcp-btn:active {
+    transform: translateY(1px);
+  }
+
+  .light-bar {
+    width: 75%;
+    height: 5px;
+    background: #151b18;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+
+  .mcp-btn.active .light-bar {
+    background: var(--boeing-green);
+    box-shadow: 0 0 8px var(--boeing-green);
+  }
+
+  /* ==================== MAIN DISPLAYS GRID ==================== */
+  .cockpit-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1.05fr 1fr;
+    gap: 10px;
+    flex: 1;
+  }
+
+  @media (max-width: 1150px) {
+    .cockpit-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .cockpit-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .display-bezel {
+    background: #1a1f27;
+    border: 3px solid #2e3644;
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: inset 0 0 14px rgba(0,0,0,0.8);
+  }
+
+  .bezel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: bold;
+  }
+
+  canvas.efis-canvas {
+    width: 100%;
+    height: 390px;
+    background: #040609;
+    border-radius: 4px;
+    border: 1px solid #222936;
+    display: block;
+  }
+
+  /* ==================== FMS CDU PANEL ==================== */
+  .cdu-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+  }
+
+  .cdu-screen-wrap {
+    display: grid;
+    grid-template-columns: 38px 1fr 38px;
+    gap: 4px;
+    align-items: stretch;
+  }
+
+  .lsk-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 32px 0 28px 0;
+  }
+
+  .lsk-key {
+    height: 28px;
+    background: #2d3440;
+    border: 1px solid #4b5566;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .lsk-key:active {
+    background: #475569;
+  }
+
+  .cdu-lcd {
+    background: #05070b;
+    border: 2px solid #222936;
+    border-radius: 4px;
+    height: 265px;
+    padding: 6px 10px;
+    font-family: 'Consolas', monospace;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .cdu-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 2px;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .badge-mod {
+    background: var(--boeing-cyan);
+    color: #000;
+    padding: 0 5px;
+    border-radius: 2px;
+  }
+
+  .badge-act {
+    color: var(--boeing-cyan);
+  }
+
+  .cdu-rows {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+
+  .cdu-line {
+    display: flex;
+    justify-content: space-between;
+    height: 32px;
+  }
+
+  .cdu-side {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cdu-side.r {
+    text-align: right;
+    align-items: flex-end;
+  }
+
+  .cdu-lbl {
+    font-size: 10px;
+    color: var(--boeing-cyan);
+    height: 12px;
+  }
+
+  .cdu-val {
+    font-size: 13px;
+    font-weight: bold;
+    height: 16px;
+  }
+
+  .cdu-sp {
+    border-top: 1px solid #1e293b;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+  }
+
+  .cdu-keys {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+  }
+
+  .cdu-k {
+    background: #2b323f;
+    border: 1px solid #475266;
+    border-radius: 4px;
+    color: #fff;
+    height: 30px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cdu-k.exec-btn {
+    background: #1f2d24;
+    border-color: #2e4736;
+  }
+
+  .exec-lamp {
+    width: 70%;
+    height: 4px;
+    background: #121a15;
+    margin-bottom: 2px;
+    border-radius: 2px;
+  }
+
+  .exec-lamp.on {
+    background: var(--boeing-green);
+    box-shadow: 0 0 8px var(--boeing-green);
+  }
+
+  /* ==================== AIRBUS VS BOEING COACH BAR ==================== */
+  .coach-box {
+    background: #141923;
+    border: 1px solid #2e3a4f;
+    border-left: 4px solid var(--boeing-magenta);
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 14px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 850px) {
+    .coach-box {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .coach-title {
+    font-weight: 700;
+    color: var(--boeing-cyan);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .airbus-compare {
+    background: #1d2432;
+    padding: 8px 12px;
+    border-radius: 5px;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    line-height: 1.45;
+  }
+
+  .tag-bus {
+    background: #0284c7;
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  .tag-b787 {
+    background: #7c3aed;
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR: SCENARIO PRESETS FOR AIRBUS TRANSITION -->
+<div class="top-bar">
+  <div class="title-block">
+    <h1>B787 INTEGRATED FLIGHT DECK — AIRBUS PILOT TRANSITION SIMULATOR</h1>
+    <span>MCP · PFD (FMA) · ND · FMS 실시간 연동 | 조작할 때마다 하단에 Airbus vs Boeing 로직 비교가 표시됩니다.</span>
+  </div>
+  <div class="scenario-btns">
+    <button class="scn-btn" onclick="loadScenario('VNAV_ALT')">시나리오 1: VNAV ALT 걸림 & 고도 개입(ALT INTV)</button>
+    <button class="scn-btn" onclick="loadScenario('SPD_INTV')">시나리오 2: VNAV 중 속도 개입(SPD INTV)</button>
+    <button class="scn-btn" onclick="loadScenario('DIR_TO')">시나리오 3: Direct-To (MOD 파선 → EXEC)</button>
+    <button class="scn-btn" onclick="loadScenario('FLCH_VS_VNAV')">시나리오 4: FLCH vs VNAV 강하 비교</button>
+    <button class="scn-btn download" onclick="downloadSelf()">💾 단독 HTML 저장</button>
+  </div>
+</div>
+
+<!-- ==================== BOEING 787 MCP ==================== -->
+<div class="mcp-panel">
+  <!-- A/T & IAS/MACH -->
+  <div class="mcp-group">
+    <button id="btnAT" class="mcp-btn active" onclick="toggleAT()">
+      <div class="light-bar"></div>
+      A/T
+    </button>
+    <button id="btnLNAV" class="mcp-btn active" onclick="pressLNAV()">
+      <div class="light-bar"></div>
+      LNAV
+    </button>
+    <button id="btnVNAV" class="mcp-btn active" onclick="pressVNAV()">
+      <div class="light-bar"></div>
+      VNAV
+    </button>
+    <div class="mcp-col">
+      <div class="mcp-label">IAS / MACH</div>
+      <div id="winSpd" class="mcp-window blank">---</div>
+      <div class="knob-row">
+        <button class="knob-step" onclick="changeSpd(-5)">-</button>
+        <button class="knob-push" onclick="pushSpdIntv()" title="Airbus Pull/Push Speed에 해당">PUSH (SPD INTV)</button>
+        <button class="knob-step" onclick="changeSpd(5)">+</button>
+      </div>
+    </div>
+    <button id="btnFLCH" class="mcp-btn" onclick="pressFLCH()">
+      <div class="light-bar"></div>
+      FLCH
+    </button>
+  </div>
+
+  <!-- HEADING -->
+  <div class="mcp-group">
+    <div class="mcp-col">
+      <div class="mcp-label">HDG / TRK</div>
+      <div id="winHdg" class="mcp-window">050</div>
+      <div class="knob-row">
+        <button class="knob-step" onclick="changeHdg(-5)">◀</button>
+        <button class="knob-push" onclick="pressHdgSel()" title="Airbus Pull HDG (Selected)에 해당">PUSH (SEL)</button>
+        <button class="knob-step" onclick="changeHdg(5)">▶</button>
+      </div>
+    </div>
+    <button id="btnHDG" class="mcp-btn" onclick="pressHdgSel()">
+      <div class="light-bar"></div>
+      HDG SEL
+    </button>
+  </div>
+
+  <!-- VERTICAL SPEED -->
+  <div class="mcp-group">
+    <div class="mcp-col">
+      <div class="mcp-label">VERT SPD</div>
+      <div id="winVS" class="mcp-window blank">----</div>
+      <div class="knob-row">
+        <button class="knob-step" onclick="changeVS(-200)">▼</button>
+        <button id="btnVS" class="mcp-btn" style="height:26px; width:48px;" onclick="pressVS()">
+          <div class="light-bar"></div>
+          V/S
+        </button>
+        <button class="knob-step" onclick="changeVS(200)">▲</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALTITUDE -->
+  <div class="mcp-group">
+    <div class="mcp-col">
+      <div class="mcp-label">ALTITUDE (FT)</div>
+      <div id="winAlt" class="mcp-window">10000</div>
+      <div class="knob-row">
+        <button class="knob-step" onclick="changeAlt(-1000)">-</button>
+        <button class="knob-push" onclick="pushAltIntv()" title="구속고도 삭제 또는 VNAV ALT 해제">PUSH (ALT INTV)</button>
+        <button class="knob-step" onclick="changeAlt(1000)">+</button>
+      </div>
+    </div>
+    <button id="btnHOLD" class="mcp-btn" onclick="pressAltHold()">
+      <div class="light-bar"></div>
+      ALT HOLD
+    </button>
+  </div>
+
+  <!-- AP & APP -->
+  <div class="mcp-group">
+    <button id="btnAPP" class="mcp-btn" onclick="pressAPP()">
+      <div class="light-bar"></div>
+      APP
+    </button>
+    <button id="btnAP" class="mcp-btn active" onclick="toggleAP()">
+      <div class="light-bar"></div>
+      AP
+    </button>
+  </div>
+</div>
+
+<!-- ==================== COCKPIT DISPLAYS: PFD + ND + FMS ==================== -->
+<div class="cockpit-grid">
+  <!-- 1. PFD -->
+  <div class="display-bezel">
+    <div class="bezel-header">
+      <span>PRIMARY FLIGHT DISPLAY (PFD)</span>
+      <span style="color:var(--boeing-green)">FMA 3-COLUMN: [A/T] | [ROLL] | [PITCH]</span>
+    </div>
+    <canvas id="pfdCanvas" class="efis-canvas" width="440" height="390"></canvas>
+  </div>
+
+  <!-- 2. ND -->
+  <div class="display-bezel">
+    <div class="bezel-header">
+      <span>NAVIGATION DISPLAY (MAP MODE)</span>
+      <span><span style="color:var(--boeing-magenta)">━━ ACT RTE</span> &nbsp; <span style="color:var(--boeing-cyan)">┅┅ MOD RTE</span></span>
+    </div>
+    <canvas id="ndCanvas" class="efis-canvas" width="440" height="390"></canvas>
+  </div>
+
+  <!-- 3. FMS VIRTUAL CDU -->
+  <div class="display-bezel">
+    <div class="bezel-header">
+      <span>FMS CDU (LEGS & VNAV LINKED)</span>
+      <span style="color:var(--boeing-cyan)">LSK 클릭으로 DIRECT-TO / 고도제한 수정</span>
+    </div>
+
+    <div class="cdu-container">
+      <div class="cdu-screen-wrap">
+        <div class="lsk-col">
+          <button class="lsk-key" onclick="cduLSK('1L')">1L</button>
+          <button class="lsk-key" onclick="cduLSK('2L')">2L</button>
+          <button class="lsk-key" onclick="cduLSK('3L')">3L</button>
+          <button class="lsk-key" onclick="cduLSK('4L')">4L</button>
+          <button class="lsk-key" onclick="cduLSK('5L')">5L</button>
+        </div>
+
+        <div class="cdu-lcd">
+          <div class="cdu-top">
+            <span id="cduBadge" class="badge-act">ACT</span>
+            <span id="cduTitle" style="color:var(--boeing-cyan)">RTE 1 LEGS</span>
+            <span style="color:var(--boeing-cyan)">1/1</span>
+          </div>
+          <div id="cduRows" class="cdu-rows"></div>
+          <div class="cdu-sp">
+            <span id="cduSpText"></span>
+            <span id="cduSpMsg" style="color:var(--boeing-amber); font-size:11px;"></span>
+          </div>
+        </div>
+
+        <div class="lsk-col">
+          <button class="lsk-key" onclick="cduLSK('1R')">1R</button>
+          <button class="lsk-key" onclick="cduLSK('2R')">2R</button>
+          <button class="lsk-key" onclick="cduLSK('3R')">3R</button>
+          <button class="lsk-key" onclick="cduLSK('4R')">4R</button>
+          <button class="lsk-key" onclick="cduLSK('5R')">5R</button>
+        </div>
+      </div>
+
+      <!-- Compact Fast-Entry Keypad for CDU -->
+      <div class="cdu-keys">
+        <button class="cdu-k" onclick="cduPage('LEGS')">LEGS</button>
+        <button class="cdu-k" onclick="cduPage('VNAV')">VNAV</button>
+        <button class="cdu-k" onclick="cduSpPreset('250/10000A')">250/100A</button>
+        <button class="cdu-k" onclick="cduSpPreset('280/14000B')">280/140B</button>
+        <button class="cdu-k" onclick="cduSpPreset('DELETE')">DEL</button>
+        <button class="cdu-k" onclick="cduClr()">CLR</button>
+
+        <button class="cdu-k" onclick="cduChar('1')">1</button>
+        <button class="cdu-k" onclick="cduChar('2')">2</button>
+        <button class="cdu-k" onclick="cduChar('5')">5</button>
+        <button class="cdu-k" onclick="cduChar('0')">0</button>
+        <button class="cdu-k" onclick="cduChar('/')">/</button>
+        <button class="cdu-k exec-btn" onclick="cduExec()">
+          <div id="execLamp" class="exec-lamp"></div>
+          EXEC
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== REAL-TIME AIRBUS VS BOEING INSTRUCTOR BAR ==================== -->
+<div class="coach-box">
+  <div>
+    <div class="coach-title" id="coachHeadline">✈️ 현재 비행 상태 및 FMA 해설</div>
+    <div id="coachDetail" style="color:#cbd5e1; line-height:1.5;">
+      현재 LNAV 및 VNAV가 결합되어 상승 중입니다. MCP 고도창(10,000ft) 또는 다음 웨이포인트(BOPTA 10000A) 중 더 낮은 고도에 도달하면 보잉 특유의 <b>VNAV ALT</b>가 작동합니다.
+    </div>
+  </div>
+  <div class="airbus-compare" id="coachCompare">
+    <span class="tag-bus">Airbus A320/A330/A350</span> 노브를 <b>Push(Managed)</b>하면 `CLB / NAV`가 결합됨.<br>
+    <span class="tag-b787">Boeing 787</span> 별도의 <b>LNAV, VNAV 버튼</b>을 눌러 결합하며, VNAV 중 속도를 바꾸려면 IAS 노브를 <b>PUSH(Speed Intervention)</b>하여 속도창을 엽니다.
+  </div>
+</div>
+
+<script>
+  // ==================== INTEGRATED FLIGHT STATE ====================
+  const sim = {
+    // Aircraft Dynamics
+    ias: 215,
+    tas: 230,
+    alt: 6800,
+    vs: 1800,
+    hdg: 050,
+    pitch: 7.5,
+    bank: 0,
+    // Aircraft Map Position (NM relative to origin)
+    acX: 0,
+    acY: 0,
+
+    // MCP Selections
+    mcpSpd: 250,
+    spdWindowOpen: false, // Closed in VNAV PTH/SPD unless Speed Intervention pressed
+    mcpHdg: 050,
+    mcpAlt: 10000,
+    mcpVS: 1500,
+    atArmed: true,
+    apEngaged: true,
+
+    // Active MCP Button Lights
+    btnLNAV: true,
+    btnVNAV: true,
+    btnFLCH: false,
+    btnHDG: false,
+    btnVS: false,
+    btnHOLD: false,
+    btnAPP: false,
+
+    // 3-Column Boeing FMA + Armed Modes
+    fmaAT: 'THR REF',
+    fmaRoll: 'LNAV',
+    fmaPitch: 'VNAV SPD',
+    fmaRollArmed: '',
+    fmaPitchArmed: '',
+    fmaChangedCol: 0, // 1=AT, 2=Roll, 3=Pitch highlight box timer
+    fmaBoxTimer: 0,
+
+    // FMS Route & Modification State
+    cduPage: 'LEGS',
+    isMod: false,
+    scratchpad: '',
+    spMsg: '',
+    fmsTargetSpd: 250,
+    fmsCrzAlt: 35000,
+
+    // Active & Mod Waypoints (x, y in NM)
+    legs: [
+      { id: 'BOPTA', x: 12, y: 14, spd: 250, alt: 10000, type: 'AT' },
+      { id: 'NOPIK', x: 26, y: 32, spd: 290, alt: 16000, type: 'AT_OR_BELOW' },
+      { id: 'LANAT', x: 46, y: 45, spd: 310, alt: 24000, type: 'NONE' },
+      { id: 'NIPPI', x: 70, y: 58, spd: 310, alt: 35000, type: 'NONE' }
+    ],
+    modLegs: null
+  };
+
+  function cloneLegs(arr) {
+    return JSON.parse(JSON.stringify(arr));
+  }
+
+  // ==================== MCP INTERACTION LOGIC ====================
+  function highlightFMA(colIndex) {
+    sim.fmaChangedCol = colIndex;
+    sim.fmaBoxTimer = 90; // ~3 seconds highlight box on PFD FMA
+  }
+
+  function setCoach(headline, detail, compareHtml) {
+    document.getElementById('coachHeadline').innerHTML = `✈️ ${headline}`;
+    document.getElementById('coachDetail').innerHTML = detail;
+    if (compareHtml) {
+      document.getElementById('coachCompare').innerHTML = compareHtml;
+    }
+  }
+
+  function toggleAT() {
+    sim.atArmed = !sim.atArmed;
+    sim.fmaAT = sim.atArmed ? 'SPD' : '---';
+    highlightFMA(1);
+    updateMCPDOM();
+  }
+
+  function toggleAP() {
+    sim.apEngaged = !sim.apEngaged;
+    updateMCPDOM();
+  }
+
+  function pressLNAV() {
+    sim.btnLNAV = true;
+    sim.btnHDG = false;
+    sim.fmaRoll = 'LNAV';
+    highlightFMA(2);
+    setCoach(
+      'LNAV 결합 (FMS 수평 경로 추적)',
+      'FMS LEGS 페이지의 활성 항로(마젠타 실선)를 따라 비행합니다.',
+      '<span class="tag-bus">Airbus</span> HDG 노브를 <b>Push (Managed NAV)</b>한 것과 동일합니다.<br><span class="tag-b787">Boeing 787</span> 전용 <b>LNAV 버튼</b>을 눌러 결합합니다.'
+    );
+    updateMCPDOM();
+  }
+
+  function pressHdgSel() {
+    sim.btnHDG = true;
+    sim.btnLNAV = false;
+    sim.fmaRoll = 'HDG SEL';
+    highlightFMA(2);
+    setCoach(
+      'HDG SEL 결합 (헤딩 셀렉트 모드)',
+      `항공기가 MCP HDG 창에 설정된 <b>${String(sim.mcpHdg).padStart(3,'0')}°</b> 방향으로 즉시 선회합니다.`,
+      '<span class="tag-bus">Airbus</span> HDG 노브를 몸쪽으로 <b>Pull (Selected HDG)</b>한 것과 동일합니다.<br><span class="tag-b787">Boeing 787</span> <b>HDG SEL 버튼</b> 또는 노브 <b>PUSH</b>로 작동합니다.'
+    );
+    updateMCPDOM();
+  }
+
+  function pressVNAV() {
+    sim.btnVNAV = true;
+    sim.btnFLCH = false;
+    sim.btnVS = false;
+    sim.btnHOLD = false;
+    sim.spdWindowOpen = false; // VNAV closes MCP speed window by default
+
+    evaluateVnavMode();
+    highlightFMA(3);
+    setCoach(
+      'VNAV 결합 (FMS 수직 경로 및 속도 관리)',
+      'MCP 속도창이 닫히고(Blank) FMS가 계산한 목표 속도와 고도 구속조건(Constraint)을 추종합니다.',
+      '<span class="tag-bus">Airbus</span> ALT 노브 및 SPD 노브를 모두 <b>Push (Managed CLB/DES)</b>한 상태입니다.<br><span class="tag-b787">Boeing 787</span> VNAV 중 속도를 수동 조절하려면 IAS 노브를 <b>PUSH(SPD INTV)</b> 하세요.'
+    );
+    updateMCPDOM();
+  }
+
+  function pushSpdIntv() {
+    if (!sim.btnVNAV) {
+      setCoach(
+        'Speed Intervention (VNAV 모드에서만 작동)',
+        '현재는 VNAV 모드가 아니므로 이미 MCP 속도창이 열려 있습니다.',
+        '<span class="tag-b787">Boeing 787</span> VNAV가 켜진 상태에서 IAS 노브를 누르면 <b>Speed Intervention</b>이 작동합니다.'
+      );
+      return;
+    }
+    sim.spdWindowOpen = !sim.spdWindowOpen;
+    if (sim.spdWindowOpen) {
+      sim.mcpSpd = Math.round(sim.ias / 5) * 5;
+      if (sim.fmaPitch === 'VNAV PTH') {
+        sim.fmaPitch = 'VNAV SPD';
+        highlightFMA(3);
+      }
+      setCoach(
+        'Speed Intervention 활성화 (VNAV 중 수동 속도 개입)',
+        '<b>VNAV를 끄지 않고도</b> MCP IAS/MACH 속도창이 열렸습니다! 이제 조종사가 원하는 속도를 직접 다이얼할 수 있으며, FMS의 고도 제한(Constraint)은 그대로 보호됩니다.',
+        '<span class="tag-bus">Airbus</span> Managed CLB/DES 중 SPD 노브만 <b>Pull (Selected Speed)</b>한 것과 완벽히 같습니다.<br><span class="tag-b787">Boeing 787</span> IAS 노브를 한 번 더 누르면 다시 FMS 속도로 복귀합니다.'
+      );
+    } else {
+      evaluateVnavMode();
+      setCoach(
+        'Speed Intervention 해제 (FMS 속도로 복귀)',
+        'MCP 속도창이 다시 닫히고(Blank) FMS 목표 속도를 추종합니다.',
+        '<span class="tag-bus">Airbus</span> SPD 노브를 다시 <b>Push (Managed Speed)</b>한 것과 동일합니다.'
+      );
+    }
+    updateMCPDOM();
+  }
+
+  function pushAltIntv() {
+    const activeLeg = sim.legs[0];
+    if (sim.btnVNAV && activeLeg && activeLeg.type !== 'NONE' && sim.mcpAlt > activeLeg.alt) {
+      const deletedAlt = activeLeg.alt;
+      activeLeg.type = 'NONE';
+      evaluateVnavMode();
+      highlightFMA(3);
+      renderCDU();
+      setCoach(
+        `Altitude Intervention: ${activeLeg.id} 고도 구속(${deletedAlt}ft) 삭제!`,
+        `MCP 고도를 ${sim.mcpAlt}ft로 올려두고 <b>ALT 노브를 PUSH</b>하여 다음 웨이포인트(${activeLeg.id})의 고도 제한을 즉시 해제했습니다.`,
+        '<span class="tag-bus">Airbus</span> ATC가 "Climb unrestricted" 지시 시 고도 노브를 <b>Pull (OP CLB)</b>하면 모든 구속을 무시하지만, <span class="tag-b787">Boeing 787</span>은 <b>ALT PUSH</b>를 누를 때마다 다음 구속고도를 <b>하나씩</b> 깔끔하게 지워줍니다.'
+      );
+      return;
+    }
+
+    if (sim.fmaPitch === 'VNAV ALT') {
+      evaluateVnavMode();
+      highlightFMA(3);
+      setCoach(
+        'VNAV ALT 해제 → 상승/강하 재개!',
+        `MCP 고도를 변경한 후 <b>ALT 노브를 PUSH</b>하여 <b>VNAV ALT</b> 고도 포착 상태에서 벗어나 다시 상승/강하를 시작합니다.`,
+        '<span class="tag-bus">Airbus</span> 고도가 ALT* / ALT로 잡힌 뒤 고도를 바꾸고 <b>Push (Managed CLB)</b>를 누르는 절차와 동일합니다.<br><span class="tag-b787">Boeing 787</span> <b>VNAV ALT</b>에 걸렸을 때는 MCP 고도 변경 후 반드시 <b>ALT 노브를 PUSH</b>해야 합니다!'
+      );
+    } else {
+      evaluateVnavMode();
+      setCoach(
+        'Altitude Intervention (ALT PUSH)',
+        'VNAV 비행 중 고도 구속조건을 삭제하거나 VNAV ALT에서 상승/강하를 재개할 때 사용합니다.',
+        '<span class="tag-b787">Boeing 787 핵심 팁</span> 에어버스의 Push-to-Level-Off 기능이 아닙니다!'
+      );
+    }
+    updateMCPDOM();
+  }
+
+  function pressFLCH() {
+    sim.btnFLCH = true;
+    sim.btnVNAV = false;
+    sim.btnVS = false;
+    sim.btnHOLD = false;
+    sim.spdWindowOpen = true;
+    sim.fmaPitch = 'FLCH SPD';
+    sim.fmaAT = sim.mcpAlt >= sim.alt ? 'THR REF' : 'HOLD';
+    highlightFMA(3);
+    setCoach(
+      'FLCH SPD 결합 (Flight Level Change — 고도 구속 무시!)',
+      `FMS의 모든 웨이포인트 고도 구속조건(예: BOPTA 10000A)을 <b>무시</b>하고 오직 MCP 고도(<b>${sim.mcpAlt}ft</b>)까지 추력/피치로 즉시 상승/강하합니다.`,
+      '<span class="tag-bus">Airbus</span> ALT 노브를 몸쪽으로 당기는 <b>OP CLB / OP DES (Open Climb/Descent)</b>와 100% 동일한 개념입니다!'
+    );
+    updateMCPDOM();
+  }
+
+  function pressVS() {
+    sim.btnVS = true;
+    sim.btnVNAV = false;
+    sim.btnFLCH = false;
+    sim.btnHOLD = false;
+    sim.spdWindowOpen = true;
+    sim.fmaPitch = 'V/S';
+    sim.fmaAT = 'SPD';
+    highlightFMA(3);
+    setCoach(
+      'V/S 모드 결합 (Vertical Speed)',
+      `분당 수직속도(<b>${sim.mcpVS >= 0 ? '+' : ''}${sim.mcpVS} fpm</b>)를 피치로 유지하고, 속도는 A/T(SPD)가 유지합니다.`,
+      '<span class="tag-bus">Airbus</span> V/S 노브를 <b>Pull</b>한 것과 동일합니다.'
+    );
+    updateMCPDOM();
+  }
+
+  function pressAltHold() {
+    sim.btnHOLD = true;
+    sim.btnVNAV = false;
+    sim.btnFLCH = false;
+    sim.btnVS = false;
+    sim.spdWindowOpen = true;
+    sim.mcpAlt = Math.round(sim.alt / 100) * 100;
+    sim.fmaPitch = 'ALT';
+    sim.fmaAT = 'SPD';
+    highlightFMA(3);
+    setCoach(
+      'ALT HOLD 결합 (현재 고도 즉시 유지)',
+      '현재 고도에서 즉시 수평 비행으로 전환합니다.',
+      '<span class="tag-bus">Airbus</span> V/S 노브를 <b>Push to Level Off</b> 하는 동작에 해당합니다.'
+    );
+    updateMCPDOM();
+  }
+
+  function pressAPP() {
+    sim.btnAPP = !sim.btnAPP;
+    if (sim.btnAPP) {
+      sim.fmaRollArmed = 'LOC';
+      sim.fmaPitchArmed = 'G/S';
+      setCoach(
+        'APP 무장 (LOC 및 G/S Armed)',
+        'PFD FMA 하단에 흰색 작은 글씨로 <b>LOC</b>와 <b>G/S</b>가 무장(Armed)되었습니다.',
+        '<span class="tag-bus">Airbus</span> FCU의 <b>APPR</b> 버튼과 동일합니다.'
+      );
+    } else {
+      sim.fmaRollArmed = '';
+      sim.fmaPitchArmed = '';
+    }
+    updateMCPDOM();
+  }
+
+  function changeSpd(delta) {
+    if (!sim.spdWindowOpen) return;
+    sim.mcpSpd = Math.max(140, Math.min(340, sim.mcpSpd + delta));
+    updateMCPDOM();
+  }
+
+  function changeHdg(delta) {
+    sim.mcpHdg = (sim.mcpHdg + delta + 360) % 360;
+    updateMCPDOM();
+  }
+
+  function changeVS(delta) {
+    if (!sim.btnVS) pressVS();
+    sim.mcpVS = Math.max(-4000, Math.min(4000, sim.mcpVS + delta));
+    updateMCPDOM();
+  }
+
+  function changeAlt(delta) {
+    sim.mcpAlt = Math.max(1000, Math.min(41000, sim.mcpAlt + delta));
+    updateMCPDOM();
+  }
+
+  function evaluateVnavMode() {
+    if (!sim.btnVNAV) return;
+    const targetAlt = getEffectiveVnavTargetAlt();
+    const diff = targetAlt - sim.alt;
+
+    if (Math.abs(diff) < 120) {
+      if (Math.abs(sim.mcpAlt - sim.alt) < 150 && sim.mcpAlt < sim.fmsCrzAlt) {
+        sim.fmaPitch = 'VNAV ALT';
+        sim.fmaAT = 'SPD';
+      } else {
+        sim.fmaPitch = 'VNAV PTH';
+        sim.fmaAT = 'SPD';
+      }
+    } else if (diff > 0) {
+      sim.fmaPitch = 'VNAV SPD';
+      sim.fmaAT = 'THR REF';
+    } else {
+      sim.fmaPitch = sim.spdWindowOpen ? 'VNAV SPD' : 'VNAV PTH';
+      sim.fmaAT = 'HOLD';
+    }
+  }
+
+  function getEffectiveVnavTargetAlt() {
+    const activeLeg = sim.legs[0];
+    if (activeLeg && activeLeg.type !== 'NONE') {
+      if (sim.alt <= activeLeg.alt + 150) {
+        return Math.min(sim.mcpAlt, activeLeg.alt);
+      }
+    }
+    return sim.mcpAlt;
+  }
+
+  function updateMCPDOM() {
+    const winSpd = document.getElementById('winSpd');
+    if (sim.spdWindowOpen) {
+      winSpd.textContent = sim.mcpSpd;
+      winSpd.classList.remove('blank');
+    } else {
+      winSpd.textContent = '---';
+      winSpd.classList.add('blank');
+    }
+
+    document.getElementById('winHdg').textContent = String(sim.mcpHdg).padStart(3, '0');
+    document.getElementById('winAlt').textContent = sim.mcpAlt;
+
+    const winVS = document.getElementById('winVS');
+    if (sim.btnVS) {
+      winVS.textContent = (sim.mcpVS >= 0 ? '+' : '') + sim.mcpVS;
+      winVS.classList.remove('blank');
+    } else {
+      winVS.textContent = '----';
+      winVS.classList.add('blank');
+    }
+
+    const setBtn = (id, state) => {
+      document.getElementById(id).classList.toggle('active', state);
+    };
+    setBtn('btnAT', sim.atArmed);
+    setBtn('btnLNAV', sim.btnLNAV);
+    setBtn('btnVNAV', sim.btnVNAV);
+    setBtn('btnFLCH', sim.btnFLCH);
+    setBtn('btnHDG', sim.btnHDG);
+    setBtn('btnVS', sim.btnVS);
+    setBtn('btnHOLD', sim.btnHOLD);
+    setBtn('btnAPP', sim.btnAPP);
+    setBtn('btnAP', sim.apEngaged);
+  }
+
+  // ==================== FMS CDU LOGIC ====================
+  function renderCDU() {
+    const badge = document.getElementById('cduBadge');
+    const title = document.getElementById('cduTitle');
+    const rowsEl = document.getElementById('cduRows');
+    const lamp = document.getElementById('execLamp');
+
+    if (sim.isMod) {
+      badge.textContent = 'MOD';
+      badge.className = 'badge-mod';
+      lamp.classList.add('on');
+    } else {
+      badge.textContent = 'ACT';
+      badge.className = 'badge-act';
+      lamp.classList.remove('on');
+    }
+
+    document.getElementById('cduSpText').textContent = sim.scratchpad;
+    document.getElementById('cduSpMsg').textContent = sim.spMsg;
+
+    const displayLegs = sim.isMod && sim.modLegs ? sim.modLegs : sim.legs;
+    rowsEl.innerHTML = '';
+
+    if (sim.cduPage === 'LEGS') {
+      title.textContent = 'RTE 1 LEGS';
+      for (let i = 0; i < 5; i++) {
+        const leg = displayLegs[i];
+        const line = document.createElement('div');
+        line.className = 'cdu-line';
+
+        if (leg) {
+          const dist = Math.round(Math.hypot(leg.x - sim.acX, leg.y - sim.acY));
+          const brg = Math.round((Math.atan2(leg.x - sim.acX, leg.y - sim.acY) * 180 / Math.PI + 360) % 360);
+          const colorClass = (i === 0 && !sim.isMod) ? 'color:var(--boeing-magenta)' : 'color:var(--boeing-white)';
+          const suffix = leg.type === 'AT' ? 'A' : (leg.type === 'AT_OR_BELOW' ? 'B' : '');
+          line.innerHTML = `
+            <div class="cdu-side">
+              <div class="cdu-lbl">${String(brg).padStart(3,'0')}° &nbsp; ${dist}NM</div>
+              <div class="cdu-val" style="${colorClass}">${leg.id}</div>
+            </div>
+            <div class="cdu-side r">
+              <div class="cdu-lbl">${i === 0 ? 'CMD SPD/ALT' : ''}</div>
+              <div class="cdu-val" style="${colorClass}">${leg.spd}/${leg.alt}${suffix}</div>
+            </div>
+          `;
+        } else {
+          line.innerHTML = `<div class="cdu-side"><div class="cdu-val">-----</div></div><div class="cdu-side r"></div>`;
+        }
+        rowsEl.appendChild(line);
+      }
+    } else {
+      // VNAV Page
+      title.textContent = 'ACT VNAV CLB';
+      const active = displayLegs[0] || { id: '---', alt: 10000 };
+      const lines = [
+        { lLbl: 'CRZ ALT', lVal: `FL${sim.fmsCrzAlt/100}`, rLbl: 'AT ' + active.id, rVal: `${active.alt}A` },
+        { lLbl: 'ECON SPD', lVal: `${sim.fmsTargetSpd}KT`, rLbl: 'TRANS ALT', rVal: '14000' },
+        { lLbl: 'SPD RESTR', lVal: '250/10000', rLbl: 'MAX ANGLE', rVal: '3.2°' },
+        { lLbl: '', lVal: '', rLbl: '', rVal: '' },
+        { lLbl: '------------', lVal: '<LEGS', rLbl: '------------', rVal: 'PERF>' }
+      ];
+      lines.forEach(item => {
+        const line = document.createElement('div');
+        line.className = 'cdu-line';
+        line.innerHTML = `
+          <div class="cdu-side">
+            <div class="cdu-lbl">${item.lLbl}</div>
+            <div class="cdu-val">${item.lVal}</div>
+          </div>
+          <div class="cdu-side r">
+            <div class="cdu-lbl">${item.rLbl}</div>
+            <div class="cdu-val" style="color:var(--boeing-magenta)">${item.rVal}</div>
+          </div>
+        `;
+        rowsEl.appendChild(line);
+      });
+    }
+  }
+
+  function cduPage(p) {
+    sim.cduPage = p;
+    renderCDU();
+  }
+
+  function cduChar(c) {
+    sim.spMsg = '';
+    if (sim.scratchpad === 'DELETE') sim.scratchpad = '';
+    if (sim.scratchpad.length < 14) sim.scratchpad += c;
+    renderCDU();
+  }
+
+  function cduSpPreset(txt) {
+    sim.spMsg = '';
+    sim.scratchpad = txt;
+    renderCDU();
+  }
+
+  function cduClr() {
+    sim.spMsg = '';
+    if (sim.scratchpad === 'DELETE') sim.scratchpad = '';
+    else sim.scratchpad = sim.scratchpad.slice(0, -1);
+    renderCDU();
+  }
+
+  function cduLSK(key) {
+    sim.spMsg = '';
+    const idx = parseInt(key[0], 10) - 1;
+    const side = key[1];
+
+    if (sim.cduPage === 'VNAV' && key === '5L') {
+      sim.cduPage = 'LEGS';
+      renderCDU();
+      return;
+    }
+
+    const workLegs = sim.isMod && sim.modLegs ? sim.modLegs : cloneLegs(sim.legs);
+
+    if (side === 'L' && workLegs[idx]) {
+      if (sim.scratchpad === '') {
+        // Copy waypoint to scratchpad
+        sim.scratchpad = workLegs[idx].id;
+        setCoach(
+          `스크래치패드에 ${workLegs[idx].id} 복사됨`,
+          `이제 <b>1L</b> 키를 누르면 ${workLegs[idx].id}(으)로 <b>Direct-To</b> 경로(청록색 MOD 파선)가 생성됩니다.`,
+          '<span class="tag-bus">Airbus</span> 전용 <b>DIR</b> 버튼을 누르는 대신, <span class="tag-b787">Boeing 787</span>은 LEGS 페이지에서 원하는 픽스를 클릭해 복사한 뒤 <b>1L(맨 위)</b>에 덮어씌웁니다!'
+        );
+      } else if (sim.scratchpad === 'DELETE') {
+        if (workLegs.length > 1) {
+          workLegs.splice(idx, 1);
+          sim.modLegs = workLegs;
+          sim.isMod = true;
+          sim.scratchpad = '';
+        }
+      } else {
+        // Direct-To if pressed on 1L
+        const foundIdx = workLegs.findIndex(w => w.id === sim.scratchpad);
+        if (idx === 0 && foundIdx > 0) {
+          workLegs.splice(0, foundIdx);
+          sim.modLegs = workLegs;
+          sim.isMod = true;
+          sim.scratchpad = '';
+          setCoach(
+            `MOD 상태 활성화 (ND의 흰색/청록색 파선 확인!)`,
+            `아직 비행기가 선회하지 않습니다! ND에서 파선 경로를 확인한 후 반드시 초록색 불이 켜진 <b>EXEC</b> 버튼을 눌러야 경로가 활성화됩니다.`,
+            '<span class="tag-bus">Airbus</span> 노란색 <b>TMPY F-PLN → INSERT*</b>와 동일한 2단계 확인 절차입니다.'
+          );
+        }
+      }
+    } else if (side === 'R' && workLegs[idx]) {
+      if (sim.scratchpad.includes('/')) {
+        const parts = sim.scratchpad.split('/');
+        const spdVal = parseInt(parts[0], 10) || workLegs[idx].spd;
+        const altRaw = parts[1].toUpperCase();
+        const altVal = parseInt(altRaw.replace(/[AB]/g, ''), 10) || workLegs[idx].alt;
+        workLegs[idx].spd = spdVal;
+        workLegs[idx].alt = altVal;
+        workLegs[idx].type = altRaw.endsWith('B') ? 'AT_OR_BELOW' : 'AT';
+        sim.modLegs = workLegs;
+        sim.isMod = true;
+        sim.scratchpad = '';
+        setCoach(
+          `${workLegs[idx].id} 속도/고도 구속조건 수정 (MOD)`,
+          `<b>EXEC</b> 버튼을 누르면 수정된 VNAV 구속조건이 즉시 PFD 및 VNAV 프로파일에 반영됩니다.`,
+          '<span class="tag-b787">Boeing 787</span> LEGS 우측(1R~5R)에 <code>250/10000A</code> 형태로 직접 입력합니다.'
+        );
+      } else {
+        sim.spMsg = 'USE SPD/ALT';
+      }
+    }
+    renderCDU();
+  }
+
+  function cduExec() {
+    if (!sim.isMod) return;
+    if (sim.modLegs) {
+      sim.legs = sim.modLegs;
+      sim.modLegs = null;
+    }
+    sim.isMod = false;
+    sim.fmsTargetSpd = sim.legs[0] ? sim.legs[0].spd : 250;
+    evaluateVnavMode();
+    highlightFMA(2);
+    renderCDU();
+    setCoach(
+      'EXEC 완료 — ACT RTE 1 활성화!',
+      'ND의 경로가 마젠타(Magenta) 실선으로 바뀌었으며, LNAV/VNAV가 새로운 경로를 즉시 추종합니다.',
+      '<span class="tag-b787">Boeing 787</span> 수정 사항은 언제나 <b>MOD → EXEC</b>로 확정됩니다.'
+    );
+  }
+
+  // ==================== FLIGHT PHYSICS & MODE ENGINE ====================
+  function updatePhysics() {
+    const activeLeg = sim.legs[0];
+
+    // 1. Target Speed Determination
+    const targetSpd = sim.spdWindowOpen ? sim.mcpSpd : (activeLeg ? activeLeg.spd : sim.fmsTargetSpd);
+    const spdErr = targetSpd - sim.ias;
+    sim.ias += Math.sign(spdErr) * Math.min(Math.abs(spdErr), 0.18);
+
+    // 2. Roll / Lateral Navigation
+    let targetHdg = sim.mcpHdg;
+    if (sim.btnLNAV && activeLeg) {
+      const dx = activeLeg.x - sim.acX;
+      const dy = activeLeg.y - sim.acY;
+      const dist = Math.hypot(dx, dy);
+      targetHdg = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+
+      // Sequence waypoint if close
+      if (dist < 1.5 && sim.legs.length > 1) {
+        sim.legs.shift();
+        renderCDU();
+      }
+    }
+
+    let hdgDiff = ((targetHdg - sim.hdg + 540) % 360) - 180;
+    sim.bank = Math.max(-25, Math.min(25, hdgDiff * 1.2));
+    sim.hdg = (sim.hdg + sim.bank * 0.015 + 360) % 360;
+
+    // Move aircraft slowly on ND
+    const rad = sim.hdg * Math.PI / 180;
+    sim.acX += Math.sin(rad) * 0.012;
+    sim.acY += Math.cos(rad) * 0.012;
+
+    // 3. Vertical / Pitch Mode Logic
+    let targetAlt = sim.mcpAlt;
+    if (sim.btnVNAV) {
+      targetAlt = getEffectiveVnavTargetAlt();
+    }
+
+    const altDiff = targetAlt - sim.alt;
+
+    if (sim.btnHOLD) {
+      sim.vs += (0 - sim.vs) * 0.15;
+    } else if (sim.btnVS) {
+      if (Math.abs(sim.mcpAlt - sim.alt) < 80) {
+        sim.btnVS = false;
+        sim.btnHOLD = true;
+        sim.fmaPitch = 'ALT';
+        highlightFMA(3);
+        updateMCPDOM();
+      } else {
+        sim.vs += (sim.mcpVS - sim.vs) * 0.1;
+      }
+    } else if (sim.btnFLCH || sim.btnVNAV) {
+      if (Math.abs(altDiff) < 90) {
+        sim.vs += (0 - sim.vs) * 0.2;
+        sim.alt += altDiff * 0.08;
+
+        if (sim.btnVNAV) {
+          const prevPitch = sim.fmaPitch;
+          if (Math.abs(sim.mcpAlt - sim.alt) < 120 && sim.mcpAlt < sim.fmsCrzAlt) {
+            sim.fmaPitch = 'VNAV ALT';
+            sim.fmaAT = 'SPD';
+            if (prevPitch !== 'VNAV ALT') {
+              highlightFMA(3);
+              setCoach(
+                '⚠️ VNAV ALT 포착! (보잉 787 전환 핵심 포인트)',
+                `FMS 목표 고도보다 낮은 MCP 고도(<b>${sim.mcpAlt}ft</b>) 또는 구속고도에 걸려 수평 비행으로 전환되었습니다. 계속 상승하려면 <b>MCP 고도를 올린 뒤 ALT 노브를 PUSH</b>하세요!`,
+                '<span class="tag-bus">Airbus</span> `ALT CST*` 또는 `ALT*`에 해당하지만, 보잉에서는 <b>VNAV ALT</b>가 떴을 때 고도만 돌려서는 절대 안 올라가고 반드시 <b>ALT INTV(PUSH)</b>를 눌러야 합니다!'
+              );
+            }
+          } else {
+            sim.fmaPitch = 'VNAV PTH';
+            sim.fmaAT = 'SPD';
+          }
+        } else if (sim.btnFLCH) {
+          sim.btnFLCH = false;
+          sim.btnHOLD = true;
+          sim.fmaPitch = 'ALT';
+          sim.fmaAT = 'SPD';
+          highlightFMA(3);
+          updateMCPDOM();
+        }
+      } else {
+        const desiredVS = altDiff > 0 ? 1800 : -1800;
+        sim.vs += (desiredVS - sim.vs) * 0.08;
+      }
+    }
+
+    sim.alt += sim.vs / 1800;
+    sim.pitch = Math.max(-5, Math.min(15, 2.0 + (sim.vs / 350)));
+
+    if (sim.fmaBoxTimer > 0) sim.fmaBoxTimer--;
+  }
+
+  // ==================== PFD CANVAS RENDERER ====================
+  const pfdCtx = document.getElementById('pfdCanvas').getContext('2d');
+
+  function drawPFD() {
+    const ctx = pfdCtx;
+    const W = 440, H = 390;
+    ctx.clearRect(0, 0, W, H);
+
+    // 1. Artificial Horizon (Center at 215, 205)
+    const cx = 215, cy = 205, radius = 115;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(cx - radius, cy - radius, radius * 2, radius * 2, 18);
+    ctx.clip();
+
+    ctx.translate(cx, cy);
+    ctx.rotate(-sim.bank * Math.PI / 180);
+    const pitchPx = sim.pitch * 5.5;
+
+    // Sky & Ground
+    ctx.fillStyle = '#005fa8';
+    ctx.fillRect(-200, -300 + pitchPx, 400, 300);
+    ctx.fillStyle = '#6b441e';
+    ctx.fillRect(-200, pitchPx, 400, 300);
+
+    // Horizon Line
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-200, pitchPx);
+    ctx.lineTo(200, pitchPx);
+    ctx.stroke();
+
+    // Pitch Ladder
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 10px Consolas';
+    for (let p = -15; p <= 20; p += 5) {
+      if (p === 0) continue;
+      const y = pitchPx - p * 5.5;
+      const w = (p % 10 === 0) ? 28 : 14;
+      ctx.beginPath();
+      ctx.moveTo(-w, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+      if (p % 10 === 0) {
+        ctx.fillText(Math.abs(p), w + 4, y + 3);
+        ctx.fillText(Math.abs(p), -w - 16, y + 3);
+      }
+    }
+    ctx.restore();
+
+    // Flight Director (FD) Bars (Magenta)
+    ctx.strokeStyle = '#ff4dff';
+    ctx.lineWidth = 3;
+    const fdPitchY = cy - (sim.pitch - (sim.vs / 350 + 2)) * 4;
+    const fdRollX = cx + (sim.bank * 0.8);
+    ctx.beginPath();
+    ctx.moveTo(cx - 48, fdPitchY);
+    ctx.lineTo(cx + 48, fdPitchY);
+    ctx.moveTo(fdRollX, cy - 48);
+    ctx.lineTo(fdRollX, cy + 48);
+    ctx.stroke();
+
+    // Aircraft Reference Symbol (Black/White L-bars + center square)
+    ctx.fillStyle = '#000';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.fillRect(cx - 5, cy - 5, 10, 10);
+    ctx.strokeRect(cx - 5, cy - 5, 10, 10);
+    ctx.beginPath();
+    ctx.moveTo(cx - 65, cy); ctx.lineTo(cx - 25, cy); ctx.lineTo(cx - 25, cy + 8);
+    ctx.moveTo(cx + 65, cy); ctx.lineTo(cx + 25, cy); ctx.lineTo(cx + 25, cy + 8);
+    ctx.stroke();
+
+    // 2. TOP FMA (Boeing 3-Column Layout)
+    ctx.fillStyle = '#0c1118';
+    ctx.fillRect(40, 6, 350, 48);
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(40, 6, 350, 48);
+    ctx.beginPath();
+    ctx.moveTo(156, 6); ctx.lineTo(156, 54);
+    ctx.moveTo(273, 6); ctx.lineTo(273, 54);
+    ctx.stroke();
+
+    // Active FMA Text (Green)
+    ctx.fillStyle = '#00ff66';
+    ctx.font = 'bold 15px Consolas';
+    ctx.textAlign = 'center';
+    ctx.fillText(sim.fmaAT, 98, 26);
+    ctx.fillText(sim.fmaRoll, 214, 26);
+    ctx.fillText(sim.fmaPitch, 331, 26);
+
+    // Highlight Box around recently changed FMA mode
+    if (sim.fmaBoxTimer > 0 && sim.fmaChangedCol > 0) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      const boxX = sim.fmaChangedCol === 1 ? 45 : (sim.fmaChangedCol === 2 ? 161 : 278);
+      ctx.strokeRect(boxX, 9, 106, 22);
+    }
+
+    // Armed FMA Modes (White small)
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '11px Consolas';
+    ctx.fillText(sim.fmaRollArmed, 214, 46);
+    ctx.fillText(sim.fmaPitchArmed, 331, 46);
+
+    // 3. SPEED TAPE (Left)
+    const stX = 14, stY = 75, stW = 62, stH = 250;
+    ctx.fillStyle = '#111722';
+    ctx.fillRect(stX, stY, stW, stH);
+    ctx.strokeStyle = '#475569';
+    ctx.strokeRect(stX, stY, stW, stH);
+
+    // Target Speed above tape (Magenta if FMS, Cyan/White if MCP)
+    const activeLeg = sim.legs[0];
+    const dispTargetSpd = sim.spdWindowOpen ? sim.mcpSpd : (activeLeg ? activeLeg.spd : sim.fmsTargetSpd);
+    ctx.fillStyle = sim.spdWindowOpen ? '#ffffff' : '#ff4dff';
+    ctx.font = 'bold 14px Consolas';
+    ctx.textAlign = 'center';
+    ctx.fillText(dispTargetSpd + (sim.spdWindowOpen ? ' MCP' : ' FMS'), stX + 31, stY - 8);
+
+    // Speed Ticks
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(stX, stY, stW, stH);
+    ctx.clip();
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '12px Consolas';
+    ctx.textAlign = 'right';
+    const baseSpd = Math.floor(sim.ias / 10) * 10;
+    for (let s = baseSpd - 40; s <= baseSpd + 40; s += 10) {
+      if (s < 100) continue;
+      const y = cy - (s - sim.ias) * 2.8;
+      ctx.beginPath();
+      ctx.moveTo(stX + stW - 8, y);
+      ctx.lineTo(stX + stW, y);
+      ctx.stroke();
+      ctx.fillText(s, stX + stW - 12, y + 4);
+    }
+
+    // Magenta Speed Bug
+    const bugY = cy - (dispTargetSpd - sim.ias) * 2.8;
+    ctx.strokeStyle = '#ff4dff';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(stX + stW - 10, bugY - 5, 10, 10);
+    ctx.restore();
+
+    // Current IAS Readout Box
+    ctx.fillStyle = '#000';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.fillRect(stX + 4, cy - 13, stW - 8, 26);
+    ctx.strokeRect(stX + 4, cy - 13, stW - 8, 26);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 16px Consolas';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.round(sim.ias), stX + 31, cy + 5);
+
+    // 4. ALTITUDE TAPE (Right)
+    const atX = 344, atY = 75, atW = 74, atH = 250;
+    ctx.fillStyle = '#111722';
+    ctx.fillRect(atX, atY, atW, atH);
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(atX, atY, atW, atH);
+
+    // Selected MCP Altitude above tape
+    ctx.fillStyle = '#ff4dff';
+    ctx.font = 'bold 15px Consolas';
+    ctx.textAlign = 'center';
+    ctx.fillText(sim.mcpAlt, atX + 37, atY - 8);
+
+    // Altitude Ticks
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(atX, atY, atW, atH);
+    ctx.clip();
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '12px Consolas';
+    ctx.textAlign = 'left';
+    const baseAlt = Math.floor(sim.alt / 200) * 200;
+    for (let a = baseAlt - 800; a <= baseAlt + 800; a += 200) {
+      const y = cy - (a - sim.alt) * 0.14;
+      ctx.beginPath();
+      ctx.moveTo(atX, y);
+      ctx.lineTo(atX + 8, y);
+      ctx.stroke();
+      ctx.fillText(a, atX + 12, y + 4);
+    }
+    ctx.restore();
+
+    // Current Altitude Readout Box
+    ctx.fillStyle = '#000';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.fillRect(atX + 4, cy - 13, atW - 8, 26);
+    ctx.strokeRect(atX + 4, cy - 13, atW - 8, 26);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 15px Consolas';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.round(sim.alt / 10) * 10, atX + 37, cy + 5);
+
+    // V/S Readout at bottom right
+    ctx.fillStyle = '#00ff66';
+    ctx.font = 'bold 13px Consolas';
+    ctx.fillText(`VS ${sim.vs >= 0 ? '+' : ''}${Math.round(sim.vs/50)*50}`, atX + 37, atY + atH + 18);
+
+    // Heading Readout at Bottom Center
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px Consolas';
+    ctx.fillText(`HDG ${String(Math.round(sim.hdg)).padStart(3,'0')}° (SEL ${String(sim.mcpHdg).padStart(3,'0')}°)`, cx, 365);
+  }
+
+  // ==================== ND CANVAS RENDERER ====================
+  const ndCtx = document.getElementById('ndCanvas').getContext('2d');
+
+  function drawND() {
+    const ctx = ndCtx;
+    const W = 440, H = 390;
+    ctx.clearRect(0, 0, W, H);
+
+    const acScreenX = W / 2;
+    const acScreenY = H - 55;
+    const scale = 4.2; // pixels per NM
+
+    // Top ND Info Bar
+    ctx.fillStyle = '#00ff66';
+    ctx.font = 'bold 13px Consolas';
+    ctx.textAlign = 'left';
+    ctx.fillText(`GS ${Math.round(sim.ias + 25)}   TAS ${Math.round(sim.ias + 18)}`, 14, 22);
+
+    const activeWpt = sim.legs[0];
+    if (activeWpt) {
+      const dist = Math.hypot(activeWpt.x - sim.acX, activeWpt.y - sim.acY).toFixed(1);
+      ctx.fillStyle = '#ff4dff';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${activeWpt.id}  ${dist} NM`, W - 14, 22);
+    }
+
+    // Compass Rose Arcs
+    ctx.strokeStyle = '#263244';
+    ctx.lineWidth = 1.2;
+    [90, 180, 270].forEach(r => {
+      ctx.beginPath();
+      ctx.arc(acScreenX, acScreenY, r, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+    });
+
+    // Helper: Convert world (x, y) to Heading-Up ND Screen Coords
+    function toScreen(wx, wy) {
+      const dx = wx - sim.acX;
+      const dy = wy - sim.acY;
+      const rot = (sim.hdg * Math.PI) / 180;
+      // Rotate world relative to aircraft heading
+      const rx = dx * Math.cos(rot) - dy * Math.sin(rot);
+      const ry = dx * Math.sin(rot) + dy * Math.cos(rot);
+      return {
+        x: acScreenX + rx * scale,
+        y: acScreenY - ry * scale
+      };
+    }
+
+    // 1. Draw Active Route (Magenta Solid Line)
+    ctx.strokeStyle = '#ff4dff';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(acScreenX, acScreenY);
+    sim.legs.forEach(w => {
+      const pt = toScreen(w.x, w.y);
+      ctx.lineTo(pt.x, pt.y);
+    });
+    ctx.stroke();
+
+    // 2. Draw Modified Route if in MOD state (Cyan/White Dashed Line)
+    if (sim.isMod && sim.modLegs) {
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([7, 6]);
+      ctx.beginPath();
+      ctx.moveTo(acScreenX, acScreenY);
+      sim.modLegs.forEach(w => {
+        const pt = toScreen(w.x, w.y);
+        ctx.lineTo(pt.x, pt.y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // 3. Draw Waypoint Stars & Altitude Constraints
+    const legList = (sim.isMod && sim.modLegs) ? sim.modLegs : sim.legs;
+    legList.forEach((w, idx) => {
+      const pt = toScreen(w.x, w.y);
+      ctx.fillStyle = idx === 0 ? '#ff4dff' : '#ffffff';
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = 'bold 12px Consolas';
+      ctx.textAlign = 'left';
+      ctx.fillText(w.id, pt.x + 8, pt.y + 3);
+
+      if (w.type !== 'NONE') {
+        ctx.fillStyle = '#00e5ff';
+        ctx.font = '11px Consolas';
+        const tag = w.type === 'AT' ? `${w.alt}A` : `${w.alt}B`;
+        ctx.fillText(tag, pt.x + 8, pt.y + 16);
+      }
+    });
+
+    // 4. Selected Heading Bug Dashed Line (if HDG SEL or always visible reference)
+    const hdgDiffRad = ((sim.mcpHdg - sim.hdg) * Math.PI) / 180;
+    ctx.strokeStyle = '#ff4dff';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(acScreenX, acScreenY);
+    ctx.lineTo(acScreenX + Math.sin(hdgDiffRad) * 260, acScreenY - Math.cos(hdgDiffRad) * 260);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 5. Own Aircraft Triangle at Bottom
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(acScreenX, acScreenY - 12);
+    ctx.lineTo(acScreenX - 10, acScreenY + 10);
+    ctx.lineTo(acScreenX + 10, acScreenY + 10);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  // ==================== SCENARIO PRESETS ====================
+  function loadScenario(type) {
+    if (type === 'VNAV_ALT') {
+      sim.alt = 9950;
+      sim.mcpAlt = 10000;
+      sim.vs = 100;
+      sim.btnVNAV = true;
+      sim.btnLNAV = true;
+      sim.btnFLCH = false;
+      sim.spdWindowOpen = false;
+      sim.fmaPitch = 'VNAV ALT';
+      sim.fmaAT = 'SPD';
+      highlightFMA(3);
+      setCoach(
+        '시나리오 1: VNAV ALT에 걸린 상태! (실습해 보세요)',
+        '현재 10,000ft에 도달하여 FMA 우측에 <b>VNAV ALT</b>가 떴습니다. <b>[실습]</b> MCP ALT `+` 버튼을 눌러 고도를 <b>15000</b>으로 올린 뒤, <b>PUSH (ALT INTV)</b> 버튼을 눌러 상승을 재개해 보세요!',
+        '<span class="tag-b787">Boeing 787 필수 지식</span> 에어버스와 달리 VNAV ALT 상태에서는 MCP 고도만 올리면 비행기가 절대 상승하지 않습니다. 반드시 고도 노브를 <b>PUSH</b> 해야 합니다!'
+      );
+    } else if (type === 'SPD_INTV') {
+      sim.alt = 7500;
+      sim.mcpAlt = 16000;
+      sim.btnVNAV = true;
+      sim.spdWindowOpen = false;
+      pushSpdIntv();
+    } else if (type === 'DIR_TO') {
+      sim.cduPage = 'LEGS';
+      sim.scratchpad = 'LANAT';
+      cduLSK('1L');
+    } else if (type === 'FLCH_VS_VNAV') {
+      sim.alt = 7200;
+      sim.mcpAlt = 15000;
+      pressFLCH();
+    }
+    updateMCPDOM();
+    renderCDU();
+  }
+
+  // Download Standalone HTML
+  function downloadSelf() {
+    const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'B787_Airbus_Transition_Trainer.html';
+    a.click();
+  }
+
+  // Main Animation Loop
+  function loop() {
+    updatePhysics();
+    drawPFD();
+    drawND();
+    requestAnimationFrame(loop);
+  }
+
+  // Initialize
+  updateMCPDOM();
+  renderCDU();
+  requestAnimationFrame(loop);
+</script>
+</body>
+</html>
