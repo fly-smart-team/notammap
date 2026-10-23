@@ -4583,6 +4583,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
     document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-jb-open]')) openJointBrief(); });
     // ===================== 내 기체(기번) 실시간 위치 · 도착 예상 (무료 ADS-B: adsb.fi / adsb.lol / airplanes.live) =====================
     let acLive = { status: 'idle' }, acTimer = null;
+    // 중계 서버 (Cloudflare Worker) 주소 — 기본값은 배포 시 지정, 기기별로 바꿀 수도 있음
+    const DEFAULT_PROXY = '';
+    const getProxy = () => { try { return (localStorage.getItem('proxyBase.v1') || DEFAULT_PROXY).replace(/\/+$/, ''); } catch (e) { return DEFAULT_PROXY; } };
     async function fetchAcByReg(reg) {
       const r = encodeURIComponent(String(reg).toUpperCase().replace(/[^A-Z0-9-]/g, ''));
       const srcs = [
@@ -4591,6 +4594,15 @@ svg.leaflet-image-layer.leaflet-interactive path {
         ['airplanes.live', `https://api.airplanes.live/v2/reg/${r}`]
       ];
       const errs = [];
+      const proxy = getProxy();
+      if (proxy) {   // 1순위: 중계 서버
+        try {
+          const res = await fetchTO(`${proxy}/adsb/reg/${r}`, 10000);
+          const j = await res.json();
+          if (res.ok) { const list = (j.ac || []).filter(a => a && (a.lat != null || a.alt_baro === 'ground')); return { src: '중계 → ' + j.src, ac: list[0] || null, errs }; }
+          errs.push(`중계 서버: HTTP ${res.status} ${(j.errs || []).join(' / ')}`);
+        } catch (e) { errs.push(`중계 서버: ${e.name === 'AbortError' ? '시간 초과' : '접속 실패'}`); }
+      }
       for (const [name, url] of srcs) {
         try {
           const res = await fetchTO(url, 8000);
@@ -4644,7 +4656,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
       if (L.status === 'noreg') body = msg('OFP에서 기번을 찾지 못했습니다.');
       else if (L.status === 'offline') body = msg('오프라인 — 온라인 연결 시 조회합니다.');
       else if (L.status === 'loading') body = msg('⏳ ADS-B 위치 조회 중…');
-      else if (L.status === 'fail') body = msg('조회 실패') + `<details class="text-[10px] text-slate-500"><summary class="cursor-pointer">실패 원인</summary>${(L.errs || []).map(e => `<div>${esc(e)}</div>`).join('')}</details>`;
+      else if (L.status === 'fail') body = msg('조회 실패') + `<details class="text-[10px] text-slate-500" open><summary class="cursor-pointer">실패 원인 · 중계 서버 설정</summary>${(L.errs || []).map(e => `<div>${esc(e)}</div>`).join('')}
+        <div class="flex items-center gap-1 mt-1"><span>중계 서버</span><input id="proxy-url" type="url" placeholder="https://xxxx.workers.dev" value="${esc(getProxy())}" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-[11px] text-slate-200" /><button type="button" data-proxy-save class="px-2 py-1 rounded bg-sky-700 text-white text-[11px] font-bold">저장</button></div></details>`;
       else if (L.status === 'none') body = msg('현재 ADS-B 신호 없음 — 지상 주기 중이거나 수신 범위 밖(서해·중국 상공 등)입니다.');
       else if (L.status === 'ok' && L.ac) {
         const a = L.ac, cs = String(a.flight || '').trim(), ll = [a.lat, a.lon];
@@ -4672,7 +4685,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
       } else body = msg('—');
       box.innerHTML = head + body;
     }
-    document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-ac-refresh]')) refreshAcLive(true); });
+    document.addEventListener('click', e => {
+      if (!e.target.closest) return;
+      if (e.target.closest('[data-ac-refresh]')) refreshAcLive(true);
+      if (e.target.closest('[data-proxy-save]')) { try { localStorage.setItem('proxyBase.v1', (document.getElementById('proxy-url').value || '').trim()); } catch (er) { } refreshAcLive(true); }
+    });
     function startAcLive() {
       clearInterval(acTimer); acLive = { status: 'idle' };
       refreshAcLive(true);
