@@ -1419,7 +1419,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       [/\bTRIGGER NOTAM\b\s*-?\s*/g, '[트리거 노탐] '],
       [/\bEXCEPT FOR (?:ACFT|AIRCRAFT) EQUIPPED WITH ([^\.;]+)/g, '($1 장착 항공기 제외)'], [/\bEXC(?:EPT)? FOR ([A-Z ]{2,30}?) EQUIPPED (?:ACFT|AIRCRAFT)\b/g, '($1 장착 항공기 제외)'],
       [/\(\s*BTN ([^)]+?) AND ([^)]+?)\)/g, '($1~$2 사이)'], [/\bSEE (AIP(?:\s+SUP)?(?:\s+[A-Z0-9\/]+(?:\.\d+)*){1,4})/g, '$1 참조'],
-      [/\b(?:BLW|BELOW) ((?:FL ?)?\d{2,5}(?: ?(?:FT|M))?(?: (?:AGL|AMSL|MSL))?)/g, '$1 이하'], [/\b(?:ABV|ABOVE) ((?:FL ?)?\d{2,5}(?: ?(?:FT|M))?(?: (?:AGL|AMSL|MSL))?)/g, '$1 이상'],
+      [/\b(?:BLW|BELOW) ((?:FL ?)?(?:\d{1,3}(?:,\d{3})+|\d{2,5})(?: ?(?:FT|M))?(?: (?:AGL|AMSL|MSL))?)/g, '$1 이하'], [/\b(?:ABV|ABOVE) ((?:FL ?)?(?:\d{1,3}(?:,\d{3})+|\d{2,5})(?: ?(?:FT|M))?(?: (?:AGL|AMSL|MSL))?)/g, '$1 이상'],
       [/\bBTN ([A-Z0-9\/\- ]{1,25}?) AND ([A-Z0-9\/\-]+(?: [A-Z0-9\/\-]+)?)(?=[\s,\.;\)]|$)/g, '($1~$2 사이)'],
       [/\bVIA\b/g, '경유'], [/\bOTHER THAN\b/g, '외'], [/\bCROSS\b/g, '횡단'], [/\bRMK\b/g, '비고'], [/\bSEE\b/g, '참조'],
       [/\bUNUSABLE\b/g, '사용 불가'], [/\bRESTRICTED\b/g, '제한'], [/\bESTABLISHED\b/g, '설정'], [/\bCONDUCTED\b/g, '실시'], [/\bDEACTIVATED\b/g, '비활성화'],
