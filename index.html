@@ -4597,7 +4597,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const proxy = getProxy();
       if (proxy) {   // 1순위: 중계 서버
         try {
-          const res = await fetchTO(`${proxy}/adsb/reg/${r}`, 10000);
+          const res = await fetchTO(`${proxy}/adsb/reg/${r}`, 15000);
           const j = await res.json();
           if (res.ok) { const list = (j.ac || []).filter(a => a && (a.lat != null || a.alt_baro === 'ground')); return { src: '중계 → ' + j.src, ac: list[0] || null, errs }; }
           errs.push(`중계 서버: HTTP ${res.status} ${(j.errs || []).join(' / ')}`);
