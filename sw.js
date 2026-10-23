@@ -1,6 +1,6 @@
 // NOTAM FIR Map Lite — 오프라인 캐시 서비스 워커
-// 전략: 저장본으로 즉시 열고(오프라인 OK), 온라인이면 백그라운드에서 새 버전을 받아 다음 실행부터 적용
-const CACHE = 'notam-lite-v1';
+// 전략: 온라인이면 최신 페이지를 먼저 받아 바로 보여주고(4초 안에 응답 없으면 저장본), 오프라인이면 저장본
+const CACHE = 'notam-lite-v2';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 const EXTRA = ['./787.html'];   // 같은 저장소의 다른 페이지 (있으면 함께 저장)
 
@@ -47,10 +47,22 @@ self.addEventListener('fetch', e => {
     const path = (rel === '' || rel === 'index.html') ? './index.html' : './' + rel;
     e.respondWith((async () => {
       const c = await caches.open(CACHE);
+      // 1순위: 네트워크 (최신 버전 즉시 반영) — 4초 넘으면 저장본
+      try {
+        const res = await Promise.race([
+          fetch(req, { cache: 'no-cache' }),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))
+        ]);
+        if (res && res.ok) {
+          const body = await res.clone().text();
+          const mk = () => new Response(body, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+          e.waitUntil((async () => { await c.put(path, mk()); if (path === './index.html') await c.put('./', mk()); })());
+          return res;
+        }
+      } catch (err) { /* 오프라인·느린 망: 저장본 사용 */ }
       const hit = await c.match(path);
       if (hit) { e.waitUntil(refresh(path)); return hit; }
-      try { const res = await fetch(req); if (res.ok) c.put(path, res.clone()); return res; }
-      catch (err) { return new Response('오프라인 저장본이 없습니다. 온라인에서 한 번 열어 주세요.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }); }
+      return new Response('오프라인 저장본이 없습니다. 온라인에서 한 번 열어 주세요.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     })());
     return;
   }
