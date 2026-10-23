@@ -4584,7 +4584,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     // ===================== 내 기체(기번) 실시간 위치 · 도착 예상 (무료 ADS-B: adsb.fi / adsb.lol / airplanes.live) =====================
     let acLive = { status: 'idle' }, acTimer = null;
     // 중계 서버 (Cloudflare Worker) 주소 — 기본값은 배포 시 지정, 기기별로 바꿀 수도 있음
-    const DEFAULT_PROXY = '';
+    const DEFAULT_PROXY = 'https://notam-proxy.flyacelee.workers.dev';
     const getProxy = () => { try { return (localStorage.getItem('proxyBase.v1') || DEFAULT_PROXY).replace(/\/+$/, ''); } catch (e) { return DEFAULT_PROXY; } };
     async function fetchAcByReg(reg) {
       const r = encodeURIComponent(String(reg).toUpperCase().replace(/[^A-Z0-9-]/g, ''));
