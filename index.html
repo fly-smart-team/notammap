@@ -810,7 +810,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v93</span>
+      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v94</span>
       <button id="btn-hidden" type="button" aria-label="도구" title="도구" class="ml-auto w-7 h-7 rounded-md text-slate-600 hover:text-slate-300 hover:bg-slate-800 text-sm leading-none">⋯</button>
     </div>
     <!-- 히든 메뉴: FOM S13.1 위험물 검색 (보조배터리 Wh 계산 포함) · 파일 내장 -->
@@ -4887,7 +4887,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
         const role = el.dataset.standRole, icao = role === 'DEP' ? info.dep : info.dest;
         const manual = standManualGet(role);
         const isIcn = icao === 'RKSI', d = isIcn ? standLive[role] : null;
-        const editBtn = (v, ph) => `<button type="button" data-stand-edit="${role}" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border ${v ? 'border-teal-600 bg-teal-950/50 text-teal-100' : 'border-dashed border-slate-600 text-slate-400'} text-[12px]"><span>🅿</span><b class="mono text-[14px]">${esc(v || ph)}</b></button>`;
+        const editBtn = (v, ph) => `<button type="button" data-stand-edit="${role}" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border whitespace-nowrap ${v ? 'border-teal-600 bg-teal-950/50 text-teal-100' : 'border-dashed border-slate-600 text-slate-400'} text-[12px]"><span>🅿</span><b class="mono text-[14px]">${esc(v || ph)}</b></button>`;
         let h = '';
         if (isIcn && d && d.stand && !manual) {
           const chg = d.est && d.sch && d.est !== d.sch ? `<span class="text-amber-300">변경 ${esc(fmtKst(d.est).slice(6))}</span>` : '';
