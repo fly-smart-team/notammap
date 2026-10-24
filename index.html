@@ -813,7 +813,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v95</span>
+      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v96</span>
       <button id="btn-hidden" type="button" aria-label="도구" title="도구" class="ml-auto w-7 h-7 rounded-md text-slate-600 hover:text-slate-300 hover:bg-slate-800 text-sm leading-none">⋯</button>
     </div>
     <!-- 히든 메뉴: FOM S13.1 위험물 검색 (보조배터리 Wh 계산 포함) · 파일 내장 -->
@@ -4510,6 +4510,20 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const lt = localTime(icao, ms);
       return lt ? `${lt.md} ${lt.hm} LT` : `${new Date(ms).toISOString().slice(5, 10).replace('-', '/')} UTC`;
     }
+
+    // Joint Brief: 출발 Gate(Spot) · 도착 Spot (자동 조회 값 또는 직접 입력 값)
+    function jbStandTxt(blank) {
+      const one = role => {
+        let man = ''; try { man = standManualGet(role); } catch (e) { }
+        const d = typeof standLive !== 'undefined' && standLive && standLive[role];
+        const stand = man || (d && d.stand) || '', gate = !man && d && d.gate ? d.gate : '';
+        if (!stand && !gate) return '';
+        return gate && gate !== stand ? `Gate ${esc(gate)} (Spot ${esc(stand || '-')})` : stand && gate ? `Gate/Spot ${esc(stand)}` : `Spot ${esc(stand)}`;
+      };
+      const dep = one('DEP'), dest = one('DEST');
+      if (!dep && !dest) return `( ${blank} )`;
+      return `<b>${dep || `( ${blank} )`}</b>${dep ? ` <span class="jb-mono">${esc(info.dep || '')}</span>` : ''}${dest ? ` · 도착 ${esc(info.dest || '')} ${dest}` : ''}`;
+    }
     function buildJointBrief() {
       const p = pdfFlt || {}, fpl = $('fpl-input').value, w = flightWindow();
       const cs = p.callsign || (fpl.match(/\(FPL-([A-Z0-9]+)-/) || [])[1] || '';
@@ -4534,7 +4548,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       h.push(`<h2>1. Flight Information: CREW</h2><ul>
         ${li(`<b>가. Flight Number / Flight Leg :</b> ${esc(cs || '--')} / ${esc(aptKoEn(info.dep))} → ${esc(aptKoEn(info.dest))}`)}
         ${li(`<b>나. Type of Aircraft / Reg. Number :</b> ${esc(type ? (AC_NAMES[type] || type) : '--')} / ${esc(p.reg || '--')}`)}
-        ${li(`<b>다. Gate (Spot) Number :</b> ( ${blank} )<ul>${li(`PAX Inform: ${pax ? `${pax.f ? `First ${pax.f}명, ` : ''}Business ${pax.c}명, Economy ${pax.y}명 (총 ${pax.f + pax.c + pax.y}명)` : `Business ${blank}명, Economy ${blank}명 (총 ${blank}명)`} / Cargo: ${cargoLbs != null ? `${Math.round(cargoLbs).toLocaleString()} LBS (약 ${Math.round(cargoLbs * 0.45359).toLocaleString()} kg)` : `${blank} LBS`}`)}</ul>`)}
+        ${li(`<b>다. Gate (Spot) Number :</b> ${jbStandTxt(blank)}<ul>${li(`PAX Inform: ${pax ? `${pax.f ? `First ${pax.f}명, ` : ''}Business ${pax.c}명, Economy ${pax.y}명 (총 ${pax.f + pax.c + pax.y}명)` : `Business ${blank}명, Economy ${blank}명 (총 ${blank}명)`} / Cargo: ${cargoLbs != null ? `${Math.round(cargoLbs).toLocaleString()} LBS (약 ${Math.round(cargoLbs * 0.45359).toLocaleString()} kg)` : `${blank} LBS`}`)}</ul>`)}
         ${li(`<b>라. Flight Schedule :</b><ul>
           ${li(`ETD : ${zTxt(w && w.etd)}Z (${ltTxt(info.dep, w && w.etd)}) / ETA : ${zTxt(w && w.eta)}Z (${ltTxt(info.dest, w && w.eta)})`)}
           ${li(`Flight Time: ${hmTxt(trip)}`)}
