@@ -813,7 +813,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v98</span>
+      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v99</span>
       <button id="btn-hidden" type="button" aria-label="도구" title="도구" class="ml-auto w-7 h-7 rounded-md text-slate-600 hover:text-slate-300 hover:bg-slate-800 text-sm leading-none">⋯</button>
     </div>
     <!-- 히든 메뉴: FOM S13.1 위험물 검색 (보조배터리 Wh 계산 포함) · 파일 내장 -->
@@ -1440,7 +1440,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     const ABBR_KEEP = new Set('RWY TWY TXL TWYL ILS VOR DME NDB VORTAC TACAN GPS GNSS GBAS GLS RNAV RNP LOC LLZ GP PAPI ALS PALS VASIS ATIS ATC ACC APP TWR ARTCC FIR CTA CTR ATZ MOA TRA SID STAR IAP ODP AIP AIC AIRAC SUP NOTAM SNOWTAM SIGMET UTC FL NM KM KT AGL AMSL MSL DA DH MDA MEA MOCA MRA MSA OCA OCH HAT TCH RVR QNH QFE QDM QDR ETA ETD EOBT EET EAT PBN RAIM ADS-B ADS-C CPDLC RVSM SSR PSR PAR ASR SMR TAR WAAS LPV LNAV VNAV UAS VFR IFR VMC IMC CAT TDZ ARP PCN TORA TODA ASDA LDA SAR RFF RCC FAF FAP IAF MAPT COP CRP CDR MNPS FATO PJE IRS MLS SDF IM MM OM MKR ABN IBN BCN LDI WDI REDL RCLL RTHL RTZL STWL RESA SWY DTHR LIH LIL LIM VDGS APU GPU TCAS EGPWS ICAO FAA RWYCC RCR H24 HJ HN HO HX FM MAP DP GS TL MIN MON RAG END NR ID CH SR SS EST TYP PLN OBS MAG GEO INT NA ACT AD AFIS AFTN AIS PAX VIP MTOW SVC NOF STN'.split(' '));
     const ABBR_RE = /(?<![A-Z0-9\/\-])(ADS-[BC]|U\/S|[A-Z][A-Z0-9]{1,7})(?![A-Z0-9\/\-])/g;
     // 해설에서 뺄 기본 약어 (조종사에게 익숙한 것)
-    const ABBR_BASIC = new Set('RWY TWY ILS LOC GP GS DME VOR NDB ATC TWR APP APCH ARR DEP FL FT NM KT UTC ACFT AIP NOTAM AD SID STAR IAP PAPI THR VIS RVR QNH ETD ETA FREQ WEF TIL HR MIN NR NO NIL INFO EXC'.split(' '));
+    const ABBR_BASIC = new Set('RWY TWY ILS LOC GP GS DME VOR NDB ATC TWR APP APCH ARR DEP FL FT NM KT UTC ACFT AIP NOTAM SID STAR IAP PAPI THR VIS RVR QNH ETD ETA FREQ MIN INFO'.split(' '));
     function abbrIn(text) {
       const seen = new Set(), out = [];
       String(text || '').toUpperCase().replace(/\n\s*[A-G]\)\s*/g, '\n').replace(ABBR_RE, m => { if (NOTAM_ABBR[m] && !seen.has(m) && !ABBR_BASIC.has(m)) { seen.add(m); out.push(m); } return m; });
