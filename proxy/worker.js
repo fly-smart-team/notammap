@@ -1,6 +1,7 @@
 // notam-proxy — Cloudflare Worker (ADS-B 중계)
 // GET /health            → {ok:true}
 // GET /adsb/reg/HL8510   → {src, ac:[...], errs}
+// GET /dgk/B551177/<서비스>/<기능>?파라미터 → 공공데이터포털(인천공항) 중계. 인증키는 Worker 비밀값 ICN_KEY에서 붙임
 const ALLOW_ORIGINS = ['https://fly-smart-team.github.io'];
 
 function cors(origin) {
@@ -60,11 +61,24 @@ export default {
     const origin = req.headers.get('Origin') || '';
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(origin) });
     const url = new URL(req.url);
-    if (url.pathname === '/health') return json({ ok: true, v: '1.1' }, 200, origin);
+    if (url.pathname === '/health') return json({ ok: true, v: '1.2', icnKey: !!env.ICN_KEY }, 200, origin);
     const m = url.pathname.match(/^\/adsb\/reg\/([A-Za-z0-9-]{3,10})$/);
     if (m) {
       const r = await adsbByReg(m[1]);
       return json(r, r.fail ? 502 : 200, origin);
+    }
+    if (url.pathname.startsWith('/dgk/')) {
+      if (!env.ICN_KEY) return json({ error: 'Worker에 ICN_KEY 비밀값이 없습니다' }, 500, origin);
+      const path = url.pathname.slice(5);
+      if (!/^B551177\/[A-Za-z0-9_\/-]+$/.test(path)) return json({ error: 'bad path' }, 400, origin);
+      const q = new URLSearchParams(url.search);
+      q.set('serviceKey', env.ICN_KEY);
+      if (!q.has('type')) q.set('type', 'json');
+      try {
+        const r = await fetch(`https://apis.data.go.kr/${path}?${q}`, { headers: { 'Accept': 'application/json' } });
+        const text = await r.text();
+        return new Response(text, { status: r.status, headers: { 'Content-Type': r.headers.get('Content-Type') || 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...cors(origin) } });
+      } catch (e) { return json({ error: '공공데이터포털 접속 실패: ' + e.message }, 502, origin); }
     }
     return json({ error: 'not found' }, 404, origin);
   },
