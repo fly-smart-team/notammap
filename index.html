@@ -810,7 +810,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v91</span>
+      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v92</span>
       <button id="btn-hidden" type="button" aria-label="도구" title="도구" class="ml-auto w-7 h-7 rounded-md text-slate-600 hover:text-slate-300 hover:bg-slate-800 text-sm leading-none">⋯</button>
     </div>
     <!-- 히든 메뉴: FOM S13.1 위험물 검색 (보조배터리 Wh 계산 포함) · 파일 내장 -->
@@ -4641,8 +4641,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
     // ===================== 내 기체(기번) 실시간 위치 · 도착 예상 (무료 ADS-B: adsb.fi / adsb.lol / airplanes.live) =====================
     let acLive = { status: 'idle' }, acTimer = null;
     // 중계 서버 (Cloudflare Worker) 주소 — 기본값은 배포 시 지정, 기기별로 바꿀 수도 있음
-    const DEFAULT_PROXY = 'https://notam-proxy.flyacelee.workers.dev';
-    const getProxy = () => { try { return (localStorage.getItem('proxyBase.v1') || DEFAULT_PROXY).replace(/\/+$/, ''); } catch (e) { return DEFAULT_PROXY; } };
+    const DEFAULT_PROXY = 'https://notam-proxy.sapsary1.workers.dev';
+    // 예전 기본 주소(flyacelee)가 기기에 저장돼 있으면 새 기본값 사용
+    const getProxy = () => { try { const v = localStorage.getItem('proxyBase.v1'); return (v && !/flyacelee/.test(v) ? v : DEFAULT_PROXY).replace(/\/+$/, ''); } catch (e) { return DEFAULT_PROXY; } };
     async function fetchAcByReg(reg) {
       const r = encodeURIComponent(String(reg).toUpperCase().replace(/[^A-Z0-9-]/g, ''));
       const srcs = [
