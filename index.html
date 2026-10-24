@@ -813,7 +813,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v97</span>
+      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v98</span>
       <button id="btn-hidden" type="button" aria-label="도구" title="도구" class="ml-auto w-7 h-7 rounded-md text-slate-600 hover:text-slate-300 hover:bg-slate-800 text-sm leading-none">⋯</button>
     </div>
     <!-- 히든 메뉴: FOM S13.1 위험물 검색 (보조배터리 Wh 계산 포함) · 파일 내장 -->
@@ -1439,9 +1439,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
     // 직역 시 영어 그대로 두는 약어(시설·절차·단위 이름) 와 뜻이 여러 개인 약어
     const ABBR_KEEP = new Set('RWY TWY TXL TWYL ILS VOR DME NDB VORTAC TACAN GPS GNSS GBAS GLS RNAV RNP LOC LLZ GP PAPI ALS PALS VASIS ATIS ATC ACC APP TWR ARTCC FIR CTA CTR ATZ MOA TRA SID STAR IAP ODP AIP AIC AIRAC SUP NOTAM SNOWTAM SIGMET UTC FL NM KM KT AGL AMSL MSL DA DH MDA MEA MOCA MRA MSA OCA OCH HAT TCH RVR QNH QFE QDM QDR ETA ETD EOBT EET EAT PBN RAIM ADS-B ADS-C CPDLC RVSM SSR PSR PAR ASR SMR TAR WAAS LPV LNAV VNAV UAS VFR IFR VMC IMC CAT TDZ ARP PCN TORA TODA ASDA LDA SAR RFF RCC FAF FAP IAF MAPT COP CRP CDR MNPS FATO PJE IRS MLS SDF IM MM OM MKR ABN IBN BCN LDI WDI REDL RCLL RTHL RTZL STWL RESA SWY DTHR LIH LIL LIM VDGS APU GPU TCAS EGPWS ICAO FAA RWYCC RCR H24 HJ HN HO HX FM MAP DP GS TL MIN MON RAG END NR ID CH SR SS EST TYP PLN OBS MAG GEO INT NA ACT AD AFIS AFTN AIS PAX VIP MTOW SVC NOF STN'.split(' '));
     const ABBR_RE = /(?<![A-Z0-9\/\-])(ADS-[BC]|U\/S|[A-Z][A-Z0-9]{1,7})(?![A-Z0-9\/\-])/g;
+    // 해설에서 뺄 기본 약어 (조종사에게 익숙한 것)
+    const ABBR_BASIC = new Set('RWY TWY ILS LOC GP GS DME VOR NDB ATC TWR APP APCH ARR DEP FL FT NM KT UTC ACFT AIP NOTAM AD SID STAR IAP PAPI THR VIS RVR QNH ETD ETA FREQ WEF TIL HR MIN NR NO NIL INFO EXC'.split(' '));
     function abbrIn(text) {
       const seen = new Set(), out = [];
-      String(text || '').toUpperCase().replace(/\n\s*[A-G]\)\s*/g, '\n').replace(ABBR_RE, m => { if (NOTAM_ABBR[m] && !seen.has(m)) { seen.add(m); out.push(m); } return m; });
+      String(text || '').toUpperCase().replace(/\n\s*[A-G]\)\s*/g, '\n').replace(ABBR_RE, m => { if (NOTAM_ABBR[m] && !seen.has(m) && !ABBR_BASIC.has(m)) { seen.add(m); out.push(m); } return m; });
       return out;
     }
     // 원문 아래 "약어 해설" 패널 (어두운 배경 / light=true 는 지도 팝업용 밝은 배경)
@@ -2482,9 +2484,20 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const toMs = v => { if (!/^\d{10}$/.test(v)) return v === 'PERM' || v === 'UFN' ? Infinity : null; const y = 2000 + +v.slice(0, 2), mo = +v.slice(2, 4), d = +v.slice(4, 6), h = +v.slice(6, 8), mi = +v.slice(8, 10); if (mo < 1 || mo > 12 || d < 1 || d > 31 || h > 24 || mi > 59) return null; return Date.UTC(y, mo - 1, d, h, mi); };
       const onC = light ? 'color:#7c2d12;background:#fed7aa;font-weight:800;border-radius:3px;padding:0 2px;' : 'color:#fde68a;background:rgba(217,119,6,.28);font-weight:800;border-radius:3px;padding:0 2px;';
       const offC = light ? 'color:#94a3b8;text-decoration:line-through;' : 'color:#64748b;text-decoration:line-through;';
+      const refY = new Date(win ? win[0] : Date.now()).getUTCFullYear();
+      const md = ms => { const d = new Date(ms); return `${d.getUTCFullYear() !== refY ? `'${String(d.getUTCFullYear()).slice(2)}년 ` : ''}${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(d.getUTCDate()).padStart(2, '0')} ${d.toISOString().slice(11, 16)}Z`; };
+      const dd = ms => { const n = Math.round(ms / 864e5); return n >= 1 ? `${n}일` : `${Math.max(1, Math.round(ms / 36e5))}시간`; };
+      const rangeNote = r => {
+        let t;
+        if (!win) t = `${md(r.a)} ~ ${r.b === Infinity ? 'PERM' : md(r.b)}`;
+        else if (r.a > win[1]) t = `${md(r.a)}부터 · ${dd(r.a - win[1])} 후 시작`;
+        else if (r.b < win[0]) t = `${md(r.b)} 종료 · ${dd(win[0] - r.b)} 전`;
+        else t = `${md(r.a)} ~ ${r.b === Infinity ? 'PERM' : md(r.b)}`;
+        return ` <span style="font-size:.85em;color:${r.on ? (light ? '#9a3412' : '#fdba74') : (light ? '#64748b' : '#94a3b8')};font-weight:400;text-decoration:none">(${t})</span>`;
+      };
       const bold = h => h.replace(KEY_WORDS_RE, '<b style="color:#fff;font-weight:800">$1</b>');
       const lines = String(t).split('\n');
-      const lineInfo = lines.map(L => { const rs = []; let m; RANGE.lastIndex = 0; while ((m = RANGE.exec(L))) { const a = toMs(m[1]), b = toMs(m[2]); if (a == null || b == null) continue; rs.push({ s: m.index, e: m.index + m[0].length, on: win ? (a <= win[1] && b >= win[0]) : null }); } return rs; });
+      const lineInfo = lines.map(L => { const rs = []; let m; RANGE.lastIndex = 0; while ((m = RANGE.exec(L))) { const a = toMs(m[1]), b = toMs(m[2]); if (a == null || b == null) continue; rs.push({ s: m.index, e: m.index + m[0].length, a, b, on: win ? (a <= win[1] && b >= win[0]) : null }); } return rs; });
       // 소제목 줄(예: "1. RWY 06L:")은 아래 하위 줄 중 하나라도 유효하면 유효로 봄
       return lines.map((L, i) => {
         const rs = lineInfo[i];
@@ -2498,7 +2511,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
         }
         const anyOn = rs.some(r => r.on);
         let out = '', pos = 0;
-        rs.forEach(r => { const pre = esc(L.slice(pos, r.s)); out += (anyOn ? bold(pre) : pre) + `<span style="${r.on ? onC : offC}">${esc(L.slice(r.s, r.e))}</span>`; pos = r.e; });
+        rs.forEach(r => { const pre = esc(L.slice(pos, r.s)); out += (anyOn ? bold(pre) : pre) + `<span style="${r.on ? onC : offC}">${esc(L.slice(r.s, r.e))}</span>${rangeNote(r)}`; pos = r.e; });
         const tail = esc(L.slice(pos)); out += anyOn ? bold(tail) : tail;
         return anyOn || !win ? out : `<span style="opacity:.55">${out}</span>`;
       }).join('\n');
