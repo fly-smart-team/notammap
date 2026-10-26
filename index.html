@@ -815,7 +815,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v100</span>
+      <h1 class="font-bold text-lg text-white">FIR NOTAM 지도 & FMS 변환</h1><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v101</span>
       <button id="btn-hidden" type="button" aria-label="도구" title="도구" class="ml-auto w-7 h-7 rounded-md text-slate-600 hover:text-slate-300 hover:bg-slate-800 text-sm leading-none">⋯</button>
     </div>
     <!-- 히든 메뉴: FOM S13.1 위험물 검색 (보조배터리 Wh 계산 포함) · 파일 내장 -->
@@ -3509,7 +3509,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
         const a = R[i], b = R[i + 1]; if (!a || !b) continue;
         if ((a[1] - lon) * (b[1] - lon) <= 0 && a[1] !== b[1]) {
           const f = (lon - a[1]) / (b[1] - a[1]), ea = elAt(i), eb = elAt(i + 1);
-          return { ll: [a[0] + (b[0] - a[0]) * f, lon], el: ea != null && eb != null ? ea + (eb - ea) * f : null, label: `${lon}E`, seg: i };
+          const near = f < 0.02 ? i : f > 0.98 ? i + 1 : -1;   // 교차점이 픽스와 같은 위치면 픽스 이름 사용 (예: SADLI = E125 00.0)
+          return { ll: [a[0] + (b[0] - a[0]) * f, lon], el: ea != null && eb != null ? ea + (eb - ea) * f : null, label: near >= 0 && routeTokens[near] ? `${routeTokens[near]}(${lon}E)` : `${lon}E`, seg: i };
         }
       }
       return null;
@@ -3551,7 +3552,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
         .bindTooltip('125E (회랑 서쪽 상하이 ACC · 동쪽 인천 ACC)', { permanent: false });
       const icon = L.divIcon({ className: '', iconSize: [26, 26], iconAnchor: [13, 13], html: '<div style="width:26px;height:26px;border-radius:50%;background:#4c1d95;border:2px solid #c4b5fd;display:grid;place-items:center;font-size:14px">📻</div>' });
       L.marker([A.pt.ll[0], sh(A.pt.ll[1])], { icon, zIndexOffset: 1500 }).addTo(layer)
-        .bindTooltip(`<b>${esc(A.pt.label)}</b>${A.tMs ? ' ' + new Date(A.tMs).toISOString().slice(11, 16) + 'Z' : ''} → ${ACC_KO[A.it.to] || A.it.to} ACC <b>${A.pri ? A.pri.f : ''}</b>${A.sec ? ' (' + A.sec.f + ')' : ''}`, { permanent: true, direction: 'left', offset: [-14, 0], className: 'toc-tip' });
+        .bindTooltip(`<b>${esc(A.pt.label)}</b>${A.tMs ? ' ' + new Date(A.tMs).toISOString().slice(11, 16) + 'Z' : ''} → ${ACC_KO[A.it.to] || A.it.to} ACC <b>${A.pri ? A.pri.f : ''}</b>${A.sec ? ' (' + A.sec.f + ')' : ''}`, { permanent: true, direction: 'bottom', offset: [0, 14], className: 'toc-tip' });
     }
     function renderBriefing() {
       const box = $('brf-list'); if (!box) return;
