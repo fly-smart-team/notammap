@@ -881,7 +881,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v114</span>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v115</span>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button id="btn-hidden" type="button" aria-label="도구" title="도구" class="w-7 h-7 rounded-md text-slate-600 hover:text-slate-300 hover:bg-slate-800 text-sm leading-none">⋯</button>
     </div>
@@ -3925,6 +3925,20 @@ svg.leaflet-image-layer.leaflet-interactive path {
           ["눈과 함께 안개·연무·연기 등으로 시정이 줄면 이 표가 실제 강설 강도를 높게 볼 수 있습니다. 하지만 METAR에 보고된 강도(-SN 등)는 HOT 기준과 직접 맞지 않아 실제보다 낮게 볼 수 있으므로, 모든 눈 조건에서 이 표를 쓰는 것을 권장합니다.", ""],
           ["예) CYVO 160200Z 15011G17KT 1SM -SN DRSN OVC009 M06/M08 — METAR는 약한 눈(-SN)이지만, 야간·시정 1SM·-6°C를 이 표로 보면 '보통(moderate)'입니다. 지속시간은 METAR의 '약한'이 아니라 '보통'으로 찾아야 합니다.", "표 읽기: 주간/야간 → 기온 구간 → 시정(SM 또는 m)으로 강도를 찾습니다. 야간에는 같은 시정이라도 강도가 더 높게 나옵니다."]
         ];
+        function dxKoHtml(pg, adj, hl) {
+          const HL = new Set(hl || []);
+          const li = (t, tip) => `<li style="margin:4px 0">${dxEsc(t)}${tip ? `<div style="color:#fcd34d;font-size:12px;margin-top:2px">⚠ ${dxEsc(tip)}</div>` : ''}</li>`;
+          const box = (title, inner, col) => `<div style="margin-top:10px;padding:10px 12px;border-radius:8px;border:1px solid ${col};background:#0f172a;color:#e2e8f0;font-size:13.5px;line-height:1.55"><div style="font-weight:800;color:#a5f3fc;margin-bottom:4px">${title}</div>${inner}</div>`;
+          let h = adj ? box('📐 조정표 (Adjusted)', '<div>제빙액을 뿌리기 <b>전에 플랩·슬랫을 미리 내린 경우</b>에 쓰는 표입니다. 지속시간을 원래 표의 <b>76%</b>로 줄인 값입니다.</div>', '#b45309') : '';
+          if (pg === 74) h += box('📘 Table 57 설명 (한글 번역)', `<ul style="list-style:disc;padding-left:18px">${DX_T57.map(x => li(x[0], x[1])).join('')}</ul>`, '#0e7490');
+          const K = DX_KO.p[pg];
+          if (K) {
+            h += box(`📘 NOTES 한글 번역 (표의 작은 숫자 = 각주 번호)${HL.size ? ' — <span style="color:#fca5a5">빨간 밑줄 = 이번 결과에 해당하는 각주</span>' : ''}`, `<ol style="list-style:none;padding-left:0">${K.n.map(([n, i]) => { const d = DX_KO.d[i], on = HL.has(n); return `<li style="margin:5px 0;display:flex;gap:8px;${on ? 'background:rgba(220,38,38,.12);border-left:3px solid #ef4444;padding:3px 6px;border-radius:4px' : ''}"><b style="min-width:20px;color:${on ? '#fca5a5' : '#67e8f9'}">${n}</b><div>${on ? '<span style="display:inline-block;margin-right:6px;padding:0 5px;border-radius:4px;background:#dc2626;color:#fff;font-size:11px;font-weight:800">해당</span>' : ''}<span style="${on ? 'text-decoration:underline;text-decoration-color:#ef4444;text-decoration-thickness:2px;text-underline-offset:3px' : ''}">${dxEsc(d[0])}</span>${d[1] ? `<div style="color:#fcd34d;font-size:12px;margin-top:2px">⚠ ${dxEsc(d[1])}</div>` : ''}</div></li>`; }).join('')}</ol>`, '#0e7490');
+            if (K.c) h += box(`⚠ CAUTIONS 한글 번역 (${K.c === 'F' ? '서리 표' : 'Type ' + K.c} 공통 주의사항)`, `<ul style="list-style:disc;padding-left:18px">${DX_CAUT[K.c].map(t => li(t)).join('')}</ul><div style="font-size:11.5px;color:#94a3b8;margin-top:4px">HOT 지침은 정보·안내용이며 규정을 바꾸지 않습니다. 'should'는 동등 이상의 안전 대안이 없는 한 지켜야 하는 것으로 이해합니다.</div>`, '#9f1239');
+          }
+          h += box('🧭 표 읽는 법', `<ul style="list-style:disc;padding-left:18px">${DX_READ.map(t => li(t)).join('')}</ul>`, '#334155');
+          return h;
+        }
         const dxTitle = s => s.toLowerCase().replace(/\b([a-z])/g, c => c.toUpperCase()).replace(/\b(Mp|Iv|Ii|Abc|Eg|Pg|Llc|Adf|Aaf|Fcy)\b/gi, w => w.toUpperCase());
         const dxEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
         const dxIsCoad = n => /\bCOAD\d/.test(String(n.notamId || ''));
@@ -3937,7 +3951,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
           dxDoc = typeof openPdf === 'function' ? await openPdf(data) : await window.pdfjsLib.getDocument({ data, isEvalSupported: false }).promise;
           return dxDoc;
         }
-        // COAD 글에서 제빙액 제품 찾기 → 'sNN' 목록
         function dxCoadKeys(n) {
           const T = String(n.rawText || n.etext || '').toUpperCase().replace(/[®™]/g, '').replace(/[’`]/g, "'").replace(/\s+/g, ' ');
           let ms = dxData.fluids.filter(f => f.id[0] === 's').filter(f => { const k = f.name.toUpperCase(), alt = k.split(' ').slice(1).join(' '); return T.includes(k) || (alt.split(' ').length >= 2 && alt.length >= 10 && T.includes(alt)); });
@@ -3956,7 +3969,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
           ['lfzr', '약한 어는 비 (-FZRA)'],
           ['snra', '눈 섞인 비 (보통 눈 + 비)'],
           ['rcsw', '차가운 날개 위의 비 (Cold-Soaked Wing, 0°C 초과)'],
-          ['other', '기타: 강한 눈 · 얼음 싸라기(PL) · 보통 이상 어는 비 · 우박']
+          ['pl', '얼음 싸라기·작은 우박 (PL·GS · SNPL 포함) → 허용 시간'],
+          ['other', '기타: 강한 눈 · 강한 얼음 싸라기(+PL) · 보통 이상 어는 비 · 우박(GR)']
         ];
         // 회사 기종 → Type I 표 날개 표면 (날개가 주로 복합재: A220·A350·787·777-9 / 나머지 알루미늄)
         const DX_AC = [
@@ -3965,6 +3979,40 @@ svg.leaflet-image-layer.leaflet-interactive path {
           ['B779', 'B777-9 (777X)', 'comp', /^B77[89]$|^B779$/], ['B787', 'B787', 'comp', /^B78/]
         ];
         const dxAcOf = id => DX_AC.find(a => a[0] === id) || DX_AC[1];
+        // 허용 시간(Allowance Time) 표의 행 — Table 55(EG)·56(PG)과 같은 순서
+        const DX_PL = [
+          ['L_PL', '약한 얼음 싸라기 (-PL)'], ['L_PLSN', '약한 얼음 싸라기 + 약한 눈 (-PLSN, -SNPL)'], ['L_PLFZDZ', '약한 얼음 싸라기 + 약한 어는 이슬비 (-PLFZDZ, -FZDZPL)'],
+          ['L_PLDZ', '약한 얼음 싸라기 + 약한 이슬비 (-PLDZ, -DZPL)'], ['L_PLFZRA', '약한 얼음 싸라기 + 약한 어는 비 (-PLFZRA, -FZRAPL)'], ['L_PLRA', '약한 얼음 싸라기 + 약한 비 (-PLRA, -RAPL)'],
+          ['L_PLFZRASN', '약한 얼음 싸라기 + 약한 어는 비 + 약한 눈 (-PLFZRASN 등)'], ['L_PLRASN', '약한 얼음 싸라기 + 약한 비 + 약한 눈 (-PLRASN 등)'],
+          ['M_PL', '보통 얼음 싸라기 (PL)'], ['M_PLSN', '보통 얼음 싸라기 + 보통 눈 (PLSN, SNPL)'], ['M_PLFZDZ', '보통 얼음 싸라기 + 약한·보통 어는 이슬비 (PLFZDZ, FZDZPL)'],
+          ['M_PLDZ', '보통 얼음 싸라기 + 약한·보통 이슬비 (PLDZ, DZPL)'], ['M_PLRA', '보통 얼음 싸라기 + 보통 비 (PLRA, RAPL)']
+        ];
+        const DX_PL_OATDROP = ['L_PLFZDZ', 'L_PLDZ', 'L_PLFZRA', 'L_PLRA', 'L_PLRASN', 'L_PLFZRASN', 'M_PLFZDZ', 'M_PLDZ', 'M_PLRA'];
+        // METAR 현상 → 허용 시간 행 (작은 우박 GS는 강도 없으면 '보통')
+        function dxPlRow(wx) {
+          const w = ' ' + wx + ' ';
+          if (!/PL|GS/.test(w)) return null;
+          if (/\+\S*(PL|GS)|\+(SN|FZRA|RA)\S*(PL|GS)/.test(w)) return { other: '강한 얼음 싸라기·강수는 허용 시간이 없습니다' };
+          const tok = w.match(/\s([-+]?)(\S*(?:PL|GS)\S*)\s/) || [];
+          const L = tok[1] === '-' ? 'L' : 'M';   // '-' 약함, 표기 없음 보통 (작은 우박 강도 없음 → 보통)
+          const has = re => re.test(w);
+          if (L === 'L') {
+            if (has(/FZRA/) && has(/SN/)) return { row: 'L_PLFZRASN' };
+            if (has(/(^|[^Z])RA/) && has(/SN/)) return { row: 'L_PLRASN' };
+            if (has(/FZRA/)) return { row: 'L_PLFZRA' };
+            if (has(/FZDZ/)) return { row: 'L_PLFZDZ' };
+            if (has(/DZ/)) return { row: 'L_PLDZ' };
+            if (has(/RA/)) return { row: 'L_PLRA' };
+            if (has(/SN/)) return { row: 'L_PLSN' };
+            return { row: 'L_PL' };
+          }
+          if (has(/FZRA/)) return { other: '보통 얼음 싸라기 + 어는 비는 허용 시간이 없습니다' };
+          if (has(/FZDZ/)) return { row: 'M_PLFZDZ' };
+          if (has(/DZ/)) return { row: 'M_PLDZ' };
+          if (has(/RA/)) return { row: 'M_PLRA' };
+          if (has(/SN/)) return { row: 'M_PLSN' };
+          return { row: 'M_PL' };
+        }
         const DX_INT = { VL: '매우 약함', L: '약함', M: '보통', H: '강함' };
         const DX_COLNM = { fzfg: '어는 안개·어는 안개비·얼음 결정', snfg: '눈+어는 안개', sn: '눈(공통)', vlsn: '매우 약한 눈', lsn: '약한 눈', msn: '보통 눈', fzdz: '어는 이슬비', lfzr: '약한 어는 비', snra: '보통 눈 섞인 비', rcsw: '차가운 날개 위의 비', other: '기타' };
         const dxHm = m => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
@@ -3986,7 +4034,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
         // 출발 공항 METAR(없으면 ETD TAF)·COAD로 기본값 채우기
         function dxAuto() {
           const ty = (pdfFlt && pdfFlt.type) || '', acm = DX_AC.find(a => a[3].test(ty));
-          const S = { ac: acm ? acm[0] : 'A321', fluid: 'g20', conc: '100/0', surf: 'alu', oat: null, precip: 'frost', intMode: 'vis', int: 'L', vis: 9999, night: false, adj: false, src: [] };
+          const S = { ac: acm ? acm[0] : 'A321', fluid: 'g20', conc: '100/0', surf: 'alu', oat: null, precip: 'frost', plRow: 'L_PL', intMode: 'vis', int: 'L', vis: 9999, night: false, adj: false, src: [] };
           S.surf = dxAcOf(S.ac)[2]; S.src.push(`기종: ${acm ? 'OFP ' + ty + ' → ' : '기본 '}${dxAcOf(S.ac)[1]}`);
           const dep = info.dep, w = flightWindow();
           try {
@@ -4004,7 +4052,10 @@ svg.leaflet-image-layer.leaflet-interactive path {
             S.vis = el.vis ?? 9999;
             const ll = airportLL(dep); if (ll) S.night = dxSunElev(ll[0], ll[1], when) < 0;
             const t = S.oat;
-            if (/\+(SH)?SN|PL|GR|GS/.test(wx)) S.precip = 'other';
+            const plr = dxPlRow(wx);
+            if (plr && plr.row) { S.precip = 'pl'; S.plRow = plr.row; }
+            else if (plr && plr.other) S.precip = 'other';
+            else if (/\+(SH)?SN|GR/.test(wx)) S.precip = 'other';
             else if (/(^|\s)(\+)?FZRA/.test(wx) && !/-FZRA/.test(wx)) S.precip = 'other';
             else if (/-FZRA/.test(wx)) S.precip = 'lfzr';
             else if (/FZDZ/.test(wx)) S.precip = 'fzdz';
@@ -4017,7 +4068,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
             S.src.push(`강수: ${srcTxt} ${wx || '현상 없음'}${S.precip === 'frost' ? ' → 서리 기준 (강수 없음)' : ''}`);
             S.src.push(`시정 ${S.vis >= 9999 ? '10km 이상' : S.vis + 'm'} · ${S.night ? '야간' : '주간'} (태양 고도 기준)`);
           } else S.src.push('METAR/TAF 없음 — 직접 입력하세요');
-          if (S.oat == null) S.oat = 0;
+          if (S.oat == null) { S.oat = -3; S.src.push('기온: 기본값 -3°C'); }
+          else if (S.oat > 5) { S.src = S.src.filter(x => !/^기온:/.test(x)); S.src.push(`기온: 실제 ${S.oat}°C는 결빙 조건이 아니라 기본값 -3°C로 둠`); S.oat = -3; }
           return S;
         }
         function dxCalc(S) {
@@ -4027,6 +4079,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
           const inBand = b => (b.lo == null || oat >= b.lo) && (b.hi == null || oat < b.hi);
           if (S.precip === 'frost') {
             const Fr = S.adj ? D.frost.adj : D.frost.main; R.page = Fr.p; R.pw = Fr.w; R.table = S.adj ? 'Table Adj-1' : 'Table 1'; R.col = '서리';
+            R.notes = ty === 'I' ? [1, 2, 3, 4] : [1, 3, 4];
             if (ty === 'I') { const v = Fr.t1[S.surf]; R.ok = true; R.min = R.max = v[0]; R.box = v[1]; R.band = '모든 기온 (LOUT 이상)'; R.msgs.push('Type I 서리 지속시간은 기온과 관계없이 한 값입니다. 혼합액 어는점이 외기온도보다 10°C 이상 낮아야 합니다.'); return R; }
             const b = Fr.bands.find(inBand); if (!b) return { ...R, err: '이 기온에 해당하는 구간이 없습니다' };
             R.band = b.lbl; const row = b.rows.find(r => r.c === S.conc);
@@ -4036,6 +4089,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
             R.msgs.push('서리 표의 Type II·IV 값은 제품과 관계없는 공통 값입니다. 서리가 오래 이어지면 이륙 전까지 가장 추웠던 기온 기준으로 다시 확인하세요.');
             return R;
           }
+          if (S.precip === 'pl') return dxAllow(S, f, oat);
           const src = ty === 'I' ? f[S.surf] : f, pg = S.adj ? src.pa : src.p, T = D.tables[pg];
           R.page = pg; R.pw = T.w; R.table = `${S.adj ? 'Table Adj-' : 'Table '}${src.t}`;
           // 강수 → 표의 열
@@ -4047,6 +4101,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
           }
           if (S.precip === 'snow') col = T.cols.includes('sn') ? 'sn' : { VL: 'vlsn', L: 'lsn', M: 'msn' }[int];
           if (S.precip === 'snra') { if (int === 'VL' || int === 'L') { col = 'lfzr'; R.msgs.push("약한 눈 + 비는 '눈 섞인 비' 열이 아니라 '약한 어는 비' 열을 씁니다 (각주)."); } else col = 'snra'; }
+          if (S.precip === 'other') { const af = Object.values(T.colfn).flat(), bs = af.length ? Math.min(...af) : 1; for (let i = 1; i < bs; i++) R.notes.push(i); (T.colfn.other || []).forEach(n => R.notes.push(n)); }
           if (S.precip === 'other') return { ...R, col: DX_COLNM.other, noHot: "강한 눈·얼음 싸라기·보통 이상 어는 비·우박은 지속시간이 없습니다. (Type IV는 얼음 싸라기·작은 우박에 한해 회사 승인 시 Allowance Times 표 사용)" };
           R.col = DX_COLNM[col] || col;
           const b = T.bands.find(inBand);
@@ -4071,6 +4126,50 @@ svg.leaflet-image-layer.leaflet-interactive path {
           if (S.precip === 'fzdz') R.msgs.push('어는 이슬비인지 확실하지 않으면 약한 어는 비 값을 쓰세요.');
           return R;
         }
+        // 허용 시간 (Allowance Time) — Table 53 검증 목록 · Table 55(EG) · Table 56(PG)
+        function dxAllow(S, f, oat) {
+          const A = dxData.allow, R = { msgs: [], notes: [], at: true, col: (DX_PL.find(x => x[0] === S.plRow) || [])[1] };
+          if (f.type !== 'IV') return { ...R, err: `허용 시간은 희석하지 않은 Type IV(EG·PG)와 Type III에만 있습니다. Type ${f.type}는 얼음 싸라기 조건에서 지속시간·허용 시간이 없습니다.` };
+          R.page = dxData.allow.t53p;
+          if (f.id === 'g20') return { ...R, err: '허용 시간은 제품마다 EG/PG와 검증 여부가 다릅니다 (Table 53). 위에서 실제 제품을 골라 주세요.' };
+          const st = A.t53[f.id];
+          if (st !== 'EG' && st !== 'PG') return { ...R, err: `${dxTitle(f.name)}은(는) 허용 시간 검증이 안 된 제품입니다 (Table 53: Fluid has not been validated) → 얼음 싸라기 조건에서 사용할 수 없습니다.` };
+          const tb = A[st]; R.page = S.adj ? tb.pa : tb.p; R.pw = tb.main.w; R.table = `${S.adj ? 'Table Adj-' + (tb.t - 1) : 'Table ' + tb.t} (Type IV ${st})`; R.conc = S.conc; R.glycol = st;
+          if (S.conc !== '100/0') return { ...R, notes: [1], npage: S.adj ? tb.pa + 1 : tb.np, err: `허용 시간은 희석하지 않은 100/0 제빙액에만 적용됩니다. ${S.conc}로 방빙했다면 허용 시간을 쓸 수 없습니다 → 100/0으로 다시 제방빙하거나, 처음부터 100/0으로 요청하세요.` };
+          const ci = oat > 0 ? 0 : oat >= -5 ? 1 : oat >= -10 ? 2 : oat >= -16 ? 3 : oat >= -22 ? 4 : -1;
+          if (ci < 0) return { ...R, err: '-22°C 미만은 허용 시간이 없습니다.' };
+          R.band = A.cols[ci];
+          const v = (S.adj ? tb.adj : tb.main).rows[S.plRow][ci];
+          if (!v) return { ...R, noHot: `이 조건(${R.col})은 ${R.band}에서 허용 시간이 없습니다 (표의 'Caution: No allowance times currently exist' 칸).` };
+          R.ok = true; R.min = R.max = v[0]; R.box = v[1];
+          R.notes = [1, 2, 3, 4, ...(st === 'PG' && ci >= 3 ? [5] : [])]; R.npage = S.adj ? tb.pa + 1 : tb.np;
+          R.msgs.push('허용 시간은 마지막 단계 제빙액을 뿌리기 시작한 시각부터 셉니다. 항공기 표면 점검으로 연장할 수 없습니다.');
+          R.msgs.push('강수가 허용 시간 안에 그치고 다시 내리지 않으면 제빙 시작부터 90분까지 이륙할 수 있습니다.' + (DX_PL_OATDROP.includes(S.plRow) ? ' 단, 이 조건은 그 90분 동안 외기온도가 내려가면 이륙할 수 없습니다.' : ''));
+          if (st === 'PG' && ci >= 3) R.msgs.push('PG 제빙액의 -10°C 미만 값은 회전 속도(Vr) 115KT 이상 항공기만 씁니다 (100KT 미만은 PG 허용 시간 자체가 없음).');
+          return R;
+        }
+        // 허용 시간 표 각주·주의사항 한글 번역
+        function dxAtKoHtml(R) {
+          const box = (title, inner, col) => `<div style="margin-top:10px;padding:10px 12px;border-radius:8px;border:1px solid ${col};background:#0f172a;color:#e2e8f0;font-size:13.5px;line-height:1.55"><div style="font-weight:800;color:#a5f3fc;margin-bottom:4px">${title}</div>${inner}</div>`;
+          const HL = new Set(R.notes || []);
+          const ol = (a, hlOn) => `<ol style="list-style:none;padding-left:0">${a.map(([n, t, tip]) => { const on = hlOn && HL.has(n); return `<li style="margin:5px 0;display:flex;gap:8px;${on ? 'background:rgba(220,38,38,.12);border-left:3px solid #ef4444;padding:3px 6px;border-radius:4px' : ''}"><b style="min-width:20px;color:${on ? '#fca5a5' : '#67e8f9'}">${n}</b><div>${on ? '<span style="display:inline-block;margin-right:6px;padding:0 5px;border-radius:4px;background:#dc2626;color:#fff;font-size:11px;font-weight:800">해당</span>' : ''}<span style="${on ? 'text-decoration:underline;text-decoration-color:#ef4444;text-decoration-thickness:2px;text-underline-offset:3px' : ''}">${dxEsc(t)}</span>${tip ? `<div style="color:#fcd34d;font-size:12px;margin-top:2px">⚠ ${dxEsc(tip)}</div>` : ''}</div></li>`; }).join('')}</ol>`;
+          if (!R.glycol) return box('📘 Table 53 (허용 시간 검증 목록) 각주', ol([[1, '허용 시간은 희석하지 않은(100/0) Type III, Type IV EG, Type IV PG 제빙액에만 있습니다. Type II는 허용 시간이 없습니다.', ''], [2, '허용 시간 검증을 아직 받지 않은 제품은 허용 시간이 없습니다 (Fluid has not been validated).', '']]), '#0e7490');
+          const eg = R.glycol === 'EG', GS = [
+            ['METAR 코드는 얼음 싸라기(PL)만 표에 적혀 있습니다. 작은 우박(GS)이 대신 보고돼도 허용 시간을 쓸 수 있지만 GS 코드는 표에 없습니다.', ''],
+            ['작은 우박의 METAR 보고 방식은 나라마다 달라, 같은 코드라도 지역에 따라 HOT·허용 시간이 다를 수 있습니다 (FAA 일반 정보 문서의 국가별 METAR 코드 표 참고).', ''],
+            ["METAR에 작은 우박 강도가 없으면 '보통 얼음 싸라기(또는 작은 우박)' 값을 씁니다. 강도가 있으면 같은 강도의 조건을 씁니다 — 예) 약한 작은 우박 → '약한 얼음 싸라기', 약한 작은 우박 + 약한 눈 → '약한 얼음 싸라기 + 약한 눈'.", '']];
+          const N = [
+            [1, `이 허용 시간은 희석하지 않은(100/0) ${eg ? 'EG' : 'PG'} 계열 제빙액${eg ? '' : '을 회전 속도 100KT 이상 항공기에 뿌린 경우'}에만 씁니다. 사용하는 제품이 Table 53(허용 시간 검증 목록)에 있어야 합니다.`, '함정: 75/25·50/50으로 제빙했다면 허용 시간을 쓸 수 없습니다 → 100/0으로 다시 제방빙.'],
+            [2, '강수가 허용 시간 안에 그치고 다시 내리지 않으면, 제빙액을 뿌리기 시작한 때부터 90분까지 이륙할 수 있습니다. 단, 약한 얼음 싸라기에 약한 어는 이슬비·약한 이슬비·약한 어는 비·약한 비·약한 비+약한 눈·약한 어는 비+약한 눈이 섞인 경우, 그리고 보통 얼음 싸라기에 약한·보통 어는 이슬비·약한·보통 이슬비·보통 비가 섞인 경우에는 그 90분 동안 외기온도가 내려가면 이륙할 수 없습니다.', '90분은 허용 시간을 늘려주는 것이 아니라, 강수가 완전히 그친 뒤에만 쓰는 예외입니다.'],
+            [3, 'LOUT(최저 운용 사용 온도)을 반드시 지켜야 합니다.', ''],
+            [4, `회전 속도(Vr) 100KT 미만 항공기는 ${eg ? 'EG' : 'PG'} 허용 시간이 없습니다.`, ''],
+            ...(eg ? GS.map((x, i) => [5 + i, ...x]) : [[5, '회전 속도(Vr) 115KT 미만 항공기는 PG 허용 시간이 없습니다 (표에서 각주 5가 붙은 -10°C 미만 칸).', ''], ...GS.map((x, i) => [6 + i, ...x])])];
+          return (R.page > 100 ? box('📐 조정표 (Adjusted)', '<div>제빙액을 뿌리기 <b>전에 플랩·슬랫을 미리 내린 경우</b>에 쓰는 표입니다. 허용 시간을 원래 표의 <b>76%</b>로 줄인 값입니다.</div>', '#b45309') : '')
+            + box(`📘 NOTES 한글 번역 (Table ${eg ? 55 : 56} · ${eg ? 70 : 72}쪽) — <span style="color:#fca5a5">빨간 밑줄 = 이번 결과에 해당</span>`, ol(N, true), '#0e7490')
+            + box('📘 Table 53 (허용 시간 검증 목록) 각주', ol([[1, '허용 시간은 희석하지 않은(100/0) Type III, Type IV EG, Type IV PG 제빙액에만 있습니다. Type II는 허용 시간이 없습니다.', ''], [2, '허용 시간 검증을 아직 받지 않은 제품은 허용 시간이 없습니다 (Fluid has not been validated).', '']]), '#0e7490')
+            + box('⚠ CAUTIONS 한글 번역 (66쪽, 허용 시간 표 공통)', `<ul style="list-style:disc;padding-left:18px">${['이 자료를 적용하는 책임은 사용자에게 있습니다.', '지상 제방빙액은 비행 중 착빙을 막아주지 않습니다.', '이 표는 출발 계획용이며 이륙 전 점검 절차와 함께 써야 합니다.', '허용 시간은 항공기 중요 표면 점검(검사)으로 연장할 수 없습니다.'].map(t => `<li style="margin:4px 0">${dxEsc(t)}</li>`).join('')}</ul>`, '#9f1239')
+            + box('🧭 허용 시간 읽는 법', `<ul style="list-style:disc;padding-left:18px">${['METAR의 SNPL·PLSN은 눈 + 얼음 싸라기(PL)입니다. 눈 알갱이(SP, Snow Pellets)와 다른 현상이라 HOT 표의 눈 열을 쓰면 안 됩니다.', 'HOT 표에서는 얼음 싸라기가 \'기타(Other)\' 열(지속시간 없음)이고, 그 각주가 허용 시간 표로 안내합니다.', '허용 시간은 범위가 아니라 한 값(분)입니다. 강도는 METAR 표기(-: 약함, 표기 없음: 보통)를 씁니다.', '제품별로 EG(Table 55)·PG(Table 56) 중 맞는 표를 써야 합니다 — Table 53에서 확인.', '2025-26년판과 표 번호가 다릅니다: 검증 목록 Table 50→53, PG 허용 시간 Table 53→56.'].map(t => `<li style="margin:4px 0">${dxEsc(t)}</li>`).join('')}</ul>`, '#334155');
+        }
         function dxFluidOpts(sel) {
           const g = t => dxData.fluids.filter(f => f.type === t).map(f => `<option value="${f.id}" ${f.id === sel ? 'selected' : ''}>${dxEsc(f.id.startsWith('s') ? `Table ${f.t} · ${dxTitle(f.name)}` : f.name)}</option>`).join('');
           return `<optgroup label="Type I">${g('I')}</optgroup><optgroup label="Type II">${g('II')}</optgroup><optgroup label="Type IV">${g('IV')}</optgroup>`;
@@ -4083,21 +4182,40 @@ svg.leaflet-image-layer.leaflet-interactive path {
             m = document.createElement('div'); m.id = 'dx-modal';
             m.style.cssText = 'position:fixed;inset:0;z-index:9600;background:rgba(2,6,23,.85);overflow:auto';
             document.body.appendChild(m);
-            m.addEventListener('input', dxFromForm); m.addEventListener('change', dxFromForm);
+            m.addEventListener('input', e => { if (e.target.name === 'fq') { dxSuggest(e.target.value); return; } dxFromForm(e); });
+            m.addEventListener('change', e => { if (e.target.name === 'fq') return; dxFromForm(e); });
+            m.addEventListener('keydown', e => { if (e.target.name === 'fq' && e.key === 'Enter') { e.preventDefault(); const b = m.querySelector('[data-dx-pick]'); if (b) b.click(); } });
             m.addEventListener('click', e => {
               if (e.target.closest('[data-dx-close]')) { m.style.display = 'none'; document.body.style.overflow = ''; }
               if (e.target.closest('[data-dx-auto]')) { dxS = dxAuto(); dxDraw(true); }
+              const ob = e.target.closest('[data-dx-oat],[data-dx-oatset]');
+              if (ob) { const inp = m.querySelector('[name="oat"]'); inp.value = ob.dataset.dxOatset != null ? ob.dataset.dxOatset : (Number(inp.value) || 0) + Number(ob.dataset.dxOat); dxFromForm({ target: inp }); m.querySelectorAll('[data-dx-oatset]').forEach(b => { const on = +b.dataset.dxOatset === +inp.value; b.className = `px-2 h-8 rounded-md border text-[12.5px] mono ${on ? 'border-cyan-400 bg-cyan-700 text-white font-bold' : 'border-slate-600 bg-slate-900 text-slate-200'}`; }); return; }
+              const pk = e.target.closest('[data-dx-pick]');
+              if (pk) { dxS.fluid = pk.dataset.dxPick; const fq = m.querySelector('[name="fq"]'); fq.value = ''; dxSuggest(''); m.querySelector('[name="fluid"]').value = dxS.fluid; dxDraw(false); const o = m.querySelector('[data-dx-out]'); o && o.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
             });
           }
           m.style.display = 'block'; document.body.style.overflow = 'hidden';
           dxDraw(true);
+        }
+        // 제빙액 검색: 단어 앞글자(여러 단어 가능) 또는 표 번호
+        function dxSuggest(q) {
+          const box = document.querySelector('#dx-modal [data-dx-fq]'); if (!box) return;
+          const qs = String(q || '').toUpperCase().replace(/[^A-Z0-9\- ]/g, ' ').trim();
+          if (!qs) { box.innerHTML = ''; return; }
+          const toks = qs.split(/[\s\-]+/).filter(Boolean);
+          const hit = dxData.fluids.filter(f => {
+            if (/^\d+$/.test(qs)) return String(f.t || (f.alu && f.alu.t) || '') === qs;
+            const words = (f.name.toUpperCase().replace(/[^A-Z0-9\- ]/g, ' ') + ' TYPE ' + f.type).split(/[\s\-]+/).filter(Boolean);
+            return toks.every(t => words.some(w => w.startsWith(t)));
+          }).slice(0, 10);
+          box.innerHTML = hit.length ? hit.map(f => `<button type="button" data-dx-pick="${f.id}" class="px-2 py-1 rounded-md border text-[12.5px] ${f.type === 'IV' ? 'border-emerald-600 bg-emerald-950/50 text-emerald-100' : f.type === 'II' ? 'border-sky-600 bg-sky-950/50 text-sky-100' : 'border-amber-600 bg-amber-950/50 text-amber-100'}"><b>Type ${f.type}</b> · ${dxEsc(f.id.startsWith('s') ? `Table ${f.t} ${dxTitle(f.name)}` : f.name)}</button>`).join('') : '<span class="text-[12px] text-slate-500">찾는 제빙액이 없습니다 — HOT 표에 없는 제품이면 같은 Type의 공통 표를 쓰세요</span>';
         }
         function dxFromForm(e) {
           const m = document.getElementById('dx-modal'), q = n => m.querySelector(`[name="${n}"]`);
           const S = dxS;
           if (e && e.target && e.target.name === 'ac') { S.ac = q('ac').value; S.surf = dxAcOf(S.ac)[2]; q('surf').value = S.surf; }
           S.fluid = q('fluid').value; S.conc = q('conc').value; S.surf = q('surf').value; S.oat = q('oat').value === '' ? 0 : +q('oat').value;
-          S.precip = q('precip').value; S.intMode = m.querySelector('[name="intMode"]:checked').value; S.int = q('int').value; S.vis = +q('vis').value || 0; S.night = q('night').value === '1'; S.adj = q('adj').checked;
+          S.precip = q('precip').value; S.plRow = q('plRow').value; S.intMode = m.querySelector('[name="intMode"]:checked').value; S.int = q('int').value; S.vis = +q('vis').value || 0; S.night = q('night').value === '1'; S.adj = q('adj').checked;
           dxDraw(e && e.target && e.target.name === 'fluid');
         }
         const dxSel = (name, opts, v) => `<select name="${name}" class="w-full bg-slate-900 border border-slate-600 rounded-md px-2 py-1.5 text-[13px] text-slate-100">${opts.map(([k, l]) => `<option value="${k}" ${String(k) === String(v) ? 'selected' : ''}>${dxEsc(l)}</option>`).join('')}</select>`;
@@ -4111,14 +4229,25 @@ svg.leaflet-image-layer.leaflet-interactive path {
             <div data-dx-src class="text-[11px] text-slate-400 mb-2"></div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px" class="rounded-xl border border-slate-700 bg-slate-900/70 p-3">
               ${lab('기종', dxSel('ac', DX_AC.map(a => [a[0], `${a[1]} — 날개 ${a[2] === 'comp' ? '복합재' : '알루미늄'}`]), S.ac))}
+              <div style="grid-column:1/-1"><div class="text-[11px] text-slate-400 mb-0.5">🔎 제빙액 직접 검색 (앞글자만 · 예: kil, safe mp iv, polar, 43)</div>
+                <input name="fq" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="제조사·제품명 앞글자 또는 표 번호" class="w-full bg-slate-950 border border-cyan-700 rounded-md px-2.5 py-2 text-[14px] text-slate-100">
+                <div data-dx-fq class="flex flex-wrap gap-1.5 mt-1.5"></div></div>
               ${lab('제빙액', `<select name="fluid" class="w-full bg-slate-900 border border-slate-600 rounded-md px-2 py-1.5 text-[13px] text-slate-100">${dxFluidOpts(S.fluid)}</select>`)}
               ${lab('희석 비율 (제빙액/물 %)', dxSel('conc', [['100/0', '100/0'], ['75/25', '75/25'], ['50/50', '50/50']], S.conc))}
               ${lab('날개 표면 (Type I 표, 기종에 따라 자동)', dxSel('surf', [['alu', '알루미늄 (Table 2)'], ['comp', '복합재 (Table 3)']], S.surf))}
-              ${lab('외기온도 (°C)', `<input name="oat" type="number" step="1" value="${S.oat}" class="w-full bg-slate-900 border border-slate-600 rounded-md px-2 py-1.5 text-[14px] mono text-slate-100">`)}
-              ${lab('강수·기상 종류', dxSel('precip', DX_PRECIP, S.precip))}
-              <div data-dx-int style="display:${isSnow ? 'block' : 'none'}"><div class="text-[11px] text-slate-400 mb-0.5">강설 강도</div>
+              <div style="grid-column:1/-1"><div class="text-[11px] text-slate-400 mb-0.5">외기온도 (°C) — 눌러서 바꾸기</div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <button type="button" data-dx-oat="-1" class="w-10 h-10 rounded-lg border border-slate-600 bg-slate-800 text-[20px] text-slate-100">−</button>
+                  <input name="oat" type="number" step="1" inputmode="numeric" value="${S.oat}" class="w-20 h-10 text-center bg-slate-900 border border-cyan-600 rounded-lg text-[20px] font-bold mono text-cyan-100">
+                  <button type="button" data-dx-oat="1" class="w-10 h-10 rounded-lg border border-slate-600 bg-slate-800 text-[20px] text-slate-100">＋</button>
+                  <span class="flex gap-1 flex-wrap ml-1">${[3, 0, -2, -3, -5, -8, -10, -14, -18, -22, -25].map(t => `<button type="button" data-dx-oatset="${t}" class="px-2 h-8 rounded-md border text-[12.5px] mono ${+S.oat === t ? 'border-cyan-400 bg-cyan-700 text-white font-bold' : 'border-slate-600 bg-slate-900 text-slate-200'}">${t > 0 ? '+' + t : t}</button>`).join('')}</span>
+                </div></div>
+              <label style="display:block"><div class="text-[11px] text-slate-400 mb-0.5 flex items-center gap-1">강수·기상 종류 <button type="button" data-dxplg-open class="ml-auto px-1.5 py-0 rounded border border-cyan-600 text-cyan-200 text-[11px] font-bold">ⓘ PL·SP 구별</button></div>${dxSel('precip', DX_PRECIP, S.precip)}</label>
+              <div data-dx-int style="display:${isSnow ? 'block' : 'none'};grid-column:1/-1"><div class="text-[11px] text-slate-400 mb-0.5">강설 강도</div>
                 <div class="flex gap-3 text-[12px] text-slate-200 mb-1"><label><input type="radio" name="intMode" value="vis" ${S.intMode === 'vis' ? 'checked' : ''}> 시정으로 계산 (Table 57)</label><label><input type="radio" name="intMode" value="sel" ${S.intMode === 'sel' ? 'checked' : ''}> 직접 선택</label></div>
                 <div class="flex gap-1.5"><input name="vis" type="number" step="100" value="${S.vis}" class="w-24 bg-slate-900 border border-slate-600 rounded-md px-2 py-1 text-[13px] mono text-slate-100" title="시정 (m)"><span class="text-[11px] text-slate-400 self-center">m</span>${dxSel('night', [['0', '주간'], ['1', '야간']], S.night ? '1' : '0')}${dxSel('int', [['VL', '매우 약함'], ['L', '약함'], ['M', '보통'], ['H', '강함']], S.int)}</div></div>
+              <div data-dx-pl style="display:${S.precip === 'pl' ? 'block' : 'none'};grid-column:1/-1"><div class="text-[11px] text-slate-400 mb-0.5 flex items-center gap-1">얼음 싸라기 조합 (METAR 표기 기준 · -: 약함, 표기 없음: 보통) <button type="button" data-dxplg-open class="ml-auto px-1.5 rounded border border-cyan-600 text-cyan-200 text-[11px] font-bold">ⓘ PL·SP 구별</button></div>${dxSel('plRow', DX_PL, S.plRow)}</div>
+              <div data-dx-snwarn style="display:${S.precip === 'snow' ? 'block' : 'none'};grid-column:1/-1" class="text-[12px] text-amber-200 bg-amber-950/40 border border-amber-700/60 rounded-md px-2 py-1">⚠ METAR의 <b>SNPL·PLSN</b>은 눈 + <b>얼음 싸라기(PL)</b>입니다. 눈 알갱이(SP)와 다릅니다 → 강수 종류에서 '얼음 싸라기'를 고르세요. <button type="button" data-dxplg-open class="ml-1 underline font-bold">그림으로 구별하기</button></div>
               <label class="flex items-center gap-2 text-[12px] text-amber-200 self-end"><input type="checkbox" name="adj" ${S.adj ? 'checked' : ''}> 플랩·슬랫을 미리 내리고 제방빙 (76% 조정표)</label>
             </div>
             <div data-dx-out class="mt-3"></div></div>`;
@@ -4127,11 +4256,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
           q('conc').closest('label').style.display = f.type === 'I' ? 'none' : 'block';
           q('surf').closest('label').style.display = f.type === 'I' ? 'block' : 'none';
           m.querySelector('[data-dx-int]').style.display = isSnow ? 'block' : 'none';
+          m.querySelector('[data-dx-pl]').style.display = S.precip === 'pl' ? 'block' : 'none';
+          m.querySelector('[data-dx-snwarn]').style.display = S.precip === 'snow' ? 'block' : 'none';
           q('vis').style.display = q('night').style.display = S.intMode === 'vis' ? '' : 'none'; q('int').style.display = S.intMode === 'sel' ? '' : 'none';
           m.querySelector('[data-dx-src]').textContent = '자동 채움: ' + (S.src.join(' · ') || '—');
           const R = dxCalc(S), out = m.querySelector('[data-dx-out]');
           const K = DX_KO.p[R.page], noteHtml = K && R.notes && R.notes.length ? `<div class="mt-2 text-[13px] leading-snug"><div class="font-bold text-cyan-200 mb-1">📘 이 칸에 붙은 각주</div>${[...new Set(R.notes)].sort((a, b) => a - b).map(n => { const it = K.n.find(x => x[0] === n); if (!it) return ''; const d = DX_KO.d[it[1]]; return `<div class="flex gap-2 my-1"><b class="text-cyan-300 w-5 shrink-0">${n}</b><div class="text-slate-200">${dxEsc(d[0])}${d[1] ? `<div class="text-amber-300 text-[12px]">⚠ ${dxEsc(d[1])}</div>` : ''}</div></div>`; }).join('')}</div>` : '';
-          const head = R.ok ? `<div class="text-[12px] text-slate-400">지속시간 (HOT)</div><div class="mono font-bold text-emerald-300" style="font-size:40px;line-height:1.1">${R.min === R.max ? dxHm(R.min) : `${dxHm(R.min)} ~ ${dxHm(R.max)}`}</div>
+          const head = R.ok && R.at ? `<div class="text-[12px] text-amber-300 font-bold">허용 시간 (Allowance Time) — 지속시간(HOT)이 아닙니다</div><div class="mono font-bold text-amber-200" style="font-size:40px;line-height:1.1">${R.min}분</div><div class="text-[12px] text-slate-300">제빙액(100/0) 마지막 단계 시작 시각부터 ${R.min}분 · 표면 점검으로 연장 불가</div>`
+            : R.ok ? `<div class="text-[12px] text-slate-400">지속시간 (HOT)</div><div class="mono font-bold text-emerald-300" style="font-size:40px;line-height:1.1">${R.min === R.max ? dxHm(R.min) : `${dxHm(R.min)} ~ ${dxHm(R.max)}`}</div>
                 <div class="text-[12px] text-slate-300">${R.min === R.max ? '' : `짧은 값 ${dxHm(R.min)} = 이 구간에서 강수가 강한 쪽 · 긴 값 ${dxHm(R.max)} = 약한 쪽`}</div>`
             : `<div class="text-[18px] font-bold text-rose-300">${R.noHot ? '⛔ 지속시간 없음' : '⚠ 계산할 수 없음'}</div><div class="text-[13px] text-rose-100 mt-1">${dxEsc(R.noHot || R.err || '')}</div>`;
           out.innerHTML = `<div class="rounded-xl border ${R.ok ? 'border-emerald-600' : 'border-rose-600'} bg-slate-950 p-3">
@@ -4139,7 +4271,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
               <div class="text-[12px] text-slate-300 mt-2">${[R.table && `${dxEsc(R.table)} (${R.page}쪽)`, R.band && `기온 구간: ${dxEsc(R.band)}`, R.conc && `희석: ${dxEsc(R.conc)}`, R.col && `열: ${dxEsc(R.col)}`, R.int && `강설 강도: ${DX_INT[R.int]}`, `기종: ${dxAcOf(S.ac)[1]}${(dxData.fluids.find(x => x.id === S.fluid) || {}).type === 'I' ? ` → Type I ${S.surf === 'comp' ? '복합재' : '알루미늄'} 표${S.surf !== dxAcOf(S.ac)[2] ? ' (기종 기본과 다르게 선택함)' : ''}` : ''}`].filter(Boolean).join(' · ')}</div>
               ${R.msgs.map(t => `<div class="text-[12.5px] text-amber-200 mt-1">• ${dxEsc(t)}</div>`).join('')}
               ${noteHtml}
-              <div class="text-[11px] text-slate-500 mt-2">회사 기종은 모두 고속 항공기(회전 속도 약 100KT 이상) 기준입니다 — LOUT는 수용 목록(Table 58~61)의 고속 항공기 값을 봅니다. 참고용 계산입니다. 아래 원본 표의 빨간 테두리 칸으로 값을 다시 확인하고, 회사 절차·LOUT·제품 목록(Table 58~61)을 따르세요.</div>
+              ${R.at ? '' : ''}<div class="text-[11px] text-slate-500 mt-2">회사 기종은 모두 고속 항공기(회전 속도 약 100KT 이상) 기준입니다 — LOUT는 수용 목록(Table 58~61)의 고속 항공기 값을 봅니다. 참고용 계산입니다. 아래 원본 표의 빨간 테두리 칸으로 값을 다시 확인하고, 회사 절차·LOUT·제품 목록(Table 58~61)을 따르세요.</div>
             </div>
             <div class="mt-3 rounded-xl bg-white p-1" data-dx-page style="min-height:120px"><div class="text-[12px] text-slate-500 p-2">원본 표 불러오는 중… (${R.page || ''}쪽)</div></div>`;
           dxRenderPage(R);
@@ -4154,11 +4286,79 @@ svg.leaflet-image-layer.leaflet-interactive path {
             cv.width = vp.width; cv.height = vp.height; cv.style.width = cssW + 'px';
             const ctx = cv.getContext('2d');
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            const ul = (c2, pgNo, kk) => { const P = (dxData.npos || {})[pgNo]; if (!P) return; c2.strokeStyle = '#dc2626'; c2.lineWidth = 2.2 * dpr; [...new Set(R.notes || [])].forEach(n => (P[n] || []).forEach(([a, b, y]) => { c2.beginPath(); c2.moveTo(a * kk, (y - 0.4) * kk); c2.lineTo(b * kk, (y - 0.4) * kk); c2.stroke(); })); };
+            if (!R.npage) ul(ctx, R.page, vp.width / v0.width);
             if (R.box) { const k = vp.width / (R.pw || v0.width), [x0, y0, x1, y1] = R.box, pad = 3 * dpr; ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3.5 * dpr; ctx.strokeRect(x0 * k - pad, y0 * k - pad, (x1 - x0) * k + 2 * pad, (y1 - y0) * k + 2 * pad); }
             box.innerHTML = ''; box.appendChild(cv);
+            if (R.npage) {   // 허용 시간 표는 각주가 다음 쪽에 있음 → 그 쪽도 그리고 해당 각주에 밑줄
+              const p2 = await doc.getPage(R.npage), w0 = p2.getViewport({ scale: 1 }), sc2 = cssW * dpr / w0.width, vp2 = p2.getViewport({ scale: sc2 }), c2 = document.createElement('canvas');
+              c2.width = vp2.width; c2.height = vp2.height * 0.55; c2.style.width = cssW + 'px'; c2.style.borderTop = '2px dashed #94a3b8';
+              const x2 = c2.getContext('2d'); await p2.render({ canvasContext: x2, viewport: vp2 }).promise; ul(x2, R.npage, vp2.width / w0.width);
+              const cap = document.createElement('div'); cap.style.cssText = 'font-size:11px;color:#475569;padding:4px 6px'; cap.textContent = `↓ ${R.npage}쪽 NOTES (빨간 밑줄 = 해당 각주)`;
+              box.appendChild(cap); box.appendChild(c2);
+            }
+            const kd = document.createElement('div'); kd.style.cssText = 'background:#0b1220;padding:2px 8px 10px;border-radius:0 0 8px 8px';
+            kd.innerHTML = R.at ? dxAtKoHtml(R) : (['snow', 'snfg', 'snra'].includes(dxS.precip) ? dxKoHtml(74, false).replace(/<div style="margin-top:10px;padding:10px 12px;border-radius:8px;border:1px solid #334155[\s\S]*$/, '') : '') + dxKoHtml(R.page, !!dxS.adj, R.notes);
+            box.appendChild(kd);
           } catch (e) { box.innerHTML = `<div class="text-[12px] text-rose-600 p-2">원본 표를 열지 못했습니다: ${dxEsc(e.message || e)}</div>`; }
         }
         document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-dx-open]')) dxOpen(); });
+        // ===== PL·SP 구별 안내 (그림은 직접 그린 SVG — 실제 사진이 생기면 교체) =====
+        const DX_PLG_SVG = {
+          PL: `<svg viewBox="0 0 220 130" width="100%"><defs><radialGradient id="dxplg1" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="#dbeafe" stop-opacity=".9"/><stop offset="1" stop-color="#60a5fa" stop-opacity=".55"/></radialGradient></defs>
+            <rect width="220" height="130" fill="#0b1220"/><rect y="104" width="220" height="26" fill="#334155"/>
+            ${[[40, 96, 9], [78, 60, 8], [118, 92, 10], [160, 50, 7], [190, 94, 8]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#dxplg1)" stroke="#bfdbfe" stroke-width="1.2"/><circle cx="${x - r * .35}" cy="${y - r * .4}" r="${r * .25}" fill="#fff"/>`).join('')}
+            <path d="M30 104 q10-22 20 0 M108 104 q10-24 20 0 M180 104 q10-20 20 0" fill="none" stroke="#fbbf24" stroke-width="1.6" stroke-dasharray="3 2"/>
+            <text x="62" y="24" fill="#fbbf24" font-size="13" font-weight="700">톡! 톡!</text><text x="132" y="22" fill="#93c5fd" font-size="11">투명·단단·튐</text></svg>`,
+          SP: `<svg viewBox="0 0 220 130" width="100%"><rect width="220" height="130" fill="#0b1220"/><rect y="104" width="220" height="26" fill="#334155"/>
+            ${[[40, 94, 10], [80, 58, 9], [120, 92, 11], [158, 52, 8]].map(([x, y, r]) => `<g>${Array.from({ length: 9 }, (_, i) => { const a = i * 0.7, rr = r * (0.55 + (i % 3) * 0.18); return `<circle cx="${x + Math.cos(a) * r * .35}" cy="${y + Math.sin(a) * r * .35}" r="${rr * .55}" fill="#f8fafc" opacity=".95"/>`; }).join('')}<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#e2e8f0" stroke-width=".8" stroke-dasharray="2 2"/></g>`).join('')}
+            <g transform="translate(196,118)">${Array.from({ length: 7 }, (_, i) => `<circle cx="${(i - 3) * 4}" cy="${(i % 2) * 3}" r="2.4" fill="#f8fafc"/>`).join('')}</g>
+            <text x="118" y="122" fill="#e2e8f0" font-size="10">누르면 부서짐 →</text><text x="20" y="22" fill="#e2e8f0" font-size="11">하얗고 불투명 (스티로폼 같음)</text></svg>`,
+          SG: `<svg viewBox="0 0 220 130" width="100%"><rect width="220" height="130" fill="#0b1220"/><rect y="104" width="220" height="26" fill="#334155"/>
+            ${Array.from({ length: 26 }, (_, i) => `<ellipse cx="${12 + (i * 37) % 200}" cy="${20 + (i * 53) % 80}" rx="2.6" ry="1.4" fill="#f1f5f9" transform="rotate(${i * 40} ${12 + (i * 37) % 200} ${20 + (i * 53) % 80})"/>`).join('')}
+            <text x="14" y="122" fill="#cbd5e1" font-size="10">1mm 미만 · 납작 · 튀지 않음</text></svg>`,
+          GS: `<svg viewBox="0 0 220 130" width="100%"><defs><radialGradient id="dxplg2" cx="50%" cy="50%" r="50%"><stop offset=".55" stop-color="#f8fafc"/><stop offset=".8" stop-color="#e0f2fe" stop-opacity=".8"/><stop offset="1" stop-color="#7dd3fc" stop-opacity=".5"/></radialGradient></defs>
+            <rect width="220" height="130" fill="#0b1220"/><rect y="104" width="220" height="26" fill="#334155"/>
+            ${[[50, 90, 12], [110, 56, 10], [168, 88, 13]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#dxplg2)" stroke="#bae6fd" stroke-width="1.2"/>`).join('')}
+            <text x="20" y="22" fill="#bae6fd" font-size="11">흰 싸락눈 겉에 얇은 얼음막 · 대류 구름</text></svg>`
+        };
+        // 위아래 기온 구조: 눈 / 얼음 싸라기 / 어는 비
+        const DX_PLG_PROFILE = `<svg viewBox="0 0 600 250" width="100%" style="max-width:680px">
+          <rect width="600" height="250" fill="#0b1220" rx="8"/>
+          ${[['SN 눈', 30, [['영하', '#1e3a8a', 0, 1]]], ['PL 얼음 싸라기', 225, [['영하', '#1e3a8a', 0, .3], ['영상 (녹음)', '#7f1d1d', .3, .62], ['영하 층 두꺼움 (다시 얼음)', '#1e3a8a', .62, 1]]], ['FZRA 어는 비', 420, [['영하', '#1e3a8a', 0, .3], ['영상 (녹음)', '#7f1d1d', .3, .82], ['얇은 영하 층', '#1e40af', .82, 1]]]].map(([t, x, layers]) =>
+            `<g>${layers.map(([l, c, a, b]) => `<rect x="${x}" y="${28 + a * 180}" width="150" height="${(b - a) * 180}" fill="${c}" opacity=".55"/><text x="${x + 6}" y="${42 + a * 180}" fill="#e2e8f0" font-size="10">${l}</text>`).join('')}
+            <text x="${x + 75}" y="20" fill="#fff" font-size="13" font-weight="700" text-anchor="middle">${t}</text>
+            <rect x="${x}" y="208" width="150" height="10" fill="#475569"/><text x="${x + 75}" y="238" fill="#cbd5e1" font-size="10.5" text-anchor="middle">${t.startsWith('SN') ? '눈송이 그대로 내림' : t.startsWith('PL') ? '녹았다가 다시 얼어 알갱이로' : '과냉각 빗방울 → 닿는 순간 얾'}</text>
+            ${t.startsWith('SN') ? '<text x="' + (x + 75) + '" y="130" fill="#fff" font-size="26" text-anchor="middle">❄ ❄ ❄</text>' : t.startsWith('PL') ? `<text x="${x + 75}" y="70" fill="#fff" font-size="18" text-anchor="middle">❄</text><text x="${x + 75}" y="122" fill="#93c5fd" font-size="18" text-anchor="middle">💧</text><circle cx="${x + 75}" cy="178" r="7" fill="#bfdbfe" stroke="#fff"/>` : `<text x="${x + 75}" y="70" fill="#fff" font-size="18" text-anchor="middle">❄</text><text x="${x + 75}" y="140" fill="#93c5fd" font-size="18" text-anchor="middle">💧</text>`}</g>`).join('')}
+        </svg>`;
+        function dxPlGuideOpen() {
+          let m = document.getElementById('dx-plg-modal');
+          if (!m) {
+            m = document.createElement('div'); m.id = 'dx-plg-modal';
+            m.style.cssText = 'position:fixed;inset:0;z-index:9700;background:#020617;overflow:auto';
+            const card = (code, ko, en, svg, pts, go, col) => `<div class="rounded-xl border p-2.5 bg-slate-900/80" style="border-color:${col}">
+                <div class="flex items-baseline gap-2 flex-wrap"><span class="mono text-[18px] font-bold" style="color:${col}">${code}</span><span class="text-[14px] font-bold text-white">${ko}</span><span class="text-[11px] text-slate-400">${en}</span></div>
+                <div class="mt-1.5 rounded-lg overflow-hidden border border-slate-800">${svg}</div>
+                <ul class="mt-1.5 text-[12.5px] text-slate-200 leading-snug" style="list-style:disc;padding-left:16px">${pts.map(x => `<li>${x}</li>`).join('')}</ul>
+                <div class="mt-1.5 text-[12px] font-bold" style="color:${col}">→ ${go}</div></div>`;
+            m.innerHTML = `<div style="max-width:1000px;margin:0 auto;padding:12px">
+              <div class="flex items-center gap-2 mb-2"><span class="text-[15px] font-bold text-cyan-200">ⓘ PL · SP 구별 — 얼음 싸라기와 싸락눈</span><button type="button" data-dxplg-close class="ml-auto px-2.5 py-1 rounded-md bg-rose-700 text-white text-[12px] font-bold">닫기 ✕</button></div>
+              <div class="rounded-xl border border-amber-600 bg-amber-950/40 p-2.5 text-[13.5px] text-amber-100 leading-snug"><b>METAR에 PL 글자가 있으면</b>(-PL, -SNPL, -PLSN, -FZDZPL …) → <b>허용 시간 표</b>. <b>SP·SG만 있으면</b> → HOT 표의 <b>눈</b> 열.<br>한 줄 요약: <b>투명하고 단단하게 튀면 PL</b>, <b>하얗고 부서지면 SP</b>.</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px" class="mt-2.5">
+                ${card('PL', '얼음 싸라기', 'Ice Pellets (예전 Sleet)', DX_PLG_SVG.PL, ['투명·반투명한 <b>단단한 얼음 알갱이</b>, 지름 5mm 이하', '땅·창문에서 <b>튀고 "톡톡" 소리</b>, 눌러도 잘 안 부서짐', '위에 <b>영상 층</b>이 있다는 신호 — 어는 비로 바뀔 수 있음', 'SNPL·PLSN = 눈 + 얼음 싸라기'], '허용 시간 표 (Table 55 EG · 56 PG)', '#60a5fa')}
+                ${card('SP', '싸락눈', 'Snow Pellets / Graupel', DX_PLG_SVG.SP, ['<b>하얗고 불투명</b>한 스티로폼 같은 알갱이 (2~5mm)', '튀기는 하지만 <b>손으로 누르면 쉽게 부서짐</b>', '눈송이에 과냉각 물방울이 붙어 뭉친 것 — 소나기성 구름', '나라에 따라 GS로 보고하기도 함'], 'HOT 표 눈(Snow·Snow Grains·Snow Pellets) 열', '#e2e8f0')}
+                ${card('SG', '쌀알눈', 'Snow Grains', DX_PLG_SVG.SG, ['아주 작고(1mm 미만) 납작한 흰 알갱이', '튀지 않고 부서지지도 않음', '층운·안개에서 내리는 아주 약한 강수'], 'HOT 표 눈 열', '#cbd5e1')}
+                ${card('GS', '작은 우박', 'Small Hail', DX_PLG_SVG.GS, ['싸락눈 겉에 <b>얇은 얼음막</b>이 씌워진 반투명 알갱이 (5mm 미만)', '대류 구름(소나기·뇌우)에서', '보고 방식이 나라마다 다름 — 강도 표시 없으면 "보통 얼음 싸라기"로 봄'], '허용 시간 표 (얼음 싸라기와 같은 행)', '#7dd3fc')}
+              </div>
+              <div class="mt-3 rounded-xl border border-slate-700 bg-slate-900/80 p-2.5"><div class="text-[13px] font-bold text-white mb-1.5">왜 PL이 더 위험한가 — 위아래 기온 구조</div>${DX_PLG_PROFILE}
+                <div class="text-[12.5px] text-slate-300 mt-1.5 leading-snug">PL은 위에서 눈이 <b>영상 층에서 녹았다가</b> 아래 두꺼운 영하 층에서 <b>다시 얼어</b> 생깁니다. 아래 영하 층이 얇아지면 다 얼지 못하고 <b>어는 비(FZRA)</b>가 됩니다. 그래서 PL이 보고되면 어는 비 가능성까지 염두에 둡니다. HOT 표에는 PL 칸이 없고(지속시간 없음), 허용 시간 표만 씁니다.</div></div>
+              <div class="text-[10.5px] text-slate-500 mt-2">그림은 이해를 돕기 위한 그림입니다 (실제 사진 아님). 기준은 METAR 보고·관제·지상 조업 보고입니다.</div></div>`;
+            document.body.appendChild(m);
+            m.addEventListener('click', e => { if (e.target.closest('[data-dxplg-close]') || e.target === m) { m.style.display = 'none'; } });
+          }
+          m.style.display = 'block';
+        }
+        document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-dxplg-open]')) dxPlGuideOpen(); });
     
     // 표 번호 · PDF 쪽 · 유체 이름 (hot.pdf = FAA Holdover Time Guidelines Winter 2026-2027)
     const HOT_TABLES = [
