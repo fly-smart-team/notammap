@@ -881,7 +881,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v116</span>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v117</span>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button id="btn-hidden" type="button" aria-label="위험물 검색" title="위험물 검색 · 보조배터리 Wh 계산 (FOM S13.1)" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-amber-600/70 bg-amber-950/40 hover:bg-amber-900/50 text-amber-200 text-[12px] font-bold">🔋 위험물 검색</button>
     </div>
@@ -4182,12 +4182,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
             m = document.createElement('div'); m.id = 'dx-modal';
             m.style.cssText = 'position:fixed;inset:0;z-index:9600;background:rgba(2,6,23,.85);overflow:auto';
             document.body.appendChild(m);
-            m.addEventListener('input', e => { if (e.target.name === 'fq') { dxSuggest(e.target.value); return; } dxFromForm(e); });
-            m.addEventListener('change', e => { if (e.target.name === 'fq') return; dxFromForm(e); });
+            m.addEventListener('input', e => { if (e.target.closest('[data-dx-log]')) { dxLogInput(e.target); return; } if (e.target.name === 'fq') { dxSuggest(e.target.value); return; } dxFromForm(e); });
+            m.addEventListener('change', e => { if (e.target.closest('[data-dx-log]')) return; if (e.target.name === 'fq') return; dxFromForm(e); });
             m.addEventListener('keydown', e => { if (e.target.name === 'fq' && e.key === 'Enter') { e.preventDefault(); const b = m.querySelector('[data-dx-pick]'); if (b) b.click(); } });
             m.addEventListener('click', e => {
               if (e.target.closest('[data-dx-close]')) { m.style.display = 'none'; document.body.style.overflow = ''; }
               if (e.target.closest('[data-dx-auto]')) { dxS = dxAuto(); dxDraw(true); }
+              const lg = e.target.closest('[data-dx-lgm],[data-dx-lgnow],[data-dx-lgcopy],[data-dx-lgreset]');
+              if (lg) { dxLogClick(lg); return; }
               const ob = e.target.closest('[data-dx-oat],[data-dx-oatset]');
               if (ob) { const inp = m.querySelector('[name="oat"]'); inp.value = ob.dataset.dxOatset != null ? ob.dataset.dxOatset : (Number(inp.value) || 0) + Number(ob.dataset.dxOat); dxFromForm({ target: inp }); m.querySelectorAll('[data-dx-oatset]').forEach(b => { const on = +b.dataset.dxOatset === +inp.value; b.className = `px-2 h-8 rounded-md border text-[12.5px] mono ${on ? 'border-cyan-400 bg-cyan-700 text-white font-bold' : 'border-slate-600 bg-slate-900 text-slate-200'}`; }); return; }
               const pk = e.target.closest('[data-dx-pick]');
@@ -4273,8 +4275,69 @@ svg.leaflet-image-layer.leaflet-interactive path {
               ${noteHtml}
               ${R.at ? '' : ''}<div class="text-[11px] text-slate-500 mt-2">회사 기종은 모두 고속 항공기(회전 속도 약 100KT 이상) 기준입니다 — LOUT는 수용 목록(Table 58~61)의 고속 항공기 값을 봅니다. 참고용 계산입니다. 아래 원본 표의 빨간 테두리 칸으로 값을 다시 확인하고, 회사 절차·LOUT·제품 목록(Table 58~61)을 따르세요.</div>
             </div>
+            ${dxLogHtml(S, R)}
             <div class="mt-3 rounded-xl bg-white p-1" data-dx-page style="min-height:120px"><div class="text-[12px] text-slate-500 p-2">원본 표 불러오는 중… (${R.page || ''}쪽)</div></div>`;
           dxRenderPage(R);
+        }
+        // ===== 제방빙 후 로그: DE/ANTI-ICING CODE REPORT (FOM 제4장 기상 양식) =====
+        // 검색기에서 고른 값(기체·방식·제빙액·희석·시각·날짜·공항)을 채움. 손으로 고친 칸은 다시 그려도 유지
+        let dxLog = {}, dxLogEdited = {}, dxLastR = null;
+        const DX_MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        function dxLogStnNow() {
+          const dep = (info && info.dep) || '', nm = getAirportNameInfo(dep), stn = (nm && nm.iata) || dep;
+          const lt = localTime(dep, Date.now()), d = new Date();
+          let hm, date;
+          if (lt) { const tz = airportTz(dep), pr = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: 'numeric', day: '2-digit' }).formatToParts(d).map(x => [x.type, x.value])); hm = lt.hm; date = `${pr.day}${DX_MON[+pr.month - 1]}${pr.year}`; }
+          else { hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; date = `${String(d.getDate()).padStart(2, '0')}${DX_MON[d.getMonth()]}${d.getFullYear()}`; }
+          return { stn, hm, date, tzOk: !!lt };
+        }
+        function dxLogAuto(S) {
+          const f = dxData.fluids.find(x => x.id === S.fluid) || {}, tyN = { I: '1', II: '2', III: '3', IV: '4' }[f.type] || '';
+          const brand = f.id && f.id.startsWith('s') ? dxTitle(f.name).replace(/\s*\(.*$/, '').replace(/\b([A-Z])([A-Z]+)\b/g, (m0, a, b) => a + b.toLowerCase()).replace(/\b(Mp|Ii|Iii|Iv|Vi)\b/g, x => x.toUpperCase()).replace(/\bAbc\b/g, 'ABC').replace(/\bDf\b/g, 'DF') : '';
+          const n = dxLogStnNow();
+          let method = 'one'; try { method = localStorage.getItem('notamLite.dxLogMethod') || 'one'; } catch (e) { }
+          return { reg: (pdfFlt && pdfFlt.reg) || '', method, fluid: `Type ${tyN}/${brand}`, pct: f.type === 'I' ? '' : (S.conc || '100/0').split('/')[0] + '%', time: n.hm, date: n.date, stn: n.stn, sign: '' };
+        }
+        function dxLogHtml(S, R) {
+          dxLastR = R;
+          const a = dxLogAuto(S); Object.keys(a).forEach(k => { if (!dxLogEdited[k]) dxLog[k] = a[k]; });
+          const L0 = dxLog, inp = (k, w, ph, cls = '') => `<input name="lg_${k}" value="${esc(L0[k] || '')}" placeholder="${esc(ph || '')}" autocomplete="off" class="w-full rounded px-1.5 py-1 text-[13px] ${cls}" style="min-width:${w}px;background:#fff;color:#0f172a;border:1px solid #94a3b8">`;
+          const mb = (k, t) => `<button type="button" data-dx-lgm="${k}" class="block w-full text-left px-1 py-0.5 rounded text-[12.5px]" style="${L0.method === k ? 'background:#0f172a;color:#fff;font-weight:700' : 'color:#334155'}">${t}(${L0.method === k ? 'v' : '&nbsp;'})</button>`;
+          const end = R && R.ok && /^\d{1,2}:\d{2}$/.test(L0.time || '') ? (() => { const [h, mi] = L0.time.split(':').map(Number), t0 = h * 60 + mi, fm = x => { const v = ((t0 + x) % 1440 + 1440) % 1440; return `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`; };
+            return R.at ? `허용 시간 끝 <b>${fm(R.min)}</b>` : `HOT 끝 <b>${R.min === R.max ? fm(R.min) : fm(R.min) + ' ~ ' + fm(R.max)}</b>`; })() : '';
+          const th = 'border:1px solid #475569;background:#cbd5e1;color:#0f172a;font-size:11.5px;padding:3px 4px;text-align:center;font-weight:600';
+          const td = 'border:1px solid #475569;padding:3px;vertical-align:middle';
+          return `<div data-dx-log class="mt-3 rounded-xl p-2.5" style="background:#f1f5f9;color:#0f172a;border:1px solid #475569">
+            <div class="flex items-center gap-2 flex-wrap mb-1.5"><b class="text-[14px]">📝 제방빙 기록 — DE/ANTI-ICING CODE REPORT</b><span class="text-[11px]" style="color:#475569">FOM 제4장 기상 양식 · 칸을 눌러 고칠 수 있음</span>
+              <span class="ml-auto flex gap-1.5"><button type="button" data-dx-lgnow class="px-2 py-1 rounded-md bg-slate-700 text-white text-[12px]">🕒 지금 시각(현지)</button><button type="button" data-dx-lgreset class="px-2 py-1 rounded-md text-[12px]" style="background:#cbd5e1;color:#1e293b">↺ 자동값</button><button type="button" data-dx-lgcopy class="px-2 py-1 rounded-md bg-sky-700 text-white text-[12px] font-bold">📋 복사</button></span></div>
+            <div class="flex items-center gap-2 mb-1.5 text-[13px]"><span>A/C No</span><span style="width:150px">${inp('reg', 110, 'HL8xxx', 'mono font-bold')}</span></div>
+            <div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;min-width:680px">
+              <tr><th style="${th};width:28px">No</th><th style="${th}"><u>Method</u></th><th style="${th}">Fluid Type &amp;<br>Brand Name</th><th style="${th}">% of<br>Fluid</th><th style="${th}">Beginning Time<br>of Final Step</th><th style="${th}">Date</th><th style="${th}">Station</th><th style="${th}">Signature</th></tr>
+              <tr><td style="${td};text-align:center">1</td><td style="${td};width:96px">${mb('one', 'One Step')}${mb('two', 'Two Step')}</td><td style="${td}">${inp('fluid', 150, 'Type 4/제품명')}</td><td style="${td};width:64px">${inp('pct', 50, '%', 'text-center')}</td>
+                <td style="${td};width:110px">${inp('time', 70, 'HH:MM', 'mono text-center')}<div class="text-[10px] text-center mt-0.5" style="color:#475569">현지 · ${dxLogTime12(L0.time)}</div></td><td style="${td};width:104px">${inp('date', 90, '02FEB2025', 'mono text-center')}</td><td style="${td};width:64px">${inp('stn', 44, 'ICN', 'mono text-center')}</td><td style="${td};width:96px">${inp('sign', 70, '서명')}</td></tr>
+            </table></div>
+            ${end ? `<div class="text-[12.5px] mt-1.5" style="color:#065f46">⏱ 마지막 단계 시작 ${esc(L0.time)} 기준 ${end} (현지)</div>` : ''}
+            <div class="text-[11.5px] mt-1.5 leading-snug" style="color:#334155"><b>Note:</b> 운항승무원이 도착하기 전에 서리로 인하여 De-icing 작업을 하였고 현재는 항공기에 서리가 없는 경우에는 보고할 필요가 없다.</div>
+            <div class="text-[10.5px] mt-1" style="color:#64748b">• Beginning Time = 마지막 단계(One Step은 그 작업, Two Step은 2단계 방빙) 시작 시각. 지상 조업사 통보 시각으로 고치세요. • Type I은 희석 비율이 제품·외기온도에 따라 달라 % 칸을 비워 둠.</div>
+          </div>`;
+        }
+        function dxLogTime12(t) { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ''); if (!m) return '—'; const h = +m[1]; return `${(h % 12) || 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`; }
+        function dxLogInput(el) {
+          const k = (el.name || '').replace(/^lg_/, ''); if (!k) return;
+          dxLog[k] = el.value; dxLogEdited[k] = true;
+          if (k === 'time') { const box = el.parentElement.querySelector('div'); if (box) box.textContent = '현지 · ' + dxLogTime12(el.value); dxLogRedraw(); }
+        }
+        function dxLogRedraw() { const old = document.querySelector('#dx-modal [data-dx-log]'); if (!old || !old.isConnected || !old.parentNode) return; const ae = document.activeElement, nm = ae && ae.name, pos = ae && ae.selectionStart; const t = document.createElement('div'); t.innerHTML = dxLogHtml(dxS, dxLastR); old.replaceWith(t.firstElementChild); if (nm) { const n = document.querySelector(`#dx-modal [name="${nm}"]`); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) { } } } }
+        function dxLogClick(b) {
+          if (b.dataset.dxLgm) { dxLog.method = b.dataset.dxLgm; dxLogEdited.method = true; try { localStorage.setItem('notamLite.dxLogMethod', dxLog.method); } catch (e) { } }
+          else if (b.hasAttribute('data-dx-lgnow')) { const n = dxLogStnNow(); dxLog.time = n.hm; dxLog.date = n.date; dxLogEdited.time = dxLogEdited.date = true; if (!n.tzOk) showToast('공항 시간대를 몰라 기기 시각을 넣었습니다'); }
+          else if (b.hasAttribute('data-dx-lgreset')) { dxLogEdited = {}; }
+          else if (b.hasAttribute('data-dx-lgcopy')) {
+            const L0 = dxLog, t = `DE/ANTI-ICING CODE REPORT\nA/C No: ${L0.reg || ''}\nNo 1 | Method: ${L0.method === 'two' ? 'Two Step' : 'One Step'} | Fluid: ${L0.fluid || ''} | ${L0.pct || ''} | Beginning Time of Final Step: ${dxLogTime12(L0.time)} (${L0.time || ''} LT) | Date: ${L0.date || ''} | Station: ${L0.stn || ''} | Signature: ${L0.sign || ''}`;
+            (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => showToast('제방빙 기록을 복사했습니다'), () => { prompt('복사하세요', t); });
+            return;
+          }
+          dxLogRedraw();
         }
         async function dxRenderPage(R) {
           const box = document.querySelector('#dx-modal [data-dx-page]'); if (!box || !R.page) { if (box) box.innerHTML = ''; return; }
