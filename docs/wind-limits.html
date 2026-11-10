@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>바람 제한치 계산</title>
+<style>
+  :root { --bg:#0b1220; --card:#111a2b; --line:#2a3a55; --tx:#e2e8f0; --mute:#94a3b8; --sky:#7dd3fc; --red:#ef4444; --redbg:#7f1d1d; --ok:#22c55e; --okbg:#14532d; --amber:#f59e0b; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--tx); font:14px/1.5 -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+  .wrap { max-width:980px; margin:0 auto; padding:12px 16px 40px; }
+  h1 { font-size:18px; margin:0 0 4px; }
+  .sub { color:var(--mute); font-size:12px; margin-bottom:8px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:10px 0; }
+  h2 { font-size:14px; margin:0 0 6px; color:var(--sky); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+  label { display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--mute); }
+  input, select { background:#0f172a; color:var(--tx); border:1px solid #334155; border-radius:8px; padding:7px 8px; font-size:15px; width:100%; }
+  input:focus, select:focus { outline:2px solid #38bdf8; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .chip { background:#1e293b; border:1px solid #334155; border-radius:999px; padding:3px 10px; font-size:12px; color:var(--tx); cursor:pointer; }
+  .chip:hover { border-color:#38bdf8; }
+  .res { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; }
+  .box { border-radius:10px; padding:8px 10px; border:1px solid var(--line); background:#0f172a; }
+  .box .k { font-size:12px; color:var(--mute); }
+  .box .v { font-size:22px; font-weight:800; }
+  .box.bad { border-color:var(--red); background:var(--redbg); }
+  .box.good { border-color:var(--ok); background:var(--okbg); }
+  .verdict { font-size:16px; font-weight:800; padding:8px 12px; border-radius:10px; margin-top:8px; }
+  .verdict.bad { background:var(--redbg); border:1px solid var(--red); }
+  .verdict.good { background:var(--okbg); border:1px solid var(--ok); }
+  .verdict.warn { background:#78350f; border:1px solid var(--amber); }
+  ul.msg { margin:6px 0 0; padding-left:18px; }
+  ul.msg li { margin:2px 0; }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; }
+  th, td { border:1px solid var(--line); padding:4px 5px; text-align:center; vertical-align:middle; }
+  th { background:#1e293b; font-weight:700; }
+  td.l { text-align:left; }
+  tr.hit td, td.hit, th.hit { background:var(--redbg) !important; color:#fff; outline:2px solid var(--red); outline-offset:-2px; font-weight:800; }
+  .cell-hit { background:var(--red) !important; color:#fff; font-weight:900; }
+  .scroll { overflow-x:auto; }
+  .fn { font-size:12px; color:#cbd5e1; margin:6px 0 0; padding-left:0; list-style:none; }
+  .fn li { margin:3px 0; }
+  .fn b { color:var(--sky); }
+  .note { font-size:12px; color:var(--mute); }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; }
+  .tabs button { background:#1e293b; color:var(--tx); border:1px solid #334155; border-radius:8px; padding:5px 10px; font-weight:700; font-size:12px; cursor:pointer; }
+  .tabs button.on { background:#0369a1; border-color:#38bdf8; }
+  .src { font-size:11px; color:#64748b; }
+  details summary { cursor:pointer; color:var(--sky); font-weight:700; }
+  .compass { width:150px; height:150px; flex:0 0 auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="display:flex;align-items:center;gap:8px"><h1 style="flex:1">🌬 바람 제한치 계산 · 활주로 상태</h1><button type="button" id="win-close" style="display:none;background:#334155;color:#fff;border:1px solid #475569;border-radius:10px;padding:8px 14px;font-size:15px;font-weight:800;cursor:pointer">✕ 닫기</button></div>
+  <div class="sub">FOM 4.5 · 5.8 / FCRM 1.17 / FCOM (A321) Runway Condition Assessment Matrix · Takeoff Performance Table 기준. 참고용 — 규정 원문·관제 정보가 우선합니다.</div>
+
+  <!-- 입력 -->
+  <div class="card">
+    <h2>① 입력</h2>
+    <div id="metar-chips" class="row" style="margin-bottom:6px"></div>
+    <div class="grid">
+      <label>RWY HDG (자북) <input id="hdg" inputmode="numeric" placeholder="예: 334 또는 33L"></label>
+      <label>바람 방향 (ATIS) <input id="wdir" inputmode="numeric" placeholder="예: 020 / VRB"></label>
+      <label>풍속 (Steady) <input id="wspd" inputmode="decimal" placeholder="예: 17"></label>
+      <label>Gust 또는 Max <input id="wgust" inputmode="decimal" placeholder="예: 30 (없으면 비움)"></label>
+      <label>변동 범위 (VRB) <span style="display:flex;gap:4px;align-items:center"><input id="wv1" class="dig" data-max="3" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="300"><b style="color:var(--mute)">–</b><input id="wv2" class="dig" data-max="3" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="030"></span></label>
+      <label>단위 <select id="unit"><option value="KT">KT</option><option value="MPS">MPS (m/s → kt)</option></select></label>
+      <label>METAR 쓸 때만: 편차 (VAR) <input id="var" placeholder="예: 8W (ATIS면 비움)"></label>
+      <label>기종 <select id="ac">
+        <option value="A321N">A321neo</option><option value="A321C">A321ceo</option><option value="A330">A330</option><option value="A350">A350</option><option value="A380">A380</option><option value="B777">B777</option></select></label>
+      <label>적용 단계 <select id="phase">
+        <option value="fly">비행 단계 (이착륙 시점: Gust·Max 중 큰 값)</option>
+        <option value="plan">비행 계획 (Steady)</option>
+        <option value="edto">계획: EDTO 교체 · 3% ERA (Max/Gust)</option></select></label>
+      <label>이륙 / 착륙 <select id="tl"><option value="L">착륙</option><option value="T">이륙</option></select></label>
+    </div>
+    <h2 style="margin-top:10px">② 활주로 상태 · Braking Action (여러 개 넣으면 가장 보수적인 값)</h2>
+    <div class="grid">
+      <label>활주로 상태 <select id="cond"></select></label>
+      <label>깊이 mm (물·슬러시·눈) <input id="depth" inputmode="decimal" placeholder="예: 5"></label>
+      <label>OAT °C (다져진 눈) <input id="oat" inputmode="decimal" placeholder="예: -10"></label>
+      <label>보고된 Braking Action <select id="ba">
+        <option value="">—</option><option value="5">Good</option><option value="4">Good to Medium</option><option value="3">Medium</option><option value="2">Medium to Poor</option><option value="1">Poor</option><option value="0">Less than Poor (Nil)</option></select></label>
+      <label>RWYCC (TDZ / MID / END) <span style="display:flex;gap:4px;align-items:center"><select id="cc1" style="text-align:center"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="0">0</option></select><b style="color:var(--mute)">/</b><select id="cc2" style="text-align:center"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="0">0</option></select><b style="color:var(--mute)">/</b><select id="cc3" style="text-align:center"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="0">0</option></select></span></label>
+      <label>Mu (μ) <input id="mu" inputmode="decimal" placeholder="예: 0.32"></label>
+      <label>RCR <input id="rcr" inputmode="numeric" placeholder="예: 11"></label>
+    </div>
+    <h2 style="margin-top:10px">③ 특수 조건</h2>
+    <div class="grid">
+      <label>공항 제한 (FOM 5.8) <select id="apt">
+        <option value="">해당 없음</option>
+        <option value="RKPC">RKPC 제주</option>
+        <option value="RKPK">RKPK 김해 36L/36R 착륙</option>
+        <option value="RJFT">RJFT 구마모토 RWY 07 착륙 (RNP 25 AR 불가 시)</option>
+        <option value="RJFM">RJFM 미야자키 RWY 27 착륙 (RNP 09/27 AR 불가 시)</option></select></label>
+      <label>Auto Land <select id="al"><option value="">사용 안 함</option><option value="1">CAT I 이상</option><option value="2">CAT II / CAT III</option></select></label>
+    </div>
+  </div>
+
+  <!-- 결과 -->
+  <div class="card" id="out">
+    <h2>④ 결과</h2>
+    <div class="row" style="align-items:flex-start">
+      <svg id="cmp" class="compass" viewBox="-80 -80 160 160"></svg>
+      <div style="flex:1;min-width:240px">
+        <div class="res" id="res"></div>
+      </div>
+    </div>
+    <div id="verdict"></div>
+  </div>
+
+  <!-- 표들 -->
+  <div class="card">
+    <h2>⑤ Braking Action에 따른 바람 제한치 <span class="note">(Cross / Tail kt)</span></h2>
+    <div class="tabs" id="wtabs"><button data-w="T">FCRM 1.17.1.2 이륙</button><button data-w="L">FCRM 1.17.1.3 착륙</button><button data-w="AAR">FCOM A321 (AAR)</button></div>
+    <div class="scroll" id="tbl-wind"></div>
+    <ul class="fn">
+      <li><b>원문 Note</b> 활주로 상태와 Braking Action이 서로 다르면 <b>더 보수적인 제한치</b>를 적용한다. 표에 나온 값보다 큰 측풍 성분이 있는 활주로에는 착륙을 권장하지 않는다.</li>
+      <li><b>1)</b> NA = Not Authorized(허용 안 됨). → 배풍 NA면 배풍 성분이 있으면 안 됨.</li>
+      <li><b>AAR Note</b> 인증된 최대 배풍(Certified Max Tailwind) 제한은 <b>회사가 지정한 공항에만</b> 적용할 수 있다. 관련 내용은 FOM 4.5 Wind Limitations 또는 5.8 Airport Restrictions 참조.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>⑥ Auto Land 바람 제한 (FCRM 1.17.1.4)</h2>
+    <div class="scroll" id="tbl-al"></div>
+    <ul class="fn"><li><b>원문 Note 1)</b> 한 엔진 부작동(OEI) 시의 바람 제한. <span class="note">(원문 표 안에 1) 표시 위치가 보이지 않아 어느 값에 해당하는지는 원문 확인 필요)</span></li></ul>
+  </div>
+
+  <div class="card">
+    <h2>⑦ Runway Condition Assessment Matrix (FCOM A321)</h2>
+    <div class="scroll" id="tbl-rcam"></div>
+    <ul class="fn">
+      <li><b>(1) RwyCC</b> 활주로 상태 코드(Runway Condition Code).</li>
+      <li><b>(2) Mu</b> 지상 마찰측정 장비로 잰 활주로 마찰계수. 일부 러시아 공항은 Normative 값을 쓰므로 Jeppesen의 표를 참조한다.</li>
+      <li><b>(3) RCR</b> Runway Condition Report (활주로 마찰계수 × 32).</li>
+      <li><b>(4) Grooved·PFC 활주로</b> 젖었을 때 제동력을 높이려고 가로 홈(grooving)이나 PFC(다공성 마찰층, porous friction course) 포장을 한 활주로.</li>
+      <li><b>(5) Smooth 활주로</b> grooving이나 PFC 처리를 하지 않은 활주로.</li>
+      <li><b>Note</b> 마찰계수 <b>0.20 이하</b>, RCR <b>6 이하</b>, 또는 Braking Action <b>'Less than Poor'(RwyCC 0)</b>로 통보되면 <b style="color:#fca5a5">이·착륙 금지</b>.</li>
+      <li><b>Note</b> 활주로 상태를 판단할 정보·보고가 서로 다르면, 값이나 표현 중 <b>더 보수적인 것</b>을 착륙 성능에 적용한다.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>⑧ 착륙 최대 오염물 깊이 (AAR)</h2>
+    <div class="scroll" id="tbl-depth"></div>
+    <ul class="fn"><li><b>Note</b> 각 오염물의 깊이가 최대값을 넘으면 <b style="color:#fca5a5">착륙 금지</b>.</li></ul>
+  </div>
+
+  <div class="card">
+    <h2>⑨ Runway Condition & Takeoff Performance Table (FCOM A321)</h2>
+    <div class="scroll" id="tbl-to"></div>
+    <ul class="fn">
+      <li><b>Note</b> 각 오염물의 깊이가 최대값을 넘으면 <b style="color:#fca5a5">이륙 금지</b>.</li>
+      <li><b>Note</b> "다져진 눈 위의 건설·습설(Dry/Wet Snow over Compacted Snow)"은 아래에 다져진 눈이 있든 없든 똑같이 거동한다. 이륙 시에는 <b>건설·습설만 보고된 경우와 같은 성능</b>을 적용한다.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>⑩ FOM 4.5 Wind Limitations 요약</h2>
+    <ul class="fn">
+      <li>• 바람 제한은 기종별 POM/FCOM(A380·A350·A321) 또는 FCRM을 따른다. <b>Tower가 준 바람</b>을 적용한다. 제한 이내여도 착륙의 최종 결정은 기장 판단.</li>
+      <li>• <b>배풍 10 kt 초과 시 기장이 이·착륙</b>한다.</li>
+      <li>• 비행 계획: <b>Steady wind</b> 적용. 단, EDTO 교체공항·3% ERA는 <b>Max wind(Gust)</b> 적용.</li>
+      <li>• 이륙 공항: 이륙 시점 기준 Gust 또는 Max Wind 중 큰 값.</li>
+      <li>• 착륙 공항: Tower 교신부터 1,000 ft(HAT/HAA) 도달 전까지 Tower 바람의 Gust·Max 중 큰 값으로 접근 계속 여부 결정.</li>
+      <li>• Gust/Max의 방향이 없으면 Steady와 같은 방향 적용 (예: 030/12 Gust 22).</li>
+      <li>• 방향이 Variable이면 측풍·배풍 각각 <b>가장 불리한 방향</b> 적용. 단 4 kt 미만 VRB는 예외 (예: 320/12 Gust 22 VRB300–030).</li>
+      <li>• Gust/Max 제한 산출 시, 필요 활주거리(Required Field Length) 안의 구간 중 <b>가장 나쁜 Braking Action</b> 적용.</li>
+      <li class="note">예) A321, RWY HDG 330°, 020° 17 kt Gust 30, BA Good to Medium → 각도 50°, 30 kt → 측풍 23 kt → 제한 20 kt 초과.</li>
+    </ul>
+  </div>
+
+  <div class="src">출처: 아시아나항공 FOM R75-1 (4.5, 5.8) · FCRM R05 1.17 · A318/A319/A320/A321 FCOM PRO-NOR-AIL-00000075 (20 OCT 25). 개인 참고용 요약.</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const BA_NAME = ['Less than Poor', 'Poor', 'Medium to Poor', 'Medium', 'Good to Medium', 'Good', 'Dry'];
+const BA_KO = ['Nil', 'Poor', 'Medium to Poor', 'Medium', 'Good to Medium', 'Good', 'Dry(Good)'];
+// 바람 제한 (Cross/Tail) — BA 코드 5..0 (6=Dry는 Good 적용)
+const WL = { 5: [30, 10], 4: [20, 5], 3: [20, 5], 2: [10, null], 1: [10, null], 0: [null, null] };
+const AL = { // [CAT I: head, cross, tail], [CAT II/III: head, cross, tail]
+  B777: [[25, 25, 10], [25, 15, 10]], A350: [[40, 30, 10], [40, 15, 10]], A380: [[38, 30, 10], [38, 15, 10]],
+  A330: [[35, 20, 10], [35, 15, 10]], A321N: [[15, 10, 10], [15, 10, 10]], A321C: [[30, 20, 10], [30, 15, 10]] };
+const AL_NAME = { B777: 'B777-200', A350: 'A350', A380: 'A380', A330: 'A330', A321N: 'A321(NEO)', A321C: 'A321(CEO)' };
+// 활주로 상태 목록 → RCAM 코드, 이륙성능 행 결정
+const COND = [
+  ['DRY', 'Dry'],
+  ['-RA', '-RA (약한 비)'],
+  ['RA_G', 'RA — Grooved/PFC 활주로'],
+  ['RA_S', 'RA — Smooth 활주로'],
+  ['+RA', 'Heavy Rain (+RA)'],
+  ['WET', 'Damp / Wet (물 ≤ 3 mm)'],
+  ['WATER', 'Water (물, 깊이 입력)'],
+  ['SLIPWET', 'Slippery Wet'],
+  ['FROST', 'Frost (서리)'],
+  ['SLUSH', 'Slush (깊이 입력)'],
+  ['DSN', 'Dry Snow (깊이 입력)'],
+  ['WSN', 'Wet Snow (깊이 입력)'],
+  ['CSN', 'Compacted Snow (OAT 입력)'],
+  ['SN_CSN', 'Dry/Wet Snow over Compacted Snow'],
+  ['W_CSN', 'Water on top of Compacted Snow'],
+  ['ICE', 'Ice (Cold & Dry)'],
+  ['WICE', 'Wet Ice'],
+  ['SN_ICE', 'Dry/Wet Snow over Ice'],
+];
+$('cond').innerHTML = COND.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+const num = v => { const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : null; };
+const MAXD = { WATER: 13, SLUSH: 13, DSN: 100, WSN: 30 };
+
+// 활주로 상태 → { cc, rcamItem, toRow, maxOver }
+function condEval() {
+  const c = $('cond').value, d = num($('depth').value), oat = num($('oat').value);
+  if (!c) return null;
+  const R = { c, d, cc: null, item: '', to: '', over: false, need: '' };
+  const dd = d == null ? null : d;
+  switch (c) {
+    case 'DRY': R.cc = 6; R.item = 'Dry'; R.to = 'Dry'; break;
+    case '-RA': R.cc = 5; R.item = '-RA'; R.to = 'W1'; break;
+    case 'RA_G': R.cc = 5; R.item = 'RA (Grooved or PFC Runway)'; R.to = 'W1'; break;
+    case 'RA_S': R.cc = 3; R.item = 'RA (Smooth Runway)'; R.to = 'W3'; break;
+    case '+RA': R.cc = 2; R.item = 'Heavy Rain'; R.to = 'W5'; break;
+    case 'WET': R.cc = 5; R.item = 'Wet (Includes damp and 3 mm (1/8 inch) depth or less of water)'; R.to = 'W1'; break;
+    case 'SLIPWET': R.cc = 3; R.item = 'Slippery Wet'; R.to = 'W2'; break;
+    case 'FROST': R.cc = 5; R.item = 'Frost'; R.to = 'FROST'; break;
+    case 'WATER':
+      if (dd == null) { R.need = '깊이(mm)'; R.cc = 2; R.item = 'Water'; R.to = 'W5'; break; }
+      if (dd <= 3) { R.cc = 5; R.item = 'Wet (Includes damp and 3 mm (1/8 inch) depth or less of water)'; R.to = 'W1'; }
+      else { R.cc = 2; R.item = 'Water'; R.to = dd <= 6 ? 'W4' : 'W5'; }
+      R.over = dd > MAXD.WATER; break;
+    case 'SLUSH':
+      if (dd == null) { R.need = '깊이(mm)'; R.cc = 2; R.item = 'Slush'; R.to = 'S3'; break; }
+      if (dd <= 3) { R.cc = 5; R.item = 'Slush ≤3'; R.to = 'S1'; } else { R.cc = 2; R.item = 'Slush'; R.to = dd <= 6 ? 'S2' : 'S3'; }
+      R.over = dd > MAXD.SLUSH; break;
+    case 'DSN':
+      if (dd == null) { R.need = '깊이(mm)'; R.cc = 3; R.item = 'Dry Snow >3'; R.to = 'D3'; break; }
+      if (dd <= 3) { R.cc = 5; R.item = 'Dry Snow ≤3'; R.to = 'D1'; } else { R.cc = 3; R.item = 'Dry Snow >3'; R.to = dd <= 10 ? 'D2' : 'D3'; }
+      R.over = dd > MAXD.DSN; break;
+    case 'WSN':
+      if (dd == null) { R.need = '깊이(mm)'; R.cc = 3; R.item = 'Wet Snow >3'; R.to = 'WS4'; break; }
+      if (dd <= 3) { R.cc = 5; R.item = 'Wet Snow ≤3'; R.to = 'WS1'; } else { R.cc = 3; R.item = 'Wet Snow >3'; R.to = dd <= 5 ? 'WS2' : dd <= 15 ? 'WS3' : 'WS4'; }
+      R.over = dd > MAXD.WSN; break;
+    case 'CSN':
+      if (oat == null) R.need = 'OAT';
+      if (oat != null && oat <= -15) { R.cc = 4; R.item = 'Compacted Snow (≤ -15)'; R.to = 'C1'; } else { R.cc = 3; R.item = 'Compacted Snow (> -15)'; R.to = 'C2'; }
+      break;
+    case 'SN_CSN': R.cc = 3; R.item = 'Dry snow or wet snow (any depth) over compacted snow'; R.to = dd == null || dd <= 3 ? 'D1' : dd <= 10 ? 'D2' : 'D3'; R.toNote = '이륙은 건설·습설 단독과 같은 성능 적용(깊이에 따라)'; break;
+    case 'W_CSN': R.cc = 0; R.item = 'Water on top of Compacted Snow'; R.to = 'C3'; break;
+    case 'ICE': R.cc = 1; R.item = 'Ice'; R.to = 'I1'; break;
+    case 'WICE': R.cc = 0; R.item = 'Wet Ice'; R.to = 'I2'; break;
+    case 'SN_ICE': R.cc = 0; R.item = 'Dry Snow or Wet Snow over Ice'; R.to = 'I2'; break;
+  }
+  return R;
+}
+const muCC = m => m == null ? null : m >= 0.40 ? 5 : m >= 0.36 ? 4 : m >= 0.30 ? 3 : m >= 0.26 ? 2 : m > 0.20 ? 1 : 0;
+const rcrCC = r => r == null ? null : r >= 13 ? 5 : r >= 12 ? 4 : r >= 10 ? 3 : r >= 8 ? 2 : r >= 7 ? 1 : 0;
+
+function parseHdg(s) {
+  s = String(s || '').trim().toUpperCase(); if (!s) return null;
+  let m = s.match(/^(\d{1,2})([LRC])?$/); if (m && +m[1] <= 36 && (m[2] || s.length <= 2)) return { h: (+m[1] % 36 || 36) * 10, approx: true };
+  m = s.match(/^(\d{3})$/); if (m && +m[1] <= 360) return { h: +m[1] % 360, approx: false };
+  return null;
+}
+function parseVar(s) { const m = String(s || '').trim().toUpperCase().match(/^(\d{1,2}(?:\.\d)?)\s*([EW])$/); return m ? (m[2] === 'W' ? +m[1] : -m[1]) : 0; }
+const norm = a => ((a % 360) + 540) % 360 - 180;     // -180..180
+const comp = (dir, spd, hdg) => { const a = norm(dir - hdg) * Math.PI / 180; return { head: spd * Math.cos(a), cross: spd * Math.sin(a) }; };
+// 방향 범위에서 가장 불리한 측풍·배풍
+function worst(dirs, spd, hdg) {
+  let x = 0, t = Infinity, xd = null, td = null;
+  dirs.forEach(d => { const c = comp(d, spd, hdg); if (Math.abs(c.cross) > Math.abs(x)) { x = c.cross; xd = d; } if (c.head < t) { t = c.head; td = d; } });
+  return { cross: x, head: t, xd, td };
+}
+function dirList(dir, vr) {
+  const L = dir == null ? [] : [dir];
+  if (vr) { let a = vr[0], b = vr[1]; const span = ((b - a) % 360 + 360) % 360; for (let i = 0; i <= span; i++) L.push((a + i) % 360); }
+  return L;
+}
+const r0 = v => Math.round(Math.abs(v) + 1e-9);
+const side = c => c > 0.4 ? 'R' : c < -0.4 ? 'L' : '';
+
+function calc() {
+  const H = parseHdg($('hdg').value), unitK = $('unit').value === 'MPS' ? 1.94384 : 1;
+  const vrbTxt = String($('wdir').value).trim().toUpperCase();
+  const isVRB = vrbTxt === 'VRB';
+  let dir = isVRB ? null : num($('wdir').value);
+  const v1 = $('wv1').value, v2 = $('wv2').value;
+  let vr = v1.length === 3 && v2.length === 3 ? [+v1 % 360, +v2 % 360] : null;
+  const vOff = parseVar($('var').value);
+  if (dir != null) dir = ((dir + vOff) % 360 + 360) % 360;
+  if (vr) vr = vr.map(x => ((x + vOff) % 360 + 360) % 360);
+  const ss = num($('wspd').value), gg = num($('wgust').value);
+  const S = ss == null ? null : ss * unitK, G = gg == null ? null : gg * unitK;
+  const phase = $('phase').value, ac = $('ac').value, tl = $('tl').value;
+  const spdUse = phase === 'plan' ? S : (G != null && S != null ? Math.max(S, G) : (G != null ? G : S));
+  // Braking action (가장 보수적)
+  const C = condEval(); const src = [];
+  if (C && C.cc != null) src.push([C.cc, `활주로 상태 ${$('cond').selectedOptions[0].text}${C.d != null && /WATER|SLUSH|DSN|WSN|SN_CSN/.test(C.c) ? ` ${C.d} mm` : ''}${C.c === 'CSN' && num($('oat').value) != null ? ` · OAT ${num($('oat').value)}°C` : ''}`]);
+  if ($('ba').value !== '') src.push([+$('ba').value, `보고 Braking Action ${BA_KO[+$('ba').value]}`]);
+  const ccs = ['cc1', 'cc2', 'cc3'].map(i => $(i).value).filter(v => v !== '').map(Number).filter(v => v >= 0 && v <= 6);
+  if (ccs.length) src.push([Math.min(...ccs), `RWYCC ${ccs.join('/')} → 가장 나쁜 구간 ${Math.min(...ccs)}`]);
+  const mu = num($('mu').value); if (mu != null) src.push([muCC(mu), `Mu ${mu}`]);
+  const rcr = num($('rcr').value); if (rcr != null) src.push([rcrCC(rcr), `RCR ${rcr}`]);
+  let cc = null, ccWhy = '';
+  src.forEach(([c, w]) => { if (cc == null || c < cc) { cc = c; ccWhy = w; } });
+  const baCode = cc == null ? 5 : Math.min(cc, 5);          // Dry(6)는 Good 칸 적용
+  const lim = WL[baCode];
+  // 공항 특례 (배풍)
+  const apt = $('apt').value; let tailLim = lim[1], aptMsg = [];
+  const isA321 = /^A321/.test(ac);
+  if (apt === 'RKPK' && tl === 'L') {
+    if (isA321) { aptMsg.push('김해 36L/36R 착륙(A321): 배풍 제한 15 kt. 배풍 10 kt 초과 시 — PIC 착륙, 36L/R Braking Action Good 이상, Normal Braking(Auto/Manual)·Anti-skid·Reverser·Spoiler 정상(ABS 쓰면 MED).'); if (baCode >= 5) tailLim = 15; else aptMsg.push('→ Braking Action이 Good 미만이라 15 kt 특례 적용 불가 — 표의 제한치 적용.'); }
+    else if (ac === 'A330') aptMsg.push('김해 36L/36R 착륙(A330): 배풍 제한은 FCOM 적용. 배풍 10 kt 초과 시 — PIC 착륙, 36L BA Good 이상·36R Surface Dry, 제동장치 정상(ABS MED), 36R 착륙중량 360,000 lbs 이하. (계산기는 표 값으로만 판정)');
+    else if (ac === 'B777') aptMsg.push('김해(B777): Planned Alternate로 사용 불가(RWY 36 사용 시 Diversion은 가능). PIC는 DLCP 또는 해당 기종 기장 1,000시간 이상. RWY 18은 주간만.');
+  }
+  if ((apt === 'RJFT' || apt === 'RJFM') && tl === 'L') {
+    const nm = apt === 'RJFT' ? '구마모토 RWY 07 (RNP RWY 25(AR) 불가 시)' : '미야자키 RWY 27 (RNP RWY 09(AR)·27(AR) 불가 시)';
+    if (isA321) { aptMsg.push(`${nm} 착륙(A321): 배풍 제한 15 kt. 배풍 10 kt 초과 시 — PIC 착륙, Braking Action Good 이상, Normal Braking·Anti-skid·Reverser·Spoiler 정상(ABS 쓰면 MED).`); if (baCode >= 5) tailLim = 15; else aptMsg.push('→ Braking Action이 Good 미만이라 15 kt 특례 적용 불가.'); }
+    else aptMsg.push(`${nm}: 규정은 A321 제한사항만 있음.`);
+  }
+  if (apt === 'RKPC') aptMsg.push('제주(FOM 5.8.1): Runway 31 이륙은 A321 항공기만 허용되며 Runway 31 착륙 및 Runway 13 이·착륙은 금지한다. (원문 그대로 — 적용 범위는 원문 확인)');
+  if (apt === 'RKPK') aptMsg.push('김해 RWY 18: Visual Approach 금지, Circling은 회사 지정 Track·절차(A-File).');
+
+  // 성분 계산
+  const out = { H, S, G, spdUse, cc, ccWhy, baCode, lim: [lim[0], tailLim], C, apt, aptMsg };
+  if (H && spdUse != null && (dir != null || vr)) {
+    const vrbIgnore = (isVRB || vr) && spdUse < 4;
+    const dirs = dirList(dir, vrbIgnore ? null : vr);
+    if (!dirs.length && isVRB) { out.vrbAll = !vrbIgnore; }
+    const allDirs = dirs.length ? dirs : (vrbIgnore ? [] : Array.from({ length: 360 }, (_, i) => i));
+    if (allDirs.length) {
+      const W = worst(allDirs, spdUse, H.h);
+      out.cross = W.cross; out.head = W.head; out.xd = W.xd; out.td = W.td; out.dirs = allDirs;
+      if (dir != null) { const c0 = comp(dir, spdUse, H.h); out.base = c0; }
+      if (S != null && dir != null) out.steady = comp(dir, S, H.h);
+      if (G != null && dir != null) out.gust = comp(dir, G, H.h);
+    }
+    out.vrbIgnore = vrbIgnore;
+  }
+  out.dir = dir; out.vr = vr; out.vOff = vOff;
+  return out;
+}
+
+function render() {
+  const o = calc(), ac = $('ac').value, tl = $('tl').value;
+  const res = [], msg = []; let bad = false, warn = false;
+  const ccTxt = o.cc == null ? '입력 없음 → Good 칸으로 계산' : `${BA_KO[Math.min(o.cc, 6)]} (RWYCC ${o.cc})`;
+  const limTxt = o.lim[0] == null ? 'NA' : `${o.lim[0]} / ${o.lim[1] == null ? 'NA' : o.lim[1]}`;
+  if (o.cross != null) {
+    const xc = r0(o.cross), hd = o.head, hv = r0(hd);
+    const xBad = o.lim[0] == null || xc > o.lim[0];
+    const tBad = hd < -0.5 && (o.lim[1] == null || hv > o.lim[1]);
+    res.push(`<div class="box ${xBad ? 'bad' : 'good'}"><div class="k">측풍 (Cross) ${o.vr ? '— 변동범위 최악' : ''}</div><div class="v">${xc} kt ${side(o.cross)}</div><div class="k">제한 ${o.lim[0] == null ? 'NA' : o.lim[0] + ' kt'}${o.xd != null && o.vr ? ` · ${String(o.xd).padStart(3, '0')}°` : ''}</div></div>`);
+    res.push(`<div class="box ${hd < -0.5 ? (tBad ? 'bad' : 'good') : 'good'}"><div class="k">${hd < -0.5 ? '배풍 (Tail)' : '정풍 (Head)'} ${o.vr ? '— 변동범위 최악' : ''}</div><div class="v">${hv} kt</div><div class="k">배풍 제한 ${o.lim[1] == null ? 'NA' : o.lim[1] + ' kt'}</div></div>`);
+    res.push(`<div class="box"><div class="k">적용 Braking Action</div><div class="v" style="font-size:16px">${ccTxt}</div><div class="k">${o.ccWhy || ''}</div></div>`);
+    res.push(`<div class="box"><div class="k">적용 풍속 (${$('phase').selectedOptions[0].text.split(' (')[0]})</div><div class="v">${Math.round(o.spdUse)} kt</div><div class="k">${o.S != null ? 'Steady ' + Math.round(o.S) : ''}${o.G != null ? ' · Gust/Max ' + Math.round(o.G) : ''}${$('unit').value === 'MPS' ? ' (m/s 환산)' : ''}</div></div>`);
+    if (o.steady && o.gust) msg.push(`참고: Steady ${Math.round(o.S)} kt → 측풍 ${r0(o.steady.cross)} / ${o.steady.head < -0.5 ? '배풍' : '정풍'} ${r0(o.steady.head)} · Gust ${Math.round(o.G)} kt → 측풍 ${r0(o.gust.cross)} / ${o.gust.head < -0.5 ? '배풍' : '정풍'} ${r0(o.gust.head)}`);
+    if (o.H.approx) msg.push(`활주로 번호로 방향을 ${o.H.h}°로 잡았습니다. 실제 자방위(예: 334°)를 넣으면 더 정확합니다.`);
+    if (o.vOff) msg.push(`METAR(진북) 바람을 자북으로 ${o.vOff > 0 ? '+' : ''}${o.vOff}° 보정했습니다 (VAR ${$('var').value}).`);
+    if (o.vrbIgnore) msg.push('풍속 4 kt 미만 VRB → 가장 불리한 방향 적용 예외 (FOM 4.5.1.1).');
+    if (xBad) { bad = true; msg.unshift(`<b>측풍 ${xc} kt — 제한 ${o.lim[0] == null ? 'NA(허용 안 됨)' : o.lim[0] + ' kt'} 초과</b>`); }
+    if (tBad) { bad = true; msg.unshift(`<b>배풍 ${hv} kt — 제한 ${o.lim[1] == null ? 'NA(배풍 허용 안 됨)' : o.lim[1] + ' kt'} 초과</b>`); }
+    if (hd < -0.5 && hv > 10 && !tBad) { warn = true; msg.push('<b>배풍 10 kt 초과 → 기장이 이·착륙 (FOM 4.5.1)</b>'); }
+    // auto land
+    if ($('al').value) {
+      const L = AL[ac][+$('al').value - 1], nm = $('al').value === '1' ? 'CAT I 이상' : 'CAT II/III';
+      const hdW = hd > 0 ? hv : 0, tlW = hd < -0.5 ? hv : 0;
+      const e = []; if (hdW > L[0]) e.push(`정풍 ${hdW}>${L[0]}`); if (xc > L[1]) e.push(`측풍 ${xc}>${L[1]}`); if (tlW > L[2]) e.push(`배풍 ${tlW}>${L[2]}`);
+      if (e.length) { bad = true; msg.unshift(`<b>Auto Land (${AL_NAME[ac]} ${nm}) 제한 초과: ${e.join(', ')}</b>`); }
+      else msg.push(`Auto Land (${AL_NAME[ac]} ${nm}) 제한 이내 — 정풍 ${L[0]} / 측풍 ${L[1]} / 배풍 ${L[2]} kt`);
+    }
+  } else {
+    res.push(`<div class="box"><div class="k">입력 필요</div><div class="v" style="font-size:15px">RWY HDG · 바람 방향 · 풍속</div></div>`);
+    res.push(`<div class="box"><div class="k">적용 Braking Action</div><div class="v" style="font-size:16px">${ccTxt}</div><div class="k">${o.ccWhy || ''}</div></div>`);
+    res.push(`<div class="box"><div class="k">바람 제한 (Cross / Tail)</div><div class="v">${limTxt}</div></div>`);
+  }
+  // 활주로 상태 판정
+  if (o.cc === 0) { bad = true; msg.unshift('<b>RWYCC 0 / Less than Poor / μ ≤ 0.20 / RCR ≤ 6 → 이·착륙 금지</b>'); }
+  if (o.C && o.C.over) { bad = true; msg.unshift(`<b>오염물 깊이 ${o.C.d} mm — 최대 ${MAXD[o.C.c]} mm 초과 → ${tl === 'L' ? '착륙' : '이륙'} 금지</b>`); }
+  if (o.C && (o.C.c === 'W_CSN' || o.C.c === 'WICE' || o.C.c === 'SN_ICE') && tl === 'T') { bad = true; msg.unshift('<b>이륙 성능표: Takeoff is not allowed</b>'); }
+  if (o.C && o.C.need) msg.push(`활주로 상태 판정에 ${o.C.need} 입력이 필요합니다 (지금은 보수적으로 가정).`);
+  if (o.C && o.C.toNote) msg.push(o.C.toNote);
+  o.aptMsg.forEach(m => msg.push(m));
+  if (o.lim[1] === 15) msg.push('공항 특례로 배풍 제한 15 kt 적용 중 (FOM 5.8).');
+  $('res').innerHTML = res.join('');
+  const cls = bad ? 'bad' : warn ? 'warn' : 'good';
+  const head = o.cross == null && !bad ? '' : bad ? '⛔ 제한 초과 / 금지 항목 있음' : warn ? '⚠ 제한 이내 — 조건 확인' : '✅ 제한 이내';
+  $('verdict').innerHTML = (head ? `<div class="verdict ${cls}">${head}</div>` : '') + (msg.length ? `<ul class="msg">${msg.map(m => `<li>${m}</li>`).join('')}</ul>` : '');
+  drawCompass(o);
+  renderTables(o);
+}
+
+function drawCompass(o) {
+  const sv = $('cmp'); if (!o.H) { sv.innerHTML = '<circle r="70" fill="none" stroke="#334155"/><text y="4" text-anchor="middle" fill="#64748b" font-size="11">RWY HDG 입력</text>'; return; }
+  const h = o.H.h, rot = a => `rotate(${a - h})`;
+  let s = '<circle r="72" fill="#0f172a" stroke="#334155"/>';
+  s += `<rect x="-7" y="-60" width="14" height="120" fill="#475569" rx="2"/><line x1="0" y1="-55" x2="0" y2="55" stroke="#e2e8f0" stroke-dasharray="6 5" stroke-width="1.5"/>`;
+  s += `<text x="0" y="68" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="700">${String(Math.round(h / 10) || 36).padStart(2, '0')}</text>`;
+  if (o.vr) { const a0 = (o.vr[0] - h) * Math.PI / 180, span = ((o.vr[1] - o.vr[0]) % 360 + 360) % 360, a1 = a0 + span * Math.PI / 180; const P = a => [70 * Math.sin(a), -70 * Math.cos(a)]; const [x0, y0] = P(a0), [x1, y1] = P(a1); s += `<path d="M0 0 L${x0} ${y0} A70 70 0 ${span > 180 ? 1 : 0} 1 ${x1} ${y1} Z" fill="#f59e0b33" stroke="#f59e0b"/>`; }
+  if (o.dir != null) s += `<g transform="${rot(o.dir)}"><line x1="0" y1="-70" x2="0" y2="-22" stroke="#38bdf8" stroke-width="4"/><path d="M0 -18 L-8 -32 L8 -32 Z" fill="#38bdf8"/></g>`;
+  s += `<text x="-72" y="-62" fill="#94a3b8" font-size="9">RWY ↑</text>`;
+  sv.innerHTML = s;
+}
+
+const CC_ROWS = [
+  [6, ['Dry'], '-', '-', '-', 'Dry', '-'],
+  [5, ['-RA', 'RA (Grooved or PFC Runway)⁽⁴⁾', 'Frost', 'Wet (Includes damp and 3 mm (1/8 inch) depth or less of water)', '<i>3mm (1/8 inch) depth or less of:</i>', 'Slush', 'Dry Snow', 'Wet Snow'], 'Good', '0.4 Or higher', 'At Or above 13', 'Good', 'Braking deceleration is normal for the wheel braking effort applied AND directional control is normal.'],
+  [4, ['<i>-15ºC and Colder outside air temperature:</i>', 'Compacted Snow'], 'Good to Medium', '0.39 ~ 0.36', '12', 'Good to Medium', 'Brake deceleration OR directional control is between Good and Medium.'],
+  [3, ['RA (Smooth Runway)⁽⁵⁾', 'Slippery Wet', 'Dry snow or wet snow (any depth) over compacted snow', '<i>Warmer than -15ºC outside air temperature:</i>', 'Compacted Snow', '<i>Greater than 3mm (1/8 inch) depth of:</i>', 'Dry Snow', 'Wet Snow'], 'Medium', '0.35 ~ 0.30', '11 ~ 10', 'Medium', 'Braking deceleration is noticeably reduced for the wheel braking effort applied OR directional control is noticeably reduced.'],
+  [2, ['Heavy Rain', '<i>Greater than 3mm (1/8 inch) depth of:</i>', 'Water', 'Slush'], 'Medium to Poor', '0.29 ~ 0.26', '9 ~ 8', 'Medium to Poor', 'Brake deceleration OR directional control is between Medium and Poor.'],
+  [1, ['Ice'], 'Poor', '0.25 ~ 0.21', '7', 'Poor', 'Braking deceleration is significantly reduced for the wheel braking effort applied OR directional control is significantly reduced.'],
+  [0, ['Wet Ice', 'Water on top of Compacted Snow', 'Dry Snow or Wet Snow over Ice'], 'Less than Poor', '0.20 Or lower', 'At Or below 6', '-', 'Braking deceleration is minimal to non-existent for the wheel braking effort applied OR directional control is uncertain.'],
+];
+// 활주로 상태 항목 → RCAM 표의 강조할 줄(문구)
+const ITEM_HL = { 'Slush ≤3': 'Slush', 'Dry Snow ≤3': 'Dry Snow', 'Wet Snow ≤3': 'Wet Snow', 'Compacted Snow (≤ -15)': 'Compacted Snow', 'Compacted Snow (> -15)': 'Compacted Snow', 'Dry Snow >3': 'Dry Snow', 'Wet Snow >3': 'Wet Snow', 'RA (Grooved or PFC Runway)': 'RA (Grooved or PFC Runway)⁽⁴⁾', 'RA (Smooth Runway)': 'RA (Smooth Runway)⁽⁵⁾' };
+const TO_ROWS = [
+  ['Dry', 'Dry', 'Dry', 'Dry'],
+  ['Water', 'W1', '-RA · RA (Grooved or PFC Runway) · Damp · Wet (Water ≤ 3 mm (1/8 inch))', 'Wet'],
+  ['Water', 'W2', 'Slippery Wet', 'Slippery Wet'],
+  ['Water', 'W3', 'RA (Smooth Runway)', 'Water 1/4" (6 mm)'],
+  ['Water', 'W4', '3 mm (1/8 inch) &lt; Water ≤ 6 mm (1/4 inch)', 'Water 1/4" (6 mm)'],
+  ['Water', 'W5', '6 mm (1/4 inch) &lt; Water ≤ 13 mm (1/2 inch) · Heavy Rain', 'Water 1/2" (13 mm)'],
+  ['Slush', 'S1', 'Slush ≤ 3 mm (1/8 inch)', 'Wet'],
+  ['Slush', 'S2', '3 mm (1/8 inch) &lt; Slush ≤ 6 mm (1/4 inch)', 'Slush 1/4" (6 mm)'],
+  ['Slush', 'S3', '6 mm (1/4 inch) &lt; Slush ≤ 13 mm (1/2 inch)', 'Slush 1/2" (13 mm)'],
+  ['Dry Snow', 'D1', 'Dry Snow ≤ 3 mm (1/8 inch)', 'Wet'],
+  ['Dry Snow', 'D2', '3 mm (1/8 inch) &lt; Dry Snow ≤ 10 mm (2/5 inch)', 'Dry snow 2/5" (10 mm)'],
+  ['Dry Snow', 'D3', '10 mm (2/5 inch) &lt; Dry Snow ≤ 100 mm (4 inch)', 'Dry snow 4" (100 mm)'],
+  ['Wet Snow', 'WS1', 'Wet Snow ≤ 3 mm (1/8 inch)', 'Wet'],
+  ['Wet Snow', 'WS2', '3 mm (1/8 inch) &lt; Wet Snow ≤ 5 mm (1/5 inch)', 'Wet snow 1/5" (5 mm)'],
+  ['Wet Snow', 'WS3', '5 mm (1/5 inch) &lt; Wet Snow ≤ 15 mm (3/5 inch)', 'Wet snow 3/5" (15 mm)'],
+  ['Wet Snow', 'WS4', '15 mm (3/5 inch) &lt; Wet Snow ≤ 30 mm (6/5 inch)', 'Wet snow 6/5" (30 mm)'],
+  ['Frost', 'FROST', 'Frost', 'Wet'],
+  ['Compacted Snow', 'C1', 'No Water on Top of Compacted Snow — OAT at or below -15 °C', 'Compact Snow'],
+  ['Compacted Snow', 'C2', 'No Water on Top of Compacted Snow — OAT above -15 °C', 'Dry snow 2/5" (10 mm)'],
+  ['Compacted Snow', 'C3', 'Water on Top of Compacted Snow', 'Takeoff is not allowed'],
+  ['Ice', 'I1', 'Ice (Cold&amp;Dry)', 'Ice cold &amp; dry'],
+  ['Ice', 'I2', 'Wet Ice · Dry or Wet Snow over Ice', 'Takeoff is not allowed'],
+];
+
+function renderTables(o) {
+  const ccHit = o.cc, baCol = o.baCode;   // baCol 5..0
+  // ⑤ 바람 제한 표
+  const wt = window._wt || ($('tl').value === 'T' ? 'T' : 'L');
+  document.querySelectorAll('#wtabs button').forEach(b => b.classList.toggle('on', b.dataset.w === wt));
+  const ac = $('ac').value, acRow = /^A321/.test(ac) ? 'A321' : ac;
+  const cols = [5, 4, 3, 2, 1, 0], colName = ['Good', 'Good to Medium', 'Medium', 'Medium to Poor', 'Poor', 'Nil'];
+  const v = c => { const L = WL[c]; return c === 0 ? 'NA <sup>1)</sup>' : `${L[0]} / ${L[1] == null ? 'NA <sup>1)</sup>' : L[1]}`; };
+  const xBad = o.cross != null && (o.lim[0] == null || r0(o.cross) > o.lim[0]);
+  const tBad = o.head != null && o.head < -0.5 && (o.lim[1] == null || r0(o.head) > o.lim[1]);
+  let rows;
+  if (wt === 'AAR') rows = [['A321', 'AAR']];
+  else if (wt === 'T') rows = [['B777', 'B777 (1.17.1.1)'], ['A380'], ['A350'], ['A330'], ['A321']];
+  else rows = [['B777', 'B777 (1.17.1.1)'], ['A380'], ['A350'], ['A330'], ['A321']];
+  let h = `<table><tr><th rowspan="2">Aircraft Type</th><th colspan="6">Braking Action (Cross Wind / Tail Wind)</th></tr><tr>${cols.map((c, i) => `<th class="${c === baCol ? 'hit' : ''}">${colName[i]}</th>`).join('')}</tr>`;
+  rows.forEach(([t, lbl]) => {
+    const me = t === acRow || (wt === 'AAR');
+    h += `<tr><td class="${me ? 'hit' : ''}">${lbl || t}</td>${cols.map(c => `<td class="${me && c === baCol ? ((xBad || tBad) ? 'cell-hit' : 'hit') : ''}">${v(c)}</td>`).join('')}</tr>`;
+  });
+  h += '</table>';
+  if (o.lim[1] === 15) h += `<div class="note" style="color:#fca5a5;margin-top:4px">※ 공항 특례(FOM 5.8)로 배풍 제한 15 kt 적용 중</div>`;
+  $('tbl-wind').innerHTML = h;
+  // ⑥ Auto land
+  const alSel = $('al').value;
+  let a = `<table><tr><th rowspan="2">A/C Type</th><th colspan="3" class="${alSel === '1' ? 'hit' : ''}">CAT I or better</th><th colspan="3" class="${alSel === '2' ? 'hit' : ''}">CAT II / CAT III</th></tr><tr><th>Head</th><th>Cross</th><th>Tail</th><th>Head</th><th>Cross</th><th>Tail</th></tr>`;
+  ['B777', 'A350', 'A380', 'A330', 'A321N', 'A321C'].forEach(t => {
+    const me = t === ac || (ac === 'B777' && t === 'B777');
+    a += `<tr><td class="${me ? 'hit' : ''}">${AL_NAME[t]}</td>${AL[t][0].concat(AL[t][1]).map((x, i) => `<td class="${me && alSel && ((alSel === '1' && i < 3) || (alSel === '2' && i >= 3)) ? 'hit' : ''}">${x}</td>`).join('')}</tr>`;
+  });
+  $('tbl-al').innerHTML = a + '</table>';
+  // ⑦ RCAM
+  const hlItem = o.C ? (ITEM_HL[o.C.item] || o.C.item) : null;
+  let r = `<table><tr><th>RWYCC⁽¹⁾</th><th>Runway Condition Description</th><th>Braking Action</th><th>Mu(μ)⁽²⁾</th><th>RCR⁽³⁾</th><th>Related Landing Performance</th><th>Deceleration or Directional Control Observation</th></tr>`;
+  CC_ROWS.forEach(([c, items, ba, mu, rcr, lp, obs]) => {
+    const on = ccHit === c;
+    r += `<tr class="${on ? 'hit' : ''}"><td>${c}</td><td class="l">${items.map(t => /^<i>/.test(t) ? `<div style="margin-top:3px">${t}</div>` : `<div${on && hlItem && (t === hlItem || t.startsWith(hlItem)) ? ' class="cell-hit" style="border-radius:4px;padding:0 3px"' : ''}>• ${t}</div>`).join('')}</td><td>${ba}</td><td>${mu}</td><td>${rcr}</td><td>${lp}</td><td class="l" style="font-weight:400">${obs}</td></tr>`;
+  });
+  $('tbl-rcam').innerHTML = r + '</table>';
+  // ⑧ 최대 깊이
+  const dk = o.C && MAXD[o.C.c] ? o.C.c : null;
+  const D = [['WATER', 'Water', '13 mm (1/2 inch)'], ['SLUSH', 'Slush', '13 mm (1/2 inch)'], ['DSN', 'Dry Snow', '100 mm (4 inch)'], ['WSN', 'Wet Snow', '30 mm (6/5 inch)']];
+  $('tbl-depth').innerHTML = `<table><tr><th>Contaminant</th>${D.map(x => `<th class="${x[0] === dk ? 'hit' : ''}">${x[1]}</th>`).join('')}</tr><tr><th>Depth</th>${D.map(x => `<td class="${x[0] === dk ? (o.C.over ? 'cell-hit' : 'hit') : ''}">${x[2]}${x[0] === dk && o.C.d != null ? `<br><b>입력 ${o.C.d} mm</b>` : ''}</td>`).join('')}</tr></table>`;
+  // ⑨ 이륙 성능 표
+  const toHit = o.C ? o.C.to : null; let t = `<table><tr><th>Contaminant</th><th>Runway Condition &amp; Depth</th><th>Takeoff Performance</th></tr>`; let last = '';
+  TO_ROWS.forEach(([g, k, desc, perf]) => {
+    const on = k === toHit, first = g !== last; last = g;
+    const span = TO_ROWS.filter(x => x[0] === g).length;
+    t += `<tr class="${on ? 'hit' : ''}">${first ? `<td rowspan="${span}" style="background:#111a2b;color:var(--tx);font-weight:700;outline:none">${g}</td>` : ''}<td class="l">${desc}</td><td class="${on && /not allowed/.test(perf) ? 'cell-hit' : ''}">${perf}</td></tr>`;
+  });
+  $('tbl-to').innerHTML = t + '</table>';
+}
+
+document.querySelectorAll('input.dig').forEach(el => el.addEventListener('input', () => {
+  let v = el.value.replace(/\D/g, '').slice(0, +el.dataset.max);
+    if (el.value !== v) el.value = v;
+  if (v.length === +el.dataset.max) { const all = [...document.querySelectorAll('input.dig')], n = all[all.indexOf(el) + 1]; if (n && n.parentElement === el.parentElement) n.focus(); }
+}));
+$('cond').value = 'DRY';
+// 새 창(아이패드 단일 창 포함)으로 열렸을 때 닫기 — iframe 안에서는 숨김
+if (window.top === window.self) {
+  const cb = $('win-close'); cb.style.display = '';
+  cb.addEventListener('click', () => {
+    try { window.close(); } catch (e) { }
+    setTimeout(() => { if (!window.closed) { if (history.length > 1) history.back(); else location.href = '../index.html'; } }, 250);
+  });
+}
+document.querySelectorAll('input,select').forEach(el => { el.addEventListener('input', render); el.addEventListener('change', render); });
+$('tl').addEventListener('change', () => { window._wt = null; render(); });
+$('wtabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; window._wt = b.dataset.w; render(); });
+
+// 앱에서 넘겨준 METAR (#d=...) → 바람 넣기 버튼
+function metarWind(raw) {
+  const m = String(raw || '').match(/\b(VRB|\d{3})(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)\b(?:\s+(\d{3})V(\d{3})\b)?/);
+  return m ? { dir: m[1], spd: +m[2], gust: m[3] ? +m[3] : null, unit: m[4], vr: m[5] ? `${m[5]}-${m[6]}` : '' } : null;
+}
+(function init() {
+  let D = null; try { D = JSON.parse(decodeURIComponent(location.hash.replace(/^#d=/, ''))); } catch (e) { }
+  if (D && D.ac && $('ac').querySelector(`option[value="${D.ac}"]`)) $('ac').value = D.ac;
+  const chips = [];
+  ((D && D.apts) || []).forEach((a, i) => {
+    const w = metarWind(a.metar); if (!w) return;
+    chips.push(`<button type="button" class="chip" data-i="${i}">${a.role} ${a.icao} METAR ${w.dir}${String(w.spd).padStart(2, '0')}${w.gust ? 'G' + w.gust : ''}${w.unit}${w.vr ? ' ' + w.vr.replace('-', 'V') : ''} 넣기</button>`);
+    a.w = w;
+  });
+  if (chips.length) {
+    $('metar-chips').innerHTML = chips.join('') + '<span class="note">METAR 바람은 진북 기준 — 자북 변환이 필요하면 VAR 칸을 쓰세요. 실제 판단은 Tower 바람.</span>';
+    $('metar-chips').addEventListener('click', e => {
+      const b = e.target.closest('[data-i]'); if (!b) return; const a = D.apts[+b.dataset.i], w = a.w;
+      $('wdir').value = w.dir; $('wspd').value = w.spd; $('wgust').value = w.gust || ''; $('unit').value = w.unit; const vv = (w.vr || '').split('-'); $('wv1').value = vv[0] || ''; $('wv2').value = vv[1] || '';
+      $('tl').value = a.role === '출발' ? 'T' : 'L';
+      if (['RKPK', 'RKPC', 'RJFT', 'RJFM'].includes(a.icao)) $('apt').value = a.icao;
+      window._wt = null; render();
+    });
+  }
+  render();
+})();
+</script>
+</body>
+</html>
