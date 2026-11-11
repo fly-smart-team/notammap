@@ -6802,6 +6802,30 @@ svg.leaflet-image-layer.leaflet-interactive path {
         im.src = url;
       });
     }
+    function ocrDone(r) {
+      const ov = $('ocr-overlay'), st = $('ocr-st'); let fixed = 0;
+      let raw = String((r && r.data && r.data.text) || '').split('\n').map(l => l.replace(/[^0-9NSEW.°'" :-]/g, '').replace(/\s+/g, ' ').trim())
+        .filter(l => /[NSEW]\s*\d{4}\.\d|[NSEW]\s*\d{5,}|\d{5,}\s*[NSEW]|\d\s*°/.test(l))   // 좌표처럼 생긴 줄만 남김
+        .map(l => l.replace(/(^|[^NSEW\d.])(\d{4,6})\s*([EW])\s*(\d{5,7})/g, (m, pre, la, ew, lo) => { fixed++; return pre + 'N' + la + ew + lo; })).join('\n');   // 위도 앞 N이 빠진 경우 보정
+      raw = raw.replace(/([NSEW]\d{4,7})\s+([EW])\s*(\d{5,7})/g, '$1$2$3').replace(/(\d{4,6}[NS])\s+(\d{5,7})/g, '$1$2').replace(/(\d{4,7}[EW])\s+(\d{5,7})/g, '$1$2');   // 글자 사이 잘못 들어간 공백 정리
+      $('ocr-txt').value = raw; ov._live();
+      const n = raw ? parseManualCoords(raw).length : 0;
+      st.textContent = n ? `좌표 ${n}개 인식 — 아래 변환 결과를 사진과 대조하세요` + (fixed ? ` · ⚠ N/S가 빠진 위도 ${fixed}개를 N(북위)으로 가정했습니다 — 확인 필요` : '') : '좌표를 찾지 못했습니다 — 사진에서 좌표 부분을 드래그로 선택해 다시 읽어 보세요';
+    }
+    // 선택 영역(비율)만 잘라냄 — 없으면 전체
+    function ocrCrop(cv, sel) {
+      if (!sel) return cv;
+      const x = Math.round(sel.l * cv.width), y = Math.round(sel.t * cv.height), w = Math.max(10, Math.round(sel.w * cv.width)), h = Math.max(10, Math.round(sel.h * cv.height));
+      const o = document.createElement('canvas'); o.width = w; o.height = h; o.getContext('2d').drawImage(cv, x, y, w, h, 0, 0, w, h); return o;
+    }
+    async function ocrRecog(sel) {
+      const ov = $('ocr-overlay'); if (!ov || !ov._pr || ocrBusy) return; ocrBusy = true; ov._sel = sel;
+      const st = $('ocr-st'); try {
+        st.textContent = '선택 영역 읽는 중…'; const w = await ocrGetWorker(); const r = await w.recognize(ocrCrop(ov._pr.canvas, sel));
+        ocrDone(r);
+      } catch (e) { st.textContent = '⚠ ' + (e && e.message || e); }
+      ocrBusy = false;
+    }
     function ocrOpenModal() {
       let ov = $('ocr-overlay'); if (ov) { ov.style.display = 'flex'; return ov; }
       ov = document.createElement('div'); ov.id = 'ocr-overlay';
@@ -6809,38 +6833,45 @@ svg.leaflet-image-layer.leaflet-interactive path {
       ov.innerHTML = `<div style="width:100%;max-width:560px;max-height:94vh;overflow:auto;background:#0f172a;border:1px solid #334155;border-radius:14px;padding:12px;color:#e2e8f0">
         <div style="display:flex;align-items:center;gap:8px"><b style="color:#5eead4;font-size:15px">📷 좌표 사진 인식</b><button type="button" id="ocr-x" style="margin-left:auto;color:#cbd5e1;font-size:18px;padding:0 6px">✕</button></div>
         <div style="font-size:11px;color:#94a3b8;margin-top:4px">좌표 줄만 가까이, 정면으로 찍으면 정확합니다. 인식 결과는 <b style="color:#fbbf24">반드시 사진과 대조</b>하세요.</div>
-        <img id="ocr-img" alt="" style="display:none;width:100%;max-height:170px;object-fit:contain;background:#020617;border-radius:8px;margin-top:8px">
+        <div id="ocr-box" style="position:relative;display:none;margin-top:8px;touch-action:none;line-height:0"><img id="ocr-img" alt="" draggable="false" style="width:100%;max-height:260px;object-fit:contain;background:#020617;border-radius:8px;display:block"><div id="ocr-sel" style="display:none;position:absolute;border:2px solid #fbbf24;background:rgba(251,191,36,.15);pointer-events:none"></div></div>
+        <div id="ocr-hint" style="display:none;font-size:11px;color:#fbbf24;margin-top:4px">좌표 부분을 손가락으로 드래그해 선택 → <b>선택 영역만 다시 읽기</b> (선택 안 하면 사진 전체)</div>
         <div id="ocr-st" style="font-size:12px;color:#7dd3fc;margin-top:8px"></div>
         <textarea id="ocr-txt" rows="3" placeholder="인식된 글자 (고칠 수 있습니다)" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;background:#020617;border:1px solid #334155;color:#e2e8f0;font-size:13px;font-family:ui-monospace,monospace"></textarea>
         <div style="font-size:11px;color:#94a3b8;margin-top:6px">변환 결과 (FMS)</div>
         <pre id="ocr-fms" style="margin:2px 0 0;padding:8px;border-radius:8px;background:#020617;color:#34d399;font-size:13px;min-height:36px;white-space:pre-wrap;font-family:ui-monospace,monospace"></pre>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
           <button type="button" id="ocr-use" style="flex:1;min-width:120px;padding:9px;border-radius:9px;background:#0f766e;color:#fff;font-weight:700;font-size:13px">입력칸에 넣기</button>
+          <button type="button" id="ocr-crop" style="display:none;padding:9px 12px;border-radius:9px;border:1px solid #fbbf24;color:#fde68a;font-size:13px">✂ 선택 영역만 다시 읽기</button>
           <button type="button" id="ocr-again" style="padding:9px 12px;border-radius:9px;border:1px solid #475569;color:#e2e8f0;font-size:13px">📷 다시</button>
         </div></div>`;
       document.body.appendChild(ov);
       const live = () => { const t = $('ocr-txt').value, pts = t.trim() ? parseManualCoords(t) : []; $('ocr-fms').textContent = !t.trim() ? '' : pts.length ? pts.map(p => p.fms).join('\n') : '좌표를 찾지 못했습니다 — 위 글자를 사진에 맞게 고쳐 보세요'; $('ocr-use').disabled = !pts.length; $('ocr-use').style.opacity = pts.length ? 1 : .4; };
       $('ocr-txt').addEventListener('input', live); ov._live = live;
       $('ocr-x').onclick = () => { ov.style.display = 'none'; };
+      // 사진 위에서 드래그로 읽을 영역 선택
+      const bx = $('ocr-box'); let sx = 0, sy = 0, drag = false;
+      const pos = e => { const r = $('ocr-img').getBoundingClientRect(); return [Math.max(0, Math.min(r.width, e.clientX - r.left)), Math.max(0, Math.min(r.height, e.clientY - r.top)), r]; };
+      bx.addEventListener('pointerdown', e => { const [x, y] = pos(e); sx = x; sy = y; drag = true; ov._sel = null; $('ocr-sel').style.display = 'none'; bx.setPointerCapture(e.pointerId); });
+      bx.addEventListener('pointermove', e => { if (!drag) return; const [x, y] = pos(e), s = $('ocr-sel'); const l = Math.min(sx, x), t = Math.min(sy, y), w = Math.abs(x - sx), h = Math.abs(y - sy); Object.assign(s.style, { display: 'block', left: l + 'px', top: t + 'px', width: w + 'px', height: h + 'px' }); });
+      bx.addEventListener('pointerup', e => { if (!drag) return; drag = false; const [x, y, r] = pos(e); const l = Math.min(sx, x), t = Math.min(sy, y), w = Math.abs(x - sx), h = Math.abs(y - sy); if (w < 20 || h < 12) { $('ocr-sel').style.display = 'none'; ov._sel = null; return; } ov._sel = { l: l / r.width, t: t / r.height, w: w / r.width, h: h / r.height }; });
+      $('ocr-crop').onclick = () => { if (!ov._sel) { showToast('먼저 사진에서 좌표 부분을 드래그해 선택하세요'); return; } ocrRecog(ov._sel); };
       $('ocr-again').onclick = () => $('ocr-file').click();
       $('ocr-use').onclick = () => { const t = $('ocr-txt').value.trim(); if (!t) return; const inp = $('mm-input'); inp.value = inp.value.trim() ? inp.value.trim() + '\n' + t : t; inp.dispatchEvent(new Event('input')); ov.style.display = 'none'; try { showToast('입력칸에 넣었습니다 — 변환 결과를 확인하세요'); } catch (e) { } };
       return ov;
     }
     async function ocrRun(file) {
       if (ocrBusy) return; ocrBusy = true;
-      const ov = ocrOpenModal(), st = $('ocr-st'); $('ocr-txt').value = ''; $('ocr-fms').textContent = ''; ov._live();
+      const ov = ocrOpenModal(), st = $('ocr-st'); $('ocr-txt').value = ''; $('ocr-fms').textContent = ''; ov._live(); ov._sel = null; $('ocr-sel').style.display = 'none';
       try {
         if (!(await ocrCached()) && navigator.onLine === false) throw new Error('인식 데이터가 아직 이 기기에 없습니다. 인터넷이 되는 곳에서 📷를 한 번 사용해 주세요.');
         st.textContent = '사진 준비 중…';
-        const pr = await ocrPrep(file); $('ocr-img').src = pr.thumb; $('ocr-img').style.display = 'block';
+        const pr = await ocrPrep(file); ov._pr = pr; $('ocr-img').src = pr.thumb; $('ocr-box').style.display = 'block'; $('ocr-hint').style.display = 'block'; $('ocr-crop').style.display = 'inline-block';
         const first = !(await ocrCached());
         st.textContent = first ? '처음 한 번 인식 데이터를 받는 중 (약 7MB)…' : '인식 엔진 준비 중…';
         const w = await ocrGetWorker(m => { if (m.status === 'recognizing text') st.textContent = '글자 읽는 중… ' + Math.round((m.progress || 0) * 100) + '%'; else if (/loading|initializ/.test(m.status)) st.textContent = (first ? '인식 데이터 받는 중… ' : '엔진 준비 중… ') + (m.progress ? Math.round(m.progress * 100) + '%' : ''); });
         st.textContent = '글자 읽는 중…';
-        const r = await w.recognize(pr.canvas);
-        const raw = String((r && r.data && r.data.text) || '').split('\n').map(l => l.replace(/[^0-9NSEW.°'" :-]/g, '').replace(/\s+/g, ' ').trim()).filter(l => /\d/.test(l)).join('\n');
-        $('ocr-txt').value = raw; ov._live();
-        st.textContent = raw ? '인식 완료 — 아래 변환 결과를 사진과 대조하세요' : '숫자를 찾지 못했습니다 — 좌표 줄만 가까이 다시 찍어 보세요';
+        const r = await w.recognize(ocrCrop(pr.canvas, ov._sel));
+        ocrDone(r);
       } catch (e) { st.textContent = '⚠ ' + (e && e.message || e); }
       ocrBusy = false;
     }
