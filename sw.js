@@ -1,6 +1,6 @@
 // NOTAM FIR Map Lite — 오프라인 캐시 서비스 워커
 // 전략: 온라인이면 최신 페이지를 먼저 받아 바로 보여주고(4초 안에 응답 없으면 저장본), 오프라인이면 저장본
-const CACHE = 'notam-lite-v6';
+const CACHE = 'notam-lite-v7';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 const EXTRA = ['./787.html', './hot.pdf', './hot-data.json', './twy/index.json', './twy/RCTP.txt', './twy/RKSI.txt', './docs/wind-limits.html'];   // 같은 저장소의 다른 페이지 (있으면 함께 저장)
 
@@ -11,7 +11,7 @@ self.addEventListener('install', e => {
   }).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && !k.startsWith('notam-ocr-')).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
 async function notify(msg) {
@@ -41,6 +41,11 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;   // 기상(METAR)·지도 타일 등 외부 요청은 그대로 통과
+  // OCR 인식 데이터(./ocr/): 앱 업데이트와 무관한 별도 캐시 — 한 번 받으면 오프라인에서도 사용
+  if (url.pathname.includes('/ocr/')) {
+    e.respondWith(caches.open('notam-ocr-v1').then(async c => { const hit = await c.match(req); if (hit) return hit; const res = await fetch(req); if (res.ok) c.put(req, res.clone()); return res; }));
+    return;
+  }
   if (req.mode === 'navigate') {
     const scope = new URL(self.registration.scope).pathname;
     let rel = url.pathname.startsWith(scope) ? url.pathname.slice(scope.length) : url.pathname.replace(/^\//, '');
