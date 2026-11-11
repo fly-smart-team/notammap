@@ -891,8 +891,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v121 ↻</button>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v122 ↻</button>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
+      <button type="button" data-ctc-open title="Cold Temperature 고도보정 계산 — FOM 4.4.2.2" class="px-2.5 py-1.5 rounded-lg border text-[12px] font-bold hover:opacity-90 whitespace-nowrap" style="border-color:#a78bfa;background:rgba(76,29,149,.35);color:#ddd6fe">🥶 Cold Temp</button>
       <button id="btn-wind" type="button" title="바람 제한치 계산 · 활주로 상태(Braking Action) — FOM 4.5/5.8 · FCRM 1.17 · FCOM RCAM" class="px-2.5 py-1.5 rounded-lg border border-sky-600/70 bg-sky-950/40 text-[12px] font-bold text-sky-200 hover:bg-sky-900/50">🌬 Wind</button>
       <button id="btn-hidden" type="button" aria-label="위험물 검색" title="위험물 검색 · 보조배터리 Wh 계산 (FOM S13.1)" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-amber-600/70 bg-amber-950/40 hover:bg-amber-900/50 text-amber-200 text-[12px] font-bold">🔋 위험물 검색</button>
     </div>
@@ -5967,6 +5968,288 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const w = flightWindow(); ov.querySelector('[data-arr-eta]').textContent = w ? `ETA ${new Date(w.eta).toISOString().slice(11, 16)}Z` : 'ETA 정보 없음';
     }
     document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-arr-open]')) openArrival(); });
+    // ===== 🥶 Cold Temperature 고도보정 계산기 (FOM 4.4.2.2 · 4-48~4-52) =====
+    (function () {
+      const TBL = {
+        ft: {
+          cols: [200, 300, 400, 500, 600, 700, 800, 900, 1000, 1500, 2000, 3000, 4000, 5000],
+          rows: {
+            0: [20, 20, 30, 30, 40, 40, 50, 50, 60, 90, 120, 170, 230, 280],
+            '-10': [20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, 290, 390, 490],
+            '-20': [30, 50, 60, 70, 90, 100, 120, 130, 140, 210, 280, 420, 570, 710],
+            '-30': [40, 60, 80, 100, 120, 140, 150, 170, 190, 280, 380, 570, 760, 950],
+            '-40': [50, 80, 100, 120, 150, 170, 190, 220, 240, 360, 480, 720, 970, 1210],
+            '-50': [60, 90, 120, 150, 180, 210, 240, 270, 300, 450, 590, 890, 1190, 1500]
+          }
+        },
+        m: {
+          cols: [60, 90, 120, 150, 180, 210, 240, 270, 300, 450, 600, 900, 1200, 1500],
+          rows: {
+            0: [5, 5, 10, 10, 10, 15, 15, 15, 20, 25, 35, 50, 70, 85],
+            '-10': [10, 10, 15, 15, 20, 25, 25, 30, 30, 45, 60, 90, 120, 150],
+            '-20': [10, 15, 20, 25, 25, 30, 35, 40, 45, 65, 85, 130, 170, 215],
+            '-30': [15, 20, 25, 30, 35, 40, 45, 55, 60, 85, 115, 170, 230, 285],
+            '-40': [15, 25, 30, 40, 45, 50, 60, 65, 75, 110, 145, 220, 290, 365],
+            '-50': [20, 30, 40, 45, 55, 65, 75, 80, 90, 135, 180, 270, 360, 450]
+          }
+        }
+      };
+      const KINDS = [
+        ['iaf', 'IAF / Procedure Turn'], ['int', 'Intermediate'], ['faf', 'FAF'], ['mda', 'MDA / DA(H)'],
+        ['ma', 'Missed Approach'], ['circ', 'Circling'], ['etc', '기타 고도']
+      ];
+      const FLAGS = [
+        ['normal', '일반 (보정 후 ATC 인가 필요)'], ['profile', 'Profile View 최저고도 (ATC 인가 불필요)'],
+        ['mand', 'Mandatory / Missed Approach (ATC 사전인가 필요)'], ['exempt', 'ATC 지시고도·Radar Vector·SID 제한 (보정 안 함)']
+      ];
+      const defFlag = k => (k === 'mda' ? 'profile' : k === 'ma' ? 'mand' : 'normal');
+
+      // 표 조회: 온도는 '다음의 더 낮은 온도' 행, 높이는 '다음의 더 높은 높이' 열.
+      // 기준 높이(ft 1000 / m 300) 초과 시 예제(1,643 ft = 1,500 + 200)와 같이 분해 합산.
+      function lookup(unit, oat, h) {
+        const T = TBL[unit], cols = T.cols, thr = cols[8], max = cols[cols.length - 1];
+        const out = { rowKey: 0, overTemp: false, parts: [], corr: 0, alt: null };
+        if (!(h > 0)) return out;
+        let rk = oat >= 0 ? 0 : -10 * Math.ceil(-oat / 10);
+        if (rk < -50) { rk = -50; out.overTemp = true; }
+        out.rowKey = rk;
+        const vals = T.rows[String(rk)];
+        let rem = h;
+        while (rem > 0) {
+          let idx;
+          if (rem > thr) { idx = -1; for (let i = 0; i < cols.length; i++) if (cols[i] <= rem) idx = i; }
+          else { idx = cols.findIndex(c => c >= rem); }
+          out.parts.push({ col: cols[idx], val: vals[idx] });
+          out.corr += vals[idx];
+          rem -= cols[idx];
+        }
+        if (out.parts.length > 1 && h <= max) {   // 대안: 다음 높은 열 단일 조회
+          const i = cols.findIndex(c => c >= h);
+          out.alt = { col: cols[i], val: vals[i] };
+        }
+        return out;
+      }
+
+      // 전역 판단 (규정 d·e·f)
+      function global(g) {
+        const r = { need: true, vnavBlocked: false, exemptNonDA: false, msgs: [] };
+        const o = g.oat;
+        if (o == null || isNaN(o)) { r.need = false; r.msgs.push(['info', '공항 OAT를 입력하세요.']); return r; }
+        if (o > 0) { r.need = false; r.msgs.push(['ok', 'OAT 0℃ 초과 → 고도보정 불필요 (d)']); return r; }
+        const x = g.x;
+        if (g.opt === 'none-us') { r.need = false; r.msgs.push(['ok', '미국 IAP에 특별한 Note가 없음 → 온도보정 불필요. 장애물 회피가 의심스러우면 언제든 더 높은 고도를 ATC에 요구 (f)']); }
+        else if (g.opt === 'minpub') {
+          if (x == null || isNaN(x)) r.msgs.push(['info', '절차에 공표된 Minimum Temperature를 입력하세요.']);
+          else if (o >= x) { r.need = false; r.msgs.push(['ok', `OAT ${o}℃ ≥ 공표 최저온도 ${x}℃ → 보정 불필요 (d)`]); }
+          else r.msgs.push(['warn', `OAT ${o}℃ < 공표 최저온도 ${x}℃ → 보정 필요 (d)`]);
+        } else if (g.opt === 'cold-req') {
+          if (x == null || isNaN(x)) r.msgs.push(['info', 'Note의 온도(예: -25)를 입력하세요.']);
+          else if (o < x) r.msgs.push(['warn', `OAT ${o}℃ < Note 온도 ${x}℃ → 고도보정 필수 (f)`]);
+          else { r.need = false; r.msgs.push(['ok', `OAT ${o}℃ ≥ Note 온도 ${x}℃ → 이 Note 기준 보정 불필요 (f) · 0℃ 미만이므로 필요 시 보정 가능`]); }
+        } else if (g.opt === 'vnav') {
+          if (x == null || isNaN(x)) r.msgs.push(['info', 'VNAV 제한 온도(예: -20, -25)를 입력하세요.']);
+          else if (o < x) { r.vnavBlocked = true; r.msgs.push(['bad', `OAT ${o}℃ < VNAV 제한 ${x}℃ → VNAV DA 사용 불가. 적용 가능하면 Published LNAV MDA까지만 Baro-VNAV 사용 가능, LNAV/VNAV DA는 인가되지 않음 (e)`]); }
+          else if (g.vnav) { r.exemptNonDA = true; r.msgs.push(['ok', `OAT ${o}℃ ≥ VNAV 제한 ${x}℃, VNAV 접근 → DA/MDA 이외 고도는 보정 불필요 (e)`]); }
+          else r.msgs.push(['info', `OAT ${o}℃ ≥ VNAV 제한 ${x}℃ — VNAV로 접근하지 않으면 IAF~MA 전 고도 보정 (d)`]);
+        }
+        if (r.need && o < -50) r.msgs.push(['warn', '표 범위(-50℃) 초과 — -50℃ 행을 사용하며 실제 보정량은 더 클 수 있음']);
+        return r;
+      }
+
+      function evalRow(g, G, row) {
+        const res = { h: null, look: null, corr: 0, corrected: null, st: 'pending', text: '' };
+        const c = row.alt;
+        if (c == null || isNaN(c)) { res.text = '차트 고도를 입력하세요'; return res; }
+        if (!G.need) { res.st = 'none'; res.text = '보정 불필요'; res.corrected = c; return res; }
+        if (g.ta != null && !isNaN(g.ta) && c >= g.ta) { res.st = 'none'; res.text = '전이고도(Transition Alt/Level) 이상 → 저고도 보정 대상 아님 (d)'; res.corrected = c; return res; }
+        if (row.flag === 'exempt') { res.st = 'none'; res.text = 'SID 제한 / Radar Vector / ATC 지시고도 유지 → 보정 안 함 (d)'; res.corrected = c; return res; }
+        if (G.exemptNonDA && row.kind !== 'mda') { res.st = 'none'; res.text = 'VNAV 접근: DA/MDA 이외 고도는 보정 불필요 (e)'; res.corrected = c; return res; }
+        if (g.elev == null || isNaN(g.elev)) { res.text = '고도계 설정 기준 표고를 입력하세요'; return res; }
+        const h = c - g.elev; res.h = h;
+        if (h <= 0) { res.st = 'none'; res.text = '표고 이하 고도 — 계산 대상 아님'; res.corrected = c; return res; }
+        const L = lookup(g.unit, g.oat, h); res.look = L; res.corr = L.corr; res.corrected = c + L.corr;
+        if (row.flag === 'mand') { res.st = 'atc'; res.text = 'Mandatory / Missed Approach 고도는 ATC 사전인가 없이 보정하지 않음 (d)'; }
+        else if (row.flag === 'profile') { res.st = 'ok'; res.text = 'Profile View 최저고도 보정 → ATC 인가 불필요 (d)'; }
+        else { res.st = 'atc'; res.text = '보정한 고도를 유지하기 전 반드시 ATC 인가 필요 (d)'; }
+        return res;
+      }
+
+      window.ctcCalc = { lookup, global, evalRow, TBL };
+
+      // ----- UI -----
+      const U = { unit: 'ft', rows: [], ready: false, sel: 0, res: [] };
+      const ssv = (k, v) => { try { localStorage.setItem('ctc.' + k, v); } catch (e) {} };
+      const gsv = k => { try { return localStorage.getItem('ctc.' + k); } catch (e) { return null; } };
+      const num = v => { const t = String(v == null ? '' : v).trim().replace(',', '.'); if (t === '') return null; const n = Number(t); return isNaN(n) ? null : n; };
+      const E = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      const newRow = (kind) => ({ kind, alt: null, flag: defFlag(kind) });
+      function defaultRows() { return [newRow('iaf'), newRow('faf'), newRow('mda'), newRow('ma')]; }
+
+      const S = {
+        card: 'background:#141a22;border:1px solid #2c3744;border-radius:12px;padding:12px;margin-bottom:10px',
+        inp: 'padding:9px 10px;border-radius:8px;background:#0d1117;border:1px solid #3a4756;color:#fff;font-size:16px;width:100%;min-width:0',
+        lab: 'display:block;font-size:12px;color:#a9b8c9;margin-bottom:3px;font-weight:600',
+        sel: 'padding:9px 8px;border-radius:8px;background:#0d1117;border:1px solid #3a4756;color:#fff;font-size:14px;width:100%',
+        btn: 'padding:7px 12px;border-radius:8px;font-size:13px;font-weight:700;border:1px solid #3a4756;background:#1b232d;color:#e2e8f0'
+      };
+      const COL = { ok: '#4ade80', warn: '#fbbf24', bad: '#f87171', info: '#7dd3fc', atc: '#fbbf24', none: '#94a3b8', pending: '#94a3b8' };
+
+      function sgnInput(id, label, sign, val, ph) {
+        return `<div><label style="${S.lab}">${label}</label><div style="display:flex;gap:6px"><select id="${id}-s" style="${S.sel};width:64px;flex:none"><option value="-" ${sign === '-' ? 'selected' : ''}>−</option><option value="+" ${sign === '+' ? 'selected' : ''}>+</option></select><input id="${id}" type="text" inputmode="decimal" value="${E(val)}" placeholder="${ph || ''}" style="${S.inp}" autocomplete="off"></div></div>`;
+      }
+      const sgnVal = id => { const v = num(($(id) || {}).value); if (v == null) return null; return ($(id + '-s').value === '-' ? -1 : 1) * Math.abs(v); };
+
+      function readG() {
+        return {
+          unit: U.unit, oat: sgnVal('ctc-oat'), elev: num($('ctc-elev').value), ta: num($('ctc-ta').value),
+          opt: $('ctc-opt').value, x: sgnVal('ctc-x'), vnav: $('ctc-vnav').checked
+        };
+      }
+      function renderTable(g) {
+        const box = $('ctc-tbl'); if (!box) return;
+        if (U.sel >= U.rows.length) U.sel = 0;
+        const u = U.unit, T = TBL[u], r = U.res[U.sel], L = r && r.look && r.look.parts.length ? r.look : null;
+        const chips = U.rows.map((row, i) => {
+          const nm = (KINDS.find(k => k[0] === row.kind) || [0, ''])[1].split(' ')[0] + (row.alt != null ? ' ' + row.alt : '');
+          const on = i === U.sel;
+          return `<button type="button" data-ctc-sel="${i}" style="${S.btn};${on ? 'background:#7f1d1d;border-color:#ef4444;color:#fff' : ''}">${E(nm)}</button>`;
+        }).join('');
+        const usedCols = L ? L.parts.map(p => p.col) : [];
+        const RED = '#ef4444', cell = 'padding:7px 4px;text-align:center;font-size:14px;border:1px solid #3a4756;white-space:nowrap';
+        let t = `<table id="ctc-tab" style="border-collapse:collapse;min-width:${T.cols.length * 50 + 70}px;width:100%"><tr><th style="${cell};background:#1b232d;color:#a9b8c9;font-size:12px">Airport<br>Temp ℃</th>${T.cols.map(c => {
+          const uc = usedCols.includes(c);
+          return `<th style="${cell};background:${uc ? '#7f1d1d' : '#1b232d'};color:${uc ? '#fff' : '#cbd5e1'};${uc ? `border:2px solid ${RED}` : ''}">${c}</th>`;
+        }).join('')}</tr>`;
+        Object.keys(T.rows).sort((a, b) => b - a).forEach(rk => {
+          const ur = L && String(L.rowKey) === rk;
+          t += `<tr><th style="${cell};background:${ur ? '#7f1d1d' : '#1b232d'};color:${ur ? '#fff' : '#cbd5e1'};${ur ? `border:2px solid ${RED}` : ''}">${rk === '0' ? '0°' : rk + '°'}</th>`;
+          T.rows[rk].forEach((v, ci) => {
+            const c = T.cols[ci], uc = usedCols.includes(c), hit = ur && uc;
+            let st = cell;
+            if (hit) st += `;background:${RED};color:#fff;font-weight:800;font-size:16px;border:2px solid #fff`;
+            else if (ur) st += `;background:rgba(239,68,68,.16);color:#fff;border-top:2px solid ${RED};border-bottom:2px solid ${RED}`;
+            else if (uc) st += `;background:rgba(239,68,68,.16);color:#fff;border-left:2px solid ${RED};border-right:2px solid ${RED}`;
+            else st += ';color:#cbd5e1';
+            t += `<td style="${st}">${v}</td>`;
+          });
+          t += '</tr>';
+        });
+        t += '</table>';
+        let cap;
+        if (L) {
+          cap = `<div style="color:#fecaca;font-size:14px;line-height:1.55;margin:8px 0"><b>${E((KINDS.find(k => k[0] === U.rows[U.sel].kind) || [0, ''])[1])}</b> · 차트 ${U.rows[U.sel].alt} − 표고 ${readG().elev} = 높이 <b>${r.h} ${u}</b><br>온도 행 <b>${L.rowKey === 0 ? '0°' : L.rowKey + '°'}</b> (OAT ${readG().oat}℃ → 다음의 더 낮은 온도)<br>높이 열 ${L.parts.map(p => `<b>${p.col}</b> → <b>${p.val}</b>`).join(' + ')}${L.parts.length > 1 ? ' (표의 값을 더함)' : ''} = <b style="color:#fff;font-size:17px">${L.corr} ${u}</b> → 보정 후 <b style="color:#fff;font-size:17px">${r.corrected}</b></div>`;
+        } else cap = `<div style="color:#94a3b8;font-size:13px;margin:8px 0">${r ? E(r.text) : '입력 후 구간을 선택하면 사용한 칸이 빨강으로 표시됩니다.'}</div>`;
+        box.innerHTML = `<div style="${S.card};border-color:#ef4444"><div style="display:flex;align-items:center;margin-bottom:8px"><b style="font-size:15px;color:#fca5a5">📋 규정 표 (FOM 4-51, ${u === 'ft' ? 'feet' : 'meters'}) — 빨강 = 사용한 값</b></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${chips}</div>${cap}<div style="overflow-x:auto;-webkit-overflow-scrolling:touch" id="ctc-tabscroll">${t}</div></div>`;
+        const sc = $('ctc-tabscroll');
+        if (sc && L) { const th = sc.querySelectorAll('tr')[0].children; const idx = T.cols.indexOf(usedCols[usedCols.length - 1]) + 1; if (th[idx]) sc.scrollLeft = Math.max(0, th[idx].offsetLeft - sc.clientWidth / 2); }
+      }
+      function renderResults() {
+        const g = readG(), G = global(g), u = U.unit;
+        const ms = G.msgs.map(([t, m]) => `<div style="color:${COL[t]};font-size:14px;line-height:1.45;margin-bottom:4px">${t === 'bad' ? '⛔' : t === 'warn' ? '⚠️' : t === 'ok' ? '✅' : 'ℹ️'} ${E(m)}</div>`).join('');
+        $('ctc-sum').innerHTML = ms || '';
+        let rowsU = 0;
+        U.rows.forEach((row, i) => {
+          const r = evalRow(g, G, row), el = $('ctc-res-' + i); U.res[i] = r; if (!el) return;
+          const col = COL[r.st] || '#e2e8f0';
+          let h = '';
+          if (r.corrected != null && row.alt != null) {
+            const detail = r.look && r.look.parts.length
+              ? `<div style="font-size:12.5px;color:#a9b8c9;margin-top:4px">표 ${r.look.rowKey}℃ 행 · ${r.look.parts.map(p => p.col + '→' + p.val).join(' + ')} = <b style="color:#e2e8f0">${r.corr}</b> ${u}${r.look.parts.length > 1 ? ` <span style="color:#94a3b8">(대안: 다음 높은 열 ${r.look.alt.col} 단일 = ${r.look.alt.val})</span>` : ''}${r.look.overTemp ? ' <span style="color:#fbbf24">(-50℃ 초과)</span>' : ''}</div>` : '';
+            h = `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:baseline"><span style="font-size:13px;color:#a9b8c9">높이 ${r.h == null ? '-' : r.h + ' ' + u}</span><span style="font-size:13px;color:#a9b8c9">보정 +<b style="color:#fff;font-size:15px">${r.corr}</b></span><span style="margin-left:auto;font-size:12px;color:#a9b8c9">보정 후 지시고도</span><b style="font-size:24px;color:${col};font-family:ui-monospace,monospace">${r.corrected}</b><span style="font-size:12px;color:#a9b8c9">${u}</span></div>${detail}<div style="font-size:13px;color:${col};margin-top:4px">${r.st === 'ok' ? '✅' : r.st === 'atc' ? '🟡' : 'ℹ️'} ${E(r.text)}</div>${r.look && r.look.parts.length ? `<button type="button" data-ctc-sel="${i}" style="${S.btn};margin-top:8px;border-color:#ef4444;color:#fecaca">📋 규정 표에서 빨강으로 확인</button>` : ''}`;
+          } else h = `<div style="font-size:13px;color:#94a3b8">${E(r.text)}</div>`;
+          el.innerHTML = h; rowsU++;
+        });
+        renderTable(g);
+      }
+      function renderRows() {
+        const box = $('ctc-rows'), u = U.unit;
+        box.innerHTML = U.rows.map((row, i) => `<div style="${S.card}">
+          <div style="display:flex;gap:8px;align-items:end">
+            <div style="flex:1;min-width:0"><label style="${S.lab}">구간</label><select data-ctc-kind="${i}" style="${S.sel}">${KINDS.map(([k, n]) => `<option value="${k}" ${row.kind === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+            <div style="flex:1;min-width:0"><label style="${S.lab}">차트 고도 (${u})</label><input data-ctc-alt="${i}" type="text" inputmode="numeric" value="${row.alt == null ? '' : row.alt}" style="${S.inp}" autocomplete="off"></div>
+            <button type="button" data-ctc-del="${i}" title="삭제" style="${S.btn};padding:9px 11px">✕</button></div>
+          <div style="margin-top:8px"><select data-ctc-flag="${i}" style="${S.sel};font-size:13px">${FLAGS.map(([k, n]) => `<option value="${k}" ${row.flag === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+          <div id="ctc-res-${i}" style="margin-top:10px;padding-top:8px;border-top:1px dashed #2c3744"></div></div>`).join('');
+      }
+      function syncOptUI() {
+        const o = $('ctc-opt').value;
+        $('ctc-x-wrap').style.display = (o === 'vnav' || o === 'cold-req' || o === 'minpub') ? 'block' : 'none';
+        $('ctc-vnav-wrap').style.display = o === 'vnav' ? 'block' : 'none';
+        const lab = { vnav: 'VNAV 제한 온도 (℃, 예: -20 / -25)', 'cold-req': 'Note 온도 (℃, 예: -25)', minpub: '공표 Minimum Temperature (℃)' }[o];
+        if (lab) $('ctc-x-lab').textContent = lab;
+      }
+      function build() {
+        const ov = document.createElement('div'); ov.id = 'ctc-overlay';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:9000;background:#0d1117;display:none;flex-direction:column';
+        ov.innerHTML = `<div style="padding:10px 12px;border-bottom:1px solid #1b232d;display:flex;align-items:center;gap:8px"><b style="color:#c4b5fd;font-size:16px">🥶 Cold Temperature 고도보정</b><span style="font-size:11px;color:#94a3b8">FOM 4.4.2.2</span><button type="button" data-ctc-close style="margin-left:auto;color:#cbd5e1;font-size:20px;padding:0 6px">✕</button></div>
+        <div id="ctc-body" style="flex:1;overflow:auto;padding:12px;color:#e2e8f0;-webkit-overflow-scrolling:touch">
+          <div style="background:#2a2310;border:1px solid #8a6d1a;color:#fde68a;border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.45;margin-bottom:10px">보조 도구입니다. 최종 판단과 사용 고도는 회사 규정·Jeppesen 차트 기준입니다. <b>WHEN IT IS COLD, LOOK OUT BELOW.</b></div>
+          <div style="${S.card}">
+            <div style="display:flex;gap:6px;margin-bottom:10px"><button type="button" data-ctc-unit="ft" style="${S.btn};flex:1">피트 (ft)</button><button type="button" data-ctc-unit="m" style="${S.btn};flex:1">미터 (m)</button></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              ${sgnInput('ctc-oat', '공항 OAT (℃)', '-', '', '예: 18')}
+              <div><label style="${S.lab}" id="ctc-elev-lab">고도계 설정 기준 표고</label><input id="ctc-elev" type="text" inputmode="numeric" placeholder="공항 표고" style="${S.inp}" autocomplete="off"></div>
+              <div><label style="${S.lab}" id="ctc-ta-lab">전이고도 (선택)</label><input id="ctc-ta" type="text" inputmode="numeric" placeholder="미입력 시 미적용" style="${S.inp}" autocomplete="off"></div>
+              <div><label style="${S.lab}">IAP 온도 Note</label><select id="ctc-opt" style="${S.sel};font-size:13px"><option value="none">해당 없음 / 일반</option><option value="minpub">Minimum Published Temperature 표기</option><option value="vnav">Baro-VNAV / LNAV-VNAV not authorized below…</option><option value="cold-req">Cold Temp Altitude Correction Required at or below…</option><option value="none-us">미국 IAP – 특별한 Note 없음</option></select></div>
+            </div>
+            <div id="ctc-x-wrap" style="display:none;margin-top:10px">${sgnInput('ctc-x', '<span id="ctc-x-lab">제한 온도 (℃)</span>', '-', '', '예: 25')}</div>
+            <label id="ctc-vnav-wrap" style="display:none;margin-top:10px;font-size:14px;color:#e2e8f0"><input id="ctc-vnav" type="checkbox" style="width:18px;height:18px;vertical-align:-3px;margin-right:6px">VNAV(Baro-VNAV)로 접근</label>
+          </div>
+          <div id="ctc-sum" style="margin-bottom:8px"></div>
+          <div style="display:flex;align-items:center;margin:4px 2px 8px"><b style="font-size:15px;color:#c4b5fd">접근 구간 (IAF ~ Missed Approach)</b><button type="button" data-ctc-add style="${S.btn};margin-left:auto">＋ 구간 추가</button></div>
+          <div id="ctc-rows"></div>
+          <div id="ctc-tbl"></div>
+          <details style="${S.card}"><summary style="cursor:pointer;font-size:14px;font-weight:700;color:#e2e8f0">참고 — 구간별 ROC (FOM 4-48)</summary>
+            <div style="margin-top:8px;font-size:13.5px;line-height:1.7;color:#cbd5e1">Procedure Turn / Arc / Initial Approach: <b>1,000 ft</b><br>Intermediate (IAF~FAF): <b>500 ft</b><br>FAF~MAP: <b>250 ft</b><br>Circling Cat A·B·C: <b>500 ft</b> above airport<br>Circling Cat D: <b>600 ft</b> above airport<br><span style="color:#94a3b8">(Circling MDA는 300 ft ROC 기준)</span><br><span style="color:#94a3b8">고도계 오차: 표고 위 1,000 ft당 ISA보다 1℃ 낮을 때마다 4 ft</span></div></details>
+          <details style="${S.card}"><summary style="cursor:pointer;font-size:14px;font-weight:700;color:#e2e8f0">계산 방법 · 규정 요약</summary>
+            <div style="margin-top:8px;font-size:13.5px;line-height:1.6;color:#cbd5e1">① 보정 대상 고도 − 고도계 설정 기준(공항) 표고 = 높이<br>② 표에서 ‘다음의 더 낮은 온도’ 행(예: -18℃ → -20℃)과 ‘다음의 더 높은 높이’ 열(예: 283 → 300, 943 → 1000)을 만나는 값<br>③ 높이가 1,000 ft(300 m)를 넘으면 예제처럼 분해 합산 (1,643 = 1,500 + 200 → 210 + 30 = 240)<br>④ 적용: IAF ~ Missed Approach의 모든 고도, Transition Alt/Level 미만 QNH 고도에만<br>⑤ 비적용: SID 제한고도 · Radar Vector · ATC 지시고도 유지 · OAT 0℃ 초과 · 공표 최저온도 이상<br>⑥ 보정 고도 유지 전 ATC 인가 필요 (Profile View 최저고도는 불필요), Mandatory/Missed Approach 고도는 ATC 사전인가 없이 보정 금지<br>⑦ 장애물 회피가 의심스러우면 언제든 더 높은 고도를 ATC에 요구</div></details>
+          <div style="font-size:11.5px;color:#7b8a9b;line-height:1.5;margin:6px 2px 30px">출처: 비행운영교범 4.4.2 (4-48 ~ 4-52) REV.72 (2025.08.01) · 4-50 REV.75 (2026.06.25) 기준. 표 값은 표(4-51)를 그대로 옮긴 것이며 개정 시 확인이 필요합니다. 고고도 ISA±30℃ 그래프(4-53)는 포함하지 않습니다.</div>
+        </div>`;
+        document.body.appendChild(ov);
+        ov.addEventListener('input', e => {
+          const t = e.target;
+          if (t.dataset.ctcAlt !== undefined) U.rows[+t.dataset.ctcAlt].alt = num(t.value);
+          renderResults();
+        });
+        ov.addEventListener('change', e => {
+          const t = e.target;
+          if (t.id === 'ctc-opt') syncOptUI();
+          else if (t.dataset.ctcKind !== undefined) { const r = U.rows[+t.dataset.ctcKind]; r.kind = t.value; r.flag = defFlag(r.kind); renderRows(); }
+          else if (t.dataset.ctcFlag !== undefined) U.rows[+t.dataset.ctcFlag].flag = t.value;
+          renderResults();
+        });
+        ov.addEventListener('click', e => {
+          const t = e.target.closest('[data-ctc-close],[data-ctc-add],[data-ctc-del],[data-ctc-unit],[data-ctc-sel]'); if (!t) return;
+          if (t.dataset.ctcClose !== undefined) ov.style.display = 'none';
+          else if (t.dataset.ctcAdd !== undefined) { U.rows.push(newRow('etc')); renderRows(); renderResults(); }
+          else if (t.dataset.ctcDel !== undefined) { U.rows.splice(+t.dataset.ctcDel, 1); renderRows(); renderResults(); }
+          else if (t.dataset.ctcUnit) setUnit(t.dataset.ctcUnit);
+          else if (t.dataset.ctcSel !== undefined) { U.sel = +t.dataset.ctcSel; renderTable(readG()); if (t.closest('[id^=ctc-res-]')) $('ctc-tbl').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        });
+        U.rows = defaultRows(); U.ready = true;
+        renderRows(); syncOptUI(); setUnit(gsv('unit') === 'm' ? 'm' : 'ft', true);
+      }
+      function setUnit(u, init) {
+        if (!init && u !== U.unit) {   // 단위를 바꾸면 입력한 값도 환산
+          const f = u === 'm' ? 0.3048 : 1 / 0.3048, cv = v => (v == null ? null : Math.round(v * f));
+          U.rows.forEach(r => { r.alt = cv(r.alt); });
+          ['ctc-elev', 'ctc-ta'].forEach(id => { const v = num($(id).value); if (v != null) $(id).value = cv(v); });
+        }
+        U.unit = u; ssv('unit', u);
+        document.querySelectorAll('#ctc-overlay [data-ctc-unit]').forEach(b => {
+          const on = b.dataset.ctcUnit === u;
+          b.style.background = on ? '#5b21b6' : '#1b232d'; b.style.borderColor = on ? '#a78bfa' : '#3a4756'; b.style.color = on ? '#fff' : '#e2e8f0';
+        });
+        $('ctc-elev-lab').textContent = `고도계 설정 기준 표고 (${u})`;
+        $('ctc-ta-lab').textContent = `전이고도 (${u}, 선택)`;
+        renderRows(); renderResults();
+      }
+      window.ctcOpen = function () {
+        if (!U.ready) build();
+        $('ctc-overlay').style.display = 'flex'; renderResults();
+      };
+      document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-ctc-open]')) window.ctcOpen(); });
+    })();
     document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-jb-open]')) openJointBrief(); });
     // ===================== 내 기체(기번) 실시간 위치 · 도착 예상 (무료 ADS-B: adsb.fi / adsb.lol / airplanes.live) =====================
     let acLive = { status: 'idle' }, acTimer = null;
