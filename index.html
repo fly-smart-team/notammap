@@ -891,7 +891,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><span id="app-ver" class="text-[10px] text-slate-500 font-mono-code" title="앱 버전">v118</span>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v119 ↻</button>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button id="btn-wind" type="button" title="바람 제한치 계산 · 활주로 상태(Braking Action) — FOM 4.5/5.8 · FCRM 1.17 · FCOM RCAM" class="px-2.5 py-1.5 rounded-lg border border-sky-600/70 bg-sky-950/40 text-[12px] font-bold text-sky-200 hover:bg-sky-900/50">🌬 Wind</button>
       <button id="btn-hidden" type="button" aria-label="위험물 검색" title="위험물 검색 · 보조배터리 Wh 계산 (FOM S13.1)" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-amber-600/70 bg-amber-950/40 hover:bg-amber-900/50 text-amber-200 text-[12px] font-bold">🔋 위험물 검색</button>
@@ -7827,6 +7827,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
       // 저장 데이터(중요 노탐·설정)를 지우지 않도록 브라우저에 요청
       if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p => p || navigator.storage.persist()).catch(() => { });
     })();
+    // ===== 버전 표시 · 눌러서 강제 업데이트 (홈 화면 바로가기에서 예전 버전이 남을 때) =====
+    $('app-ver').addEventListener('click', async () => {
+      if (!navigator.onLine) { showToast('오프라인입니다 — 인터넷 연결 후 다시 눌러 주세요'); return; }
+      $('app-ver').textContent = '업데이트 중…';
+      try { const ks = await caches.keys(); await Promise.all(ks.filter(k => k.startsWith('notam-lite-')).map(k => caches.delete(k))); } catch (e) { }   // 사진 인식 데이터(notam-ocr-)는 남김
+      try { const r = await navigator.serviceWorker.getRegistration(); if (r) await r.update(); } catch (e) { }
+      location.replace(location.pathname + '?v=' + Date.now());
+    });
     // 초기 상태
     renderFir();
     renderMap(false);
