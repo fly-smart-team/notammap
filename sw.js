@@ -1,6 +1,6 @@
 // NOTAM FIR Map Lite — 오프라인 캐시 서비스 워커
 // 전략: 온라인이면 최신 페이지를 먼저 받아 바로 보여주고(4초 안에 응답 없으면 저장본), 오프라인이면 저장본
-const CACHE = 'notam-lite-v12';
+const CACHE = 'notam-lite-v13';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 const EXTRA = ['./787.html', './hot.pdf', './hot-data.json', './twy/index.json', './twy/RCTP.txt', './twy/RKSI.txt', './docs/wind-limits.html'];   // 같은 저장소의 다른 페이지 (있으면 함께 저장)
 

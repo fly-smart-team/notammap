@@ -891,7 +891,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v122 ↻</button>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v123 ↻</button>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button type="button" data-ctc-open title="Cold Temperature 고도보정 계산 — FOM 4.4.2.2" class="px-2.5 py-1.5 rounded-lg border text-[12px] font-bold hover:opacity-90 whitespace-nowrap" style="border-color:#a78bfa;background:rgba(76,29,149,.35);color:#ddd6fe">🥶 Cold Temp</button>
       <button id="btn-wind" type="button" title="바람 제한치 계산 · 활주로 상태(Braking Action) — FOM 4.5/5.8 · FCRM 1.17 · FCOM RCAM" class="px-2.5 py-1.5 rounded-lg border border-sky-600/70 bg-sky-950/40 text-[12px] font-bold text-sky-200 hover:bg-sky-900/50">🌬 Wind</button>
@@ -3862,6 +3862,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
         if (a && !a.ok) return { tier: 'W', why: `경로 ${[...awy, ...fx].slice(0, 3).join('·')} 언급 · ${a.why}` };
         if (awy.length && !fx.length && named5.length) return { tier: 'Y', why: `같은 항로 ${awy.join('·')} 다른 구간` };
         return { tier: 'R', why: `경로 ${[...awy, ...fx].slice(0, 4).join('·')}` };
+      }
+      // 조건부 경로(CDR) 표: 구간 픽스가 내 경로에 하나도 없으면 영향 없음 (있으면 위 fx 분기에서 처리)
+      if (/\bCDR\s?\d?\b|CONDITIONAL ROUTE/.test(t)) {
+        const segs = [...new Set([...t.matchAll(/\b([A-Z]{5})-([A-Z]{5})\b/g)].map(m => m[0]))];
+        if (segs.length) return { tier: 'W', why: `조건부 경로(CDR) ${segs.length}개 구간 — 내 경로에 없는 픽스 (${segs.slice(0, 2).join(', ')}${segs.length > 2 ? ' 등' : ''})` };
       }
       const otherAwy = [...words].filter(x => /^(?:[ABGHJLMNPQRTVWYZ]|U[ABGHLMNPRTW])\d{1,4}$/.test(x));
       if (otherAwy.length) return { tier: 'W', why: `경로 외 항로 (${otherAwy.slice(0, 3).join('·')})` };
