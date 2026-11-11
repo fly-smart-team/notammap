@@ -64,7 +64,7 @@
       <label>RWY HDG (자북) <input id="hdg" inputmode="numeric" placeholder="예: 334 또는 33L"></label>
       <label>바람 방향 (ATIS) <input id="wdir" inputmode="numeric" placeholder="예: 020 / VRB"></label>
       <label>풍속 (Steady) <input id="wspd" inputmode="decimal" placeholder="예: 17"></label>
-      <label>Gust 또는 Max <input id="wgust" inputmode="decimal" placeholder="예: 30 (없으면 비움)"></label>
+      <label>Gust 또는 Max (큰 값) <input id="wgust" inputmode="decimal" placeholder="예: 30 (없으면 비움)"></label>
       <label>변동 범위 (VRB) <span style="display:flex;gap:4px;align-items:center"><input id="wv1" class="dig" data-max="3" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="300"><b style="color:var(--mute)">–</b><input id="wv2" class="dig" data-max="3" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="030"></span></label>
       <label>단위 <select id="unit"><option value="KT">KT</option><option value="MPS">MPS (m/s → kt)</option></select></label>
       <label>METAR 쓸 때만: 편차 (VAR) <input id="var" placeholder="예: 8W (ATIS면 비움)"></label>
@@ -325,7 +325,7 @@ function calc() {
 
   // 성분 계산
   const out = { H, S, G, spdUse, cc, ccWhy, baCode, lim: [lim[0], tailLim], C, apt, aptMsg };
-  if (H && spdUse != null && (dir != null || vr)) {
+  if (H && spdUse != null && (dir != null || vr || isVRB)) {
     const vrbIgnore = (isVRB || vr) && spdUse < 4;
     const dirs = dirList(dir, vrbIgnore ? null : vr);
     if (!dirs.length && isVRB) { out.vrbAll = !vrbIgnore; }
@@ -360,9 +360,10 @@ function render() {
     if (o.H.approx) msg.push(`활주로 번호로 방향을 ${o.H.h}°로 잡았습니다. 실제 자방위(예: 334°)를 넣으면 더 정확합니다.`);
     if (o.vOff) msg.push(`METAR(진북) 바람을 자북으로 ${o.vOff > 0 ? '+' : ''}${o.vOff}° 보정했습니다 (VAR ${$('var').value}).`);
     if (o.vrbIgnore) msg.push('풍속 4 kt 미만 VRB → 가장 불리한 방향 적용 예외 (FOM 4.5.1.1).');
+    if (o.vrbAll) msg.push('방향 VRB(4 kt 이상) → 측풍·배풍 각각 가장 불리한 방향을 적용 (FOM 4.5.1.1 c): 풍속 전체를 측풍 / 배풍으로 가정.');
     if (xBad) { bad = true; msg.unshift(`<b>측풍 ${xc} kt — 제한 ${o.lim[0] == null ? 'NA(허용 안 됨)' : o.lim[0] + ' kt'} 초과</b>`); }
     if (tBad) { bad = true; msg.unshift(`<b>배풍 ${hv} kt — 제한 ${o.lim[1] == null ? 'NA(배풍 허용 안 됨)' : o.lim[1] + ' kt'} 초과</b>`); }
-    if (hd < -0.5 && hv > 10 && !tBad) { warn = true; msg.push('<b>배풍 10 kt 초과 → 기장이 이·착륙 (FOM 4.5.1)</b>'); }
+    if (hd < -0.5 && hv > 10) { if (!tBad) warn = true; msg.push('<b>배풍 10 kt 초과 → 기장이 이·착륙 (FOM 4.5.1)</b>'); }
     // auto land
     if ($('al').value) {
       const L = AL[ac][+$('al').value - 1], nm = $('al').value === '1' ? 'CAT I 이상' : 'CAT II/III';
@@ -371,6 +372,10 @@ function render() {
       if (e.length) { bad = true; msg.unshift(`<b>Auto Land (${AL_NAME[ac]} ${nm}) 제한 초과: ${e.join(', ')}</b>`); }
       else msg.push(`Auto Land (${AL_NAME[ac]} ${nm}) 제한 이내 — 정풍 ${L[0]} / 측풍 ${L[1]} / 배풍 ${L[2]} kt`);
     }
+  } else if (o.vrbIgnore && o.H) {
+    res.push(`<div class="box good"><div class="k">VRB · 풍속 ${Math.round(o.spdUse)} kt (4 kt 미만)</div><div class="v" style="font-size:15px">불리한 방향 적용 예외</div><div class="k">제한 ${limTxt} kt (측풍 / 배풍)</div></div>`);
+    res.push(`<div class="box"><div class="k">적용 Braking Action</div><div class="v" style="font-size:16px">${ccTxt}</div><div class="k">${o.ccWhy || ''}</div></div>`);
+    msg.push('풍속 4 kt 미만 VRB → Crosswind/Tailwind에 가장 불리한 방향을 적용하지 않는 예외 (FOM 4.5.1.1 c).');
   } else {
     res.push(`<div class="box"><div class="k">입력 필요</div><div class="v" style="font-size:15px">RWY HDG · 바람 방향 · 풍속</div></div>`);
     res.push(`<div class="box"><div class="k">적용 Braking Action</div><div class="v" style="font-size:16px">${ccTxt}</div><div class="k">${o.ccWhy || ''}</div></div>`);
