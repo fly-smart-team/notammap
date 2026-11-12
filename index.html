@@ -891,7 +891,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v123 ↻</button>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v124 ↻</button>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button type="button" data-ctc-open title="Cold Temperature 고도보정 계산 — FOM 4.4.2.2" class="px-2.5 py-1.5 rounded-lg border text-[12px] font-bold hover:opacity-90 whitespace-nowrap" style="border-color:#a78bfa;background:rgba(76,29,149,.35);color:#ddd6fe">🥶 Cold Temp</button>
       <button id="btn-wind" type="button" title="바람 제한치 계산 · 활주로 상태(Braking Action) — FOM 4.5/5.8 · FCRM 1.17 · FCOM RCAM" class="px-2.5 py-1.5 rounded-lg border border-sky-600/70 bg-sky-950/40 text-[12px] font-bold text-sky-200 hover:bg-sky-900/50">🌬 Wind</button>
@@ -4032,17 +4032,38 @@ svg.leaflet-image-layer.leaflet-interactive path {
         // 결과는 항상 원본 표 페이지의 해당 칸에 테두리를 그려 함께 보여준다 (눈으로 재확인용)
         let dxData = null, dxS = null;
         const DX_PRECIP = [
-          ['frost', '서리 (Active Frost)'],
-          ['fzfg', '어는 안개 · 어는 안개비 · 얼음 결정 (FZFG · 영하 BR · IC)'],
-          ['snfg', '눈 + 어는 안개 (SN + FZFG)'],
-          ['snow', '눈 · 싸락눈 · 눈 알갱이 (SN · SG · SP)'],
-          ['fzdz', '어는 이슬비 (FZDZ, 강도 무관)'],
-          ['lfzr', '약한 어는 비 (-FZRA)'],
-          ['snra', '눈 섞인 비 (보통 눈 + 비)'],
-          ['rcsw', '차가운 날개 위의 비 (Cold-Soaked Wing, 0°C 초과)'],
-          ['pl', '얼음 싸라기·작은 우박 (PL·GS · SNPL 포함) → 허용 시간'],
-          ['other', '기타: 강한 눈 · 강한 얼음 싸라기(+PL) · 보통 이상 어는 비 · 우박(GR)']
+          ['frost', 'Active Frost', '서리 — 날개 위 서리가 생기는 중 (Table 1)'],
+          ['fzfg', 'Freezing Fog, Freezing Mist, or Ice Crystals', '어는 안개 · 어는 박무 · 얼음 결정 (FZFG · 영하 BR · IC)'],
+          ['snfg', 'Snow mixed with Freezing Fog', '눈 + 어는 안개 (SN + FZFG)'],
+          ['snow', 'Snow, Snow Grains or Snow Pellets', '눈 · 눈 알갱이 · 싸락눈 (SN · SG · SP) — Type I은 매우 약함/약함/보통, 강도는 Table 57'],
+          ['fzdz', 'Freezing Drizzle', '어는 이슬비 (FZDZ) — 약·보통·강 모두 포함'],
+          ['lfzr', 'Light Freezing Rain', '약한 어는 비 (-FZRA)'],
+          ['snra', 'Moderate Snow mixed with Rain', '보통 눈 + 비 (약한 눈+비는 Light Freezing Rain 사용)'],
+          ['rcsw', 'Rain on Cold-Soaked Wing', '차가운 날개(Cold-Soaked Wing) 위의 비 — 0°C 초과만'],
+          ['pl', 'Ice Pellets (or Small Hail) — Allowance Times (Table 55/56)', '얼음 싸라기·작은 우박 (PL·GS, SNPL 포함) → 허용 시간'],
+          ['other', 'Other: Heavy snow, ice pellets, moderate and heavy freezing rain, small hail and hail', '기타 — 강한 눈 · 강한 얼음 싸라기(+PL) · 보통 이상 어는 비 · 우박(GR)']
         ];
+        const dxPpRow = (o, sel) => `<span style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:10px;align-items:start;width:100%;text-align:left"><b style="font-size:13px;line-height:1.35;color:${sel ? '#fff' : '#e2e8f0'}">${dxEsc(o[1])}</b><span style="font-size:12.5px;line-height:1.4;color:${sel ? '#bae6fd' : '#a9b8c9'}">${dxEsc(o[2])}</span></span>`;
+        function dxAdjBasisHtml(open) {
+          return `<details ${open ? 'open' : ''} style="grid-column:1/-1;border:1px solid #b45309;border-radius:8px;background:#1c1407;padding:6px 10px"><summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:#fcd34d">📖 76% 조정표 근거 (FAA 원문 · Page 6 / Page A-1)</summary>
+            <div style="font-size:12.5px;color:#fde68a;line-height:1.6;margin-top:6px"><b>① 목차 — "Page 6 of 91" (Appendices)</b>
+              <div style="font-family:ui-monospace,monospace;font-size:11.5px;color:#e2e8f0;background:#0b1220;border-left:3px solid #f59e0b;padding:6px 8px;margin:3px 0 8px">Appendix A: Provides adjusted holdover time guidelines (holdover time tables and allowance time tables) for operations when flaps and slats are deployed prior to de/anti-icing.</div>
+              <b>② 부록 A 본문 — "Page A-1" (PDF 92쪽, 2026.8.11)</b>
+              <div style="font-family:ui-monospace,monospace;font-size:11.5px;color:#e2e8f0;background:#0b1220;border-left:3px solid #f59e0b;padding:6px 8px;margin:3px 0 4px">APPENDIX A: ADJUSTED HOLDOVER TIME (HOT) GUIDELINES. These tables are for use when flaps/slats are deployed prior to de/anti-icing. Holdover and allowance times have been adjusted to 76 percent of standard times. Standard holdover and allowance times can be used if flaps and slats are deployed as close to departure as safety allows.<br><b>Note:</b> Industry data indicates the possibility of increased takeoff misconfigurations when the selection of takeoff flaps is delayed later in the taxi regime. If an air carrier chooses to select the flaps/slats to the takeoff configuration prior to beginning the anti-icing process, operators should have robust procedures in place to ensure that the aircraft is properly configured prior to takeoff. Air Carriers should follow the airframe manufacturer's recommended procedures regarding anti-icing operations and the configuration of flaps/slats while taxiing.</div>
+              <div style="color:#fcd34d;margin-bottom:8px">→ 한글: 이 표들은 <b>제·방빙 전에 플랩/슬랫을 내린 경우</b>에 씁니다. 보온시간(HOT)·허용시간은 <b>표준값의 76%</b>로 줄여 놓았습니다. 플랩/슬랫을 <b>이륙 직전 안전이 허락하는 한 늦게</b> 내린다면 표준(원래) 표를 써도 됩니다. 주의: 택시 중 이륙 플랩 선택이 늦어지면 <b>이륙 형상 오설정</b> 위험이 커지므로, 방빙 전에 미리 내릴 경우 이륙 전 형상 확인 절차를 철저히 하고 기체 제작사의 방빙·택시 중 플랩 절차를 따르십시오.</div>
+              <b>③ 각 조정표 하단 문구 (부록 A 모든 표 쪽)</b>
+              <div style="font-family:ui-monospace,monospace;font-size:11.5px;color:#e2e8f0;background:#0b1220;border-left:3px solid #f59e0b;padding:6px 8px;margin:3px 0">THIS TABLE IS FOR USE WHEN FLAPS/SLATS ARE DEPLOYED PRIOR TO DE/ANTI-ICING. HOLDOVER TIMES HAVE BEEN ADJUSTED TO 76 PERCENT.</div>
+              <div style="font-size:11px;color:#94a3b8">출처: FAA Holdover Time Guidelines, Winter 2026-2027 (hot.pdf). 조정표는 부록 A(A-1쪽~)에 있고, 결과 화면의 쪽수는 PDF 쪽 번호입니다.</div></div></details>`;
+        }
+        function dxPrecipPicker(v) {
+          const cur = DX_PRECIP.find(o => o[0] === v) || DX_PRECIP[0];
+          return `<div data-dx-pp style="position:relative">
+            <select name="precip" style="display:none">${DX_PRECIP.map(o => `<option value="${o[0]}" ${o[0] === cur[0] ? 'selected' : ''}>${dxEsc(o[1])}</option>`).join('')}</select>
+            <button type="button" data-dx-ppbtn style="display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border-radius:8px;background:#0f172a;border:1px solid #38bdf8;color:#fff"><span data-dx-pplbl style="flex:1;min-width:0">${dxPpRow(cur, false)}</span><span style="color:#7dd3fc;font-size:12px">▾</span></button>
+            <div data-dx-pppanel style="display:none;margin-top:4px;border:1px solid #38bdf8;border-radius:10px;background:#0b1220;max-height:60vh;overflow:auto">
+              ${DX_PRECIP.map(o => `<button type="button" data-dx-ppopt="${o[0]}" style="display:block;width:100%;padding:8px 10px;border:0;border-bottom:1px solid #1e293b;background:${o[0] === cur[0] ? '#0c4a6e' : 'transparent'}">${dxPpRow(o, o[0] === cur[0])}</button>`).join('')}
+            </div></div>`;
+        }
         // 회사 기종 → Type I 표 날개 표면 (날개가 주로 복합재: A220·A350·787·777-9 / 나머지 알루미늄)
         const DX_AC = [
           ['A220', 'A220', 'comp', /^BCS[13]$/], ['A321', 'A321', 'alu', /^A32[01N]|^A21N$/], ['A330', 'A330', 'alu', /^A33/], ['A350', 'A350', 'comp', /^A35/],
@@ -4261,6 +4282,16 @@ svg.leaflet-image-layer.leaflet-interactive path {
               if (e.target.closest('[data-dx-auto]')) { dxS = dxAuto(); dxDraw(true); }
               const lg = e.target.closest('[data-dx-lgm],[data-dx-lgnow],[data-dx-lgcopy],[data-dx-lgreset]');
               if (lg) { dxLogClick(lg); return; }
+              const ppb = e.target.closest('[data-dx-ppbtn]');
+              if (ppb) { const pn = ppb.parentElement.querySelector('[data-dx-pppanel]'); pn.style.display = pn.style.display === 'none' ? 'block' : 'none'; return; }
+              const ppo = e.target.closest('[data-dx-ppopt]');
+              if (ppo) {
+                const box = ppo.closest('[data-dx-pp]'), sel = box.querySelector('select[name="precip"]'); sel.value = ppo.dataset.dxPpopt;
+                const o = DX_PRECIP.find(x => x[0] === sel.value) || DX_PRECIP[0];
+                box.querySelector('[data-dx-pplbl]').innerHTML = dxPpRow(o, false); box.querySelector('[data-dx-pppanel]').style.display = 'none';
+                box.querySelectorAll('[data-dx-ppopt]').forEach(b => { const on = b.dataset.dxPpopt === sel.value; b.style.background = on ? '#0c4a6e' : 'transparent'; b.innerHTML = dxPpRow(DX_PRECIP.find(x => x[0] === b.dataset.dxPpopt), on); });
+                dxFromForm({ target: sel }); return;
+              }
               const ob = e.target.closest('[data-dx-oat],[data-dx-oatset]');
               if (ob) { const inp = m.querySelector('[name="oat"]'); inp.value = ob.dataset.dxOatset != null ? ob.dataset.dxOatset : (Number(inp.value) || 0) + Number(ob.dataset.dxOat); dxFromForm({ target: inp }); m.querySelectorAll('[data-dx-oatset]').forEach(b => { const on = +b.dataset.dxOatset === +inp.value; b.className = `px-2 h-8 rounded-md border text-[12.5px] mono ${on ? 'border-cyan-400 bg-cyan-700 text-white font-bold' : 'border-slate-600 bg-slate-900 text-slate-200'}`; }); return; }
               const pk = e.target.closest('[data-dx-pick]');
@@ -4315,13 +4346,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
                   <button type="button" data-dx-oat="1" class="w-10 h-10 rounded-lg border border-slate-600 bg-slate-800 text-[20px] text-slate-100">＋</button>
                   <span class="flex gap-1 flex-wrap ml-1">${[3, 0, -2, -3, -5, -8, -10, -14, -18, -22, -25].map(t => `<button type="button" data-dx-oatset="${t}" class="px-2 h-8 rounded-md border text-[12.5px] mono ${+S.oat === t ? 'border-cyan-400 bg-cyan-700 text-white font-bold' : 'border-slate-600 bg-slate-900 text-slate-200'}">${t > 0 ? '+' + t : t}</button>`).join('')}</span>
                 </div></div>
-              <label style="display:block"><div class="text-[11px] text-slate-400 mb-0.5 flex items-center gap-1">강수·기상 종류 <button type="button" data-dxplg-open class="ml-auto px-1.5 py-0 rounded border border-cyan-600 text-cyan-200 text-[11px] font-bold">ⓘ PL·SP 구별</button></div>${dxSel('precip', DX_PRECIP, S.precip)}</label>
+              <label style="display:block"><div class="text-[11px] text-slate-400 mb-0.5 flex items-center gap-1">강수·기상 종류 <button type="button" data-dxplg-open class="ml-auto px-1.5 py-0 rounded border border-cyan-600 text-cyan-200 text-[11px] font-bold">ⓘ PL·SP 구별</button></div>${dxPrecipPicker(S.precip)}</label>
               <div data-dx-int style="display:${isSnow ? 'block' : 'none'};grid-column:1/-1"><div class="text-[11px] text-slate-400 mb-0.5">강설 강도</div>
                 <div class="flex gap-3 text-[12px] text-slate-200 mb-1"><label><input type="radio" name="intMode" value="vis" ${S.intMode === 'vis' ? 'checked' : ''}> 시정으로 계산 (Table 57)</label><label><input type="radio" name="intMode" value="sel" ${S.intMode === 'sel' ? 'checked' : ''}> 직접 선택</label></div>
                 <div class="flex gap-1.5"><input name="vis" type="number" step="100" value="${S.vis}" class="w-24 bg-slate-900 border border-slate-600 rounded-md px-2 py-1 text-[13px] mono text-slate-100" title="시정 (m)"><span class="text-[11px] text-slate-400 self-center">m</span>${dxSel('night', [['0', '주간'], ['1', '야간']], S.night ? '1' : '0')}${dxSel('int', [['VL', '매우 약함'], ['L', '약함'], ['M', '보통'], ['H', '강함']], S.int)}</div></div>
               <div data-dx-pl style="display:${S.precip === 'pl' ? 'block' : 'none'};grid-column:1/-1"><div class="text-[11px] text-slate-400 mb-0.5 flex items-center gap-1">얼음 싸라기 조합 (METAR 표기 기준 · -: 약함, 표기 없음: 보통) <button type="button" data-dxplg-open class="ml-auto px-1.5 rounded border border-cyan-600 text-cyan-200 text-[11px] font-bold">ⓘ PL·SP 구별</button></div>${dxSel('plRow', DX_PL, S.plRow)}</div>
               <div data-dx-snwarn style="display:${S.precip === 'snow' ? 'block' : 'none'};grid-column:1/-1" class="text-[12px] text-amber-200 bg-amber-950/40 border border-amber-700/60 rounded-md px-2 py-1">⚠ METAR의 <b>SNPL·PLSN</b>은 눈 + <b>얼음 싸라기(PL)</b>입니다. 눈 알갱이(SP)와 다릅니다 → 강수 종류에서 '얼음 싸라기'를 고르세요. <button type="button" data-dxplg-open class="ml-1 underline font-bold">그림으로 구별하기</button></div>
               <label class="flex items-center gap-2 text-[12px] text-amber-200 self-end"><input type="checkbox" name="adj" ${S.adj ? 'checked' : ''}> 플랩·슬랫을 미리 내리고 제방빙 (76% 조정표)</label>
+              ${dxAdjBasisHtml(false)}
             </div>
             <div data-dx-out class="mt-3"></div></div>`;
           // 필드 표시 조건
@@ -4433,6 +4465,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
             }
             const kd = document.createElement('div'); kd.style.cssText = 'background:#0b1220;padding:2px 8px 10px;border-radius:0 0 8px 8px';
             kd.innerHTML = R.at ? dxAtKoHtml(R) : (['snow', 'snfg', 'snra'].includes(dxS.precip) ? dxKoHtml(74, false).replace(/<div style="margin-top:10px;padding:10px 12px;border-radius:8px;border:1px solid #334155[\s\S]*$/, '') : '') + dxKoHtml(R.page, !!dxS.adj, R.notes);
+            if (dxS.adj) { const bd = document.createElement('div'); bd.style.cssText = 'display:grid;padding-top:6px'; bd.innerHTML = dxAdjBasisHtml(false); kd.appendChild(bd); }
             box.appendChild(kd);
           } catch (e) { box.innerHTML = `<div class="text-[12px] text-rose-600 p-2">원본 표를 열지 못했습니다: ${dxEsc(e.message || e)}</div>`; }
         }
