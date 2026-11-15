@@ -917,7 +917,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v125 ↻</button>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v126 ↻</button>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button type="button" data-ctc-open title="Cold Temperature 고도보정 계산 — FOM 4.4.2.2" class="px-2.5 py-1.5 rounded-lg border text-[12px] font-bold hover:opacity-90 whitespace-nowrap" style="border-color:#a78bfa;background:rgba(76,29,149,.35);color:#ddd6fe">🥶 Cold Temp</button>
       <button id="btn-wind" type="button" title="바람 제한치 계산 · 활주로 상태(Braking Action) — FOM 4.5/5.8 · FCRM 1.17 · FCOM RCAM" class="px-2.5 py-1.5 rounded-lg border border-sky-600/70 bg-sky-950/40 text-[12px] font-bold text-sky-200 hover:bg-sky-900/50">🌬 Wind</button>
@@ -954,6 +954,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
           <input id="pdf-input" type="file" accept="application/pdf,.pdf" class="hidden" />
         </label>
         <div id="pdf-progress" class="hidden text-[11px] text-sky-400 mono">PDF 분석 중...</div>
+        <div class="flex items-stretch gap-2">
+          <label id="ret-dropzone" class="flex-1 flex flex-col items-center justify-center gap-0.5 border-2 border-dashed border-indigo-700/60 hover:border-indigo-400 rounded-xl p-3 cursor-pointer bg-indigo-950/20 text-center">
+            <span id="ret-pdf-label" class="text-xs font-bold text-indigo-300">🔄 Return flight OFP 첨부 (퀵턴·선택)</span>
+            <span id="ret-pdf-sub" class="text-[10px] text-slate-400">돌아오는 편 OFP를 추가하면 2번 운항정보·3번 노탐·Joint Brief에 반영됩니다</span>
+            <input id="ret-pdf-input" type="file" accept="application/pdf,.pdf" class="hidden" />
+          </label>
+          <button id="btn-ret-clear" type="button" style="display:none" class="px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold">✕ 빼기</button>
+        </div>
 
         <textarea id="fpl-input" rows="3" placeholder="FPL 전문을 직접 붙여넣을 수도 있습니다 (선택)"
           class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs mono text-slate-200 focus:outline-none focus:border-sky-500"></textarea>
@@ -981,6 +989,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
           <button id="btn-pkg1-tab-dep" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-slate-200"><span id="tab-label-dep">출발 (DEP: --)</span></button>
           <button id="btn-pkg1-tab-dest" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-sky-600 text-white shadow"><span id="tab-label-dest">목적 (DEST: --)</span></button>
           <button id="btn-pkg1-tab-altn" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-slate-200"><span id="tab-label-altn">교체 (ALTN: --)</span></button>
+          <button id="btn-pkg1-tab-ret" data-pkg1-tab="RALTN" style="display:none" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-slate-200"><span data-tab-label="ret">Return 교체 (--)</span></button>
         </div>
       </section>
 
@@ -1086,7 +1095,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
           </div>
         </div>
         <details id="brf-tools" class="group rounded-lg border border-amber-800/50 bg-amber-950/10">
-          <summary class="cursor-pointer select-none list-none flex items-center gap-2 flex-wrap px-2 py-1 text-[11px]"><span class="text-amber-300 font-bold"><span class="group-open:hidden">▸</span><span class="hidden group-open:inline">▾</span> ⏱ ETD·ETA 조정 · 🔄 퀵턴(복편)</span><span id="brf-tools-status" class="text-[10px] text-slate-400 font-mono-code">계획값 사용 중</span></summary>
+          <summary class="cursor-pointer select-none list-none flex items-center gap-2 flex-wrap px-2 py-1 text-[11px]"><span class="text-amber-300 font-bold"><span class="group-open:hidden">▸</span><span class="hidden group-open:inline">▾</span> ⏱ ETD·ETA 조정 · 🔄 퀵턴(Return flight)</span><span id="brf-tools-status" class="text-[10px] text-slate-400 font-mono-code">계획값 사용 중</span></summary>
           <div class="flex flex-col gap-1.5 p-2 pt-0">
             <div class="flex flex-col gap-1.5 bg-amber-950/30 p-2 rounded-lg border border-amber-700/40">
               <div class="flex items-center justify-between flex-wrap gap-1">
@@ -1114,20 +1123,21 @@ svg.leaflet-image-layer.leaflet-interactive path {
               </div>
             </div>
 
-            <!-- 퀵턴(복편) 연동 및 임의 시간 입력 컨트롤 -->
+            <!-- 퀵턴(Return flight) 연동 및 임의 시간 입력 컨트롤 -->
             <div class="self-start flex flex-wrap items-center gap-1.5 text-[11px] text-sky-300 bg-sky-950/40 px-2 py-0.5 rounded-md border border-sky-800/40">
               <label class="flex items-center gap-1 cursor-pointer">
                 <input type="checkbox" id="chk-quickturn" class="rounded bg-slate-900 border-sky-600 text-sky-500 focus:ring-0 w-3 h-3" />
-                <span>🔄 퀵턴(복편) 연동</span>
+                <span>🔄 퀵턴(Return flight) 연동</span>
               </label>
+
               <div id="quickturn-time-inputs" class="hidden flex-wrap items-center gap-1 pl-1 border-l border-sky-700/60 font-mono-code text-[10px]">
-                <input type="text" id="qt-return-etd" placeholder="복편ETD(Z)" maxlength="4" class="w-16 bg-slate-900 text-amber-300 text-center rounded border border-slate-700 px-1 py-0.5 focus:outline-none focus:border-amber-400" title="예: 1500 (목적지 복편 출발시각)" />
+                <input type="text" id="qt-return-etd" placeholder="Ret ETD(Z)" maxlength="4" class="w-16 bg-slate-900 text-amber-300 text-center rounded border border-slate-700 px-1 py-0.5 focus:outline-none focus:border-amber-400" title="예: 1500 (목적지 Return 출발시각)" />
                 <span class="text-slate-500">~</span>
-                <input type="text" id="qt-return-eta" placeholder="복편ETA(Z)" maxlength="4" class="w-16 bg-slate-900 text-emerald-300 text-center rounded border border-slate-700 px-1 py-0.5 focus:outline-none focus:border-emerald-400" title="예: 1900 (출발지 복편 도착시각)" />
+                <input type="text" id="qt-return-eta" placeholder="Ret ETA(Z)" maxlength="4" class="w-16 bg-slate-900 text-emerald-300 text-center rounded border border-slate-700 px-1 py-0.5 focus:outline-none focus:border-emerald-400" title="예: 1900 (출발지 Return 도착시각)" />
                 <span class="text-slate-500">정비</span>
                 <input type="text" id="qt-turn-min" inputmode="numeric" maxlength="3" value="70" class="w-10 bg-slate-900 text-sky-200 text-center rounded border border-slate-700 px-1 py-0.5 focus:outline-none focus:border-sky-400" title="지상 정비(Turn) 시간 (분)" />
                 <span class="text-slate-500">분 · 비행</span>
-                <input type="text" id="qt-return-eet" inputmode="numeric" maxlength="3" placeholder="EET" class="w-10 bg-slate-900 text-sky-200 text-center rounded border border-slate-700 px-1 py-0.5 focus:outline-none focus:border-sky-400" title="복편 비행시간 (분), 비우면 OFP EET" />
+                <input type="text" id="qt-return-eet" inputmode="numeric" maxlength="3" placeholder="EET" class="w-10 bg-slate-900 text-sky-200 text-center rounded border border-slate-700 px-1 py-0.5 focus:outline-none focus:border-sky-400" title="Return 비행시간 (분), 비우면 OFP EET" />
                 <span class="text-slate-500">분</span>
                 <button id="btn-qt-suggest" type="button" class="px-2 py-0.5 rounded bg-sky-700 hover:bg-sky-600 text-white font-bold">제안 적용</button>
               </div>
@@ -1181,6 +1191,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
           <button data-pkg1-tab="DEP" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-slate-200"><span data-tab-label="dep">출발 (DEP: --)</span></button>
           <button data-pkg1-tab="DEST" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-sky-600 text-white shadow"><span data-tab-label="dest">목적 (DEST: --)</span></button>
           <button data-pkg1-tab="ALTN" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-slate-200"><span data-tab-label="altn">교체 (ALTN: --)</span></button>
+          <button data-pkg1-tab="RALTN" style="display:none" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-slate-200"><span data-tab-label="ret">Return 교체 (--)</span></button>
         </div>
 
         <!-- 운항 시간대 안내 배너 -->
@@ -1266,6 +1277,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
         <span class="font-bold text-sm text-white">방빙액 Holdover Time 표</span><span class="text-[11px] text-slate-400">FAA HOT Guidelines · Winter 2026-2027</span>
         <div class="ml-auto flex items-center gap-1"><button type="button" data-hot-zoom="-1" class="w-8 h-8 rounded-md border border-slate-700 text-slate-300">−</button><button type="button" data-hot-zoom="1" class="w-8 h-8 rounded-md border border-slate-700 text-slate-300">+</button><button type="button" data-dx-open class="h-8 px-2 rounded-md border border-cyan-600 bg-cyan-950/50 text-cyan-200 text-[12px] font-bold">🧊 제방액 검색기</button><button type="button" data-hot-close class="w-8 h-8 rounded-md border border-slate-700 text-slate-300">✕</button></div>
       </div>
+      <style>#hot-modal [data-dx-close]{display:none!important}</style>
+      <div id="hot-dx" class="flex-1 overflow-auto bg-slate-950" style="display:none"></div>
       <div id="hot-tabs" class="flex flex-wrap gap-1 px-3 py-2 border-b border-slate-800"></div>
       <div id="hot-view" class="flex-1 overflow-auto bg-white"></div>
       <div id="hot-foot" class="px-3 py-1.5 text-[10px] text-slate-500 border-t border-slate-800"></div>
@@ -1903,6 +1916,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const roleName = { DEP: '출발', DEST: '목적', ALTN: '교체' };
       const rows = [];
       (package1AirportNotams || []).forEach(n => {
+        if (n._ret) return;
         const role = roleOf(n); if (!role) return;
         const isDep = role === 'DEP';
         const planAct = pkg1ActiveFor(n, isDep, pE, pA);
@@ -1975,7 +1989,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const hint = document.getElementById('qt-suggest-hint');
       if (hint) {
         const tag = (qtEtdManual || qtEtaManual) ? ' · 수동 입력 중 (제안 적용으로 복귀)' : ' · 자동 제안';
-        hint.textContent = `복편 제안: ETD ${formatMinutes(sugEtd)}Z (정비 ${qtTurnMin}분) / ETA ${formatMinutes(etdVal + eet)}Z (비행 ${eet}분)${tag}`;
+        hint.textContent = `Return 제안: ETD ${formatMinutes(sugEtd)}Z (정비 ${qtTurnMin}분) / ETA ${formatMinutes(etdVal + eet)}Z (비행 ${eet}분)${tag}`;
       }
     }
 
@@ -1995,14 +2009,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const hhmm = ms => new Date(ms).toISOString().slice(11, 16) + 'Z';
       const chip = (n, cls) => `<button type="button" onclick="viewNotamDetail('${esc(n.notamId)}', 'PKG1')" class="px-1.5 py-0.5 rounded border text-[10px] ${cls}">${esc(n.notamId)}</button>`;
 
-      // 목적지: 복편 출발 시점 유효 노탐 (출발 시 창: 복편 ETD ±1h, 목록 규칙과 동일)
-      const destRet = (package1AirportNotams || []).filter(n => n.airport === ci.dest).map(n => ({
+      // 목적지: Return 출발 시점 유효 노탐 (출발 시 창: Return ETD ±1h, 목록 규칙과 동일)
+      const destRet = (package1AirportNotams || []).filter(n => !n._ret && n.airport === ci.dest).map(n => ({
         n, retActive: pkg1ActiveWin(n, rE - 36e5, rE + 36e5),
         outActive: pkg1ActiveWin(n, aA - 30 * 6e4, aA + 36e5),
         critical: ['RWY', 'NAV', 'APCH_MIN'].includes(n.category)
       }));
-      // 출발지: 복편 도착 시점 유효 노탐 (도착 창: 복편 ETA -30분~+1h)
-      const depRet = (package1AirportNotams || []).filter(n => n.airport === ci.dep).map(n => ({
+      // 출발지: Return 도착 시점 유효 노탐 (도착 창: Return ETA -30분~+1h)
+      const depRet = (package1AirportNotams || []).filter(n => !n._ret && n.airport === ci.dep).map(n => ({
         n, retActive: pkg1ActiveWin(n, rA - 30 * 6e4, rA + 36e5),
         outActive: pkg1ActiveWin(n, aE - 10 * 6e4, aE + 36e5),
         critical: ['RWY', 'NAV', 'APCH_MIN'].includes(n.category)
@@ -2017,17 +2031,17 @@ svg.leaflet-image-layer.leaflet-interactive path {
       box.innerHTML = `
         <div class="rounded-lg border border-sky-800/50 bg-sky-950/20 p-2 flex flex-col gap-1.5 text-[11px]">
           <div class="flex flex-wrap items-center gap-1.5">
-            <span class="text-sky-300 font-bold">🔄 복편 점검</span>
-            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-200">복편 출발 ${esc(ci.dest)} ${formatMinutes(quickturnReturnEtdMin)}Z: 유효 ${retDestActive}건</span>
-            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-200">복편 도착 ${esc(ci.dep)} ${formatMinutes(quickturnReturnEtaMin)}Z: 유효 ${retDepActive}건</span>
+            <span class="text-sky-300 font-bold">🔄 Return 점검</span>
+            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-200">Return 출발 ${esc(ci.dest)} ${formatMinutes(quickturnReturnEtdMin)}Z: 유효 ${retDestActive}건</span>
+            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-200">Return 도착 ${esc(ci.dep)} ${formatMinutes(quickturnReturnEtaMin)}Z: 유효 ${retDepActive}건</span>
             ${gapWarn ? `<span class="px-1.5 py-0.5 rounded bg-rose-950/60 border border-rose-800/60 text-rose-300 font-bold">⚠ 지상시간 ${gap}분 (최소 30분 권장)</span>` : `<span class="px-1.5 py-0.5 rounded bg-emerald-950/40 border border-emerald-800/50 text-emerald-300">지상시간 ${gap}분</span>`}
           </div>
           <div class="flex flex-wrap items-center gap-1">
-            <span class="text-emerald-300 font-bold">🟢 복편 출발 시 새로 유효 ${newDest.length}건</span>
+            <span class="text-emerald-300 font-bold">🟢 Return 출발 시 새로 유효 ${newDest.length}건</span>
             ${newDest.map(x => chip(x.n, 'border-emerald-700/60 bg-emerald-950/40 text-emerald-200')).join(' ') || '<span class="text-slate-500">없음</span>'}
           </div>
           <div class="flex flex-wrap items-center gap-1">
-            <span class="text-emerald-300 font-bold">🟢 복편 도착 시 새로 유효 ${newDep.length}건</span>
+            <span class="text-emerald-300 font-bold">🟢 Return 도착 시 새로 유효 ${newDep.length}건</span>
             ${newDep.map(x => chip(x.n, 'border-emerald-700/60 bg-emerald-950/40 text-emerald-200')).join(' ') || '<span class="text-slate-500">없음</span>'}
           </div>
         </div>`;
@@ -2144,7 +2158,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       if (altnTab) altnTab.textContent = `교체 (${altnStr})`;
       document.querySelectorAll('[data-tab-label]').forEach(el => {
         const k = el.dataset.tabLabel;
-        el.textContent = k === 'dep' ? `출발 (${depStr}${etdTxt})` : k === 'dest' ? `목적 (${destStr}${etaTxt})` : `교체 (${altnStr})`;
+        el.textContent = k === 'dep' ? `출발 (${depStr}${etdTxt})` : k === 'dest' ? `목적 (${destStr}${etaTxt})` : k === 'ret' ? `Return 교체 (${(jbQT && jbQT.meta && jbQT.meta.altn) || '--'})` : `교체 (${altnStr})`;
       });
 
       if (chkLabel) {
@@ -2154,9 +2168,10 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const isDep = currentPkg1Tab === "DEP";
       const isDest = currentPkg1Tab === "DEST";
       const isAltn = currentPkg1Tab === "ALTN";
+      const isRAltn = currentPkg1Tab === 'RALTN' && !!(jbQT && jbQT.meta);
 
-      const targetAirport = isDep ? info.dep : (isAltn ? info.altn : info.dest);
-      let notamItems = package1AirportNotams.filter(n => n.airport === targetAirport);
+      const targetAirport = isRAltn ? jbQT.meta.altn : (isDep ? info.dep : (isAltn ? info.altn : info.dest));
+      let notamItems = package1AirportNotams.filter(n => n.airport === targetAirport && (isRAltn ? n._ret : !n._ret));
 
       const w = flightWindow();
       if (w) {
@@ -2165,10 +2180,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
         const [y, m, d] = (info.flightDate || new Date().toISOString().slice(0, 10)).split('-').map(Number);
         const dayBaseMs = Date.UTC(y, m - 1, d);
 
+        if (isRAltn) retEtaMs = dayBaseMs + (quickturnReturnEtaMin != null ? quickturnReturnEtaMin : jbQT.meta.etaAbs) * 60 * 1000;
         if (quickturnActive && quickturnReturnEtdMin !== null) {
           retEtdMs = dayBaseMs + quickturnReturnEtdMin * 60 * 1000;
         }
-        if (quickturnActive && quickturnReturnEtaMin !== null) {
+        if (!isRAltn && quickturnActive && quickturnReturnEtaMin !== null) {
           retEtaMs = dayBaseMs + quickturnReturnEtaMin * 60 * 1000;
         }
       }
@@ -2177,11 +2193,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
         if (!info.dep && !info.dest) {
           timeBanner.textContent = "비행계획서(FPL/OFP)를 입력하거나 불러오세요.";
         } else if (isDep) {
-          timeBanner.textContent = `🛫 출발 ${depStr} (${etdOverride ? '조정' : '계획'} ETD ${formatMinutes(info.etdMinutes)}Z)${quickturnActive && retEtaMs ? ` ➔ 🔄 복편도착 ETA ${formatMinutes(quickturnReturnEtaMin)}Z` : ''}`;
+          timeBanner.textContent = `🛫 출발 ${depStr} (${etdOverride ? '조정' : '계획'} ETD ${formatMinutes(info.etdMinutes)}Z)${quickturnActive && retEtaMs ? ` ➔ 🔄 Return도착 ETA ${formatMinutes(quickturnReturnEtaMin)}Z` : ''}`;
         } else if (isDest) {
           timeBanner.textContent = `🛬 목적지 ${destStr} (${etdOverride || etaOverride ? '조정' : '계획'} ETA ${formatMinutes(info.etaMinutes)}Z)${quickturnActive && retEtdMs ? ` ➔ 🔄 퀵턴출발 ETD ${formatMinutes(quickturnReturnEtdMin)}Z` : ''}`;
         } else {
-          timeBanner.textContent = `📍 교체공항 ${altnStr} (도착 ETA ${formatMinutes(info.etaMinutes)}Z 기준)`;
+          timeBanner.textContent = isRAltn ? `🔄 Return flight 교체공항 ${jbQT.meta.altn} (Return 도착 ETA ${formatMinutes(quickturnReturnEtaMin != null ? quickturnReturnEtaMin : jbQT.meta.etaAbs)}Z 기준 · Return flight OFP 노탐)` : `📍 교체공항 ${altnStr} (도착 ETA ${formatMinutes(info.etaMinutes)}Z 기준)`;
         }
       }
       if (filterTag) {
@@ -2190,7 +2206,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
       }
 
       const H = 60 * 60 * 1000;
-      if (pkg1ValidOnly && w && !quickturnActive) notamItems = notamItems.filter(n => pkg1ActiveFor(n, isDep, outEtd, outEta));
+      if (pkg1ValidOnly && w && !quickturnActive && !isRAltn) notamItems = notamItems.filter(n => pkg1ActiveFor(n, isDep, outEtd, outEta));
+      const ETA_BASE = isRAltn && retEtaMs ? retEtaMs : outEta;
       const evaluated = notamItems.map(n => {
         let isFlightActive = true;
         if (w) {
@@ -2199,8 +2216,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
             winStart = outEtd - 10 * 60 * 1000;
             winEnd = outEtd + H;
           } else {
-            winStart = outEta - 30 * 60 * 1000;
-            winEnd = outEta + H;
+            winStart = ETA_BASE - 30 * 60 * 1000;
+            winEnd = ETA_BASE + H;
           }
 
           let activeOutbound = false;
@@ -2238,11 +2255,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
           isFlightActive = activeOutbound || activeReturn;
         }
 
-        const targetTimeMs = isDep ? (outEtd || Date.now()) : (outEta || Date.now());
+        const targetTimeMs = isDep ? (outEtd || Date.now()) : (ETA_BASE || Date.now());
         const baseLabel = isDep ? 'ETD' : 'ETA';
         const useReturnTime = quickturnActive && isDest && retEtdMs;
         const relResult = (!useReturnTime && w)
-          ? buildFlightWindowBadge(n, isDep ? { etd: outEtd - 10 * 60e3, eta: outEtd + 60 * 60e3 } : { etd: outEta - 30 * 60e3, eta: outEta + 60 * 60e3 }, isFlightActive, { s: { ms: targetTimeMs, label: baseLabel }, e: { ms: targetTimeMs, label: baseLabel } })
+          ? buildFlightWindowBadge(n, isDep ? { etd: outEtd - 10 * 60e3, eta: outEtd + 60 * 60e3 } : { etd: ETA_BASE - 30 * 60e3, eta: ETA_BASE + 60 * 60e3 }, isFlightActive, { s: { ms: targetTimeMs, label: baseLabel }, e: { ms: targetTimeMs, label: baseLabel } })
           : buildRelTimeBadge(n, useReturnTime ? retEtdMs : targetTimeMs, baseLabel, useReturnTime, isFlightActive);
 
         return { 
@@ -3459,6 +3476,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
         ofpOrdered = parsed.ordered; brfEraSel = null; brfStarView = false;
         pdfFlt = parseFlightInfo(fullText, fplToApply); pdfTaf = parseTafs(fullText); pdfExtras = parseOfpExtras(fullText); setTimeout(() => { refreshLiveWx(true); startAcLive(); }, 0); window.__ofpText = fullText;
         package1AirportNotams = parsed.airport.filter(n => n.pkg !== 2);
+        try { qtReattach(); } catch (e) { console.warn(e); }
         package2AirportNotams = parsed.airport.filter(n => n.pkg === 2);
         package2AreaNotams = [];
         pdfEtp = parseEtp(fullText);
@@ -4292,9 +4310,10 @@ svg.leaflet-image-layer.leaflet-interactive path {
           const g = t => dxData.fluids.filter(f => f.type === t).map(f => `<option value="${f.id}" ${f.id === sel ? 'selected' : ''}>${dxEsc(f.id.startsWith('s') ? `Table ${f.t} · ${dxTitle(f.name)}` : f.name)}</option>`).join('');
           return `<optgroup label="Type I">${g('I')}</optgroup><optgroup label="Type II">${g('II')}</optgroup><optgroup label="Type IV">${g('IV')}</optgroup>`;
         }
-        async function dxOpen() {
-          try { await dxLoad(); } catch (e) { alert(e.message); return; }
+        async function dxOpen(o) {
+          try { await dxLoad(); } catch (e) { alert(e.message); return false; }
           dxS = dxAuto();
+          if (o && o.fluid && dxData.fluids.find(f => f.id === o.fluid)) { dxS.fluid = o.fluid; dxS.src = dxS.src.filter(x => !/^제빙액:/.test(x)); dxS.src.push('제빙액: 이 노탐의 제품'); }
           let m = document.getElementById('dx-modal');
           if (!m) {
             m = document.createElement('div'); m.id = 'dx-modal';
@@ -4324,8 +4343,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
               if (pk) { dxS.fluid = pk.dataset.dxPick; const fq = m.querySelector('[name="fq"]'); fq.value = ''; dxSuggest(''); m.querySelector('[name="fluid"]').value = dxS.fluid; dxDraw(false); const o = m.querySelector('[data-dx-out]'); o && o.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
             });
           }
-          m.style.display = 'block'; document.body.style.overflow = 'hidden';
+          if (o && o.embed) { o.embed.appendChild(m); m.style.cssText = 'position:relative;background:transparent;overflow:visible'; }
+          else { if (m.parentNode !== document.body) document.body.appendChild(m); m.style.cssText = 'position:fixed;inset:0;z-index:9600;background:rgba(2,6,23,.85);overflow:auto'; document.body.style.overflow = 'hidden'; }
+          m.style.display = 'block';
           dxDraw(true);
+          return true;
         }
         // 제빙액 검색: 단어 앞글자(여러 단어 가능) 또는 표 번호
         function dxSuggest(q) {
@@ -4615,7 +4637,12 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const list = hotTablesFor(raw) || HOT_TABLES.filter(t => [1, 2, 4, 20].includes(t.no));
       $('hot-tabs').innerHTML = list.map(t => `<button type="button" data-hot-tab="${t.no}" class="px-2 py-1 rounded border text-[11px] ${t.key ? 'border-cyan-500 bg-cyan-900/50 text-cyan-100 font-bold' : 'border-slate-600 text-slate-300'} ring-cyan-300">T${t.no} · ${esc(t.name)}</button>`).join('');
       $('hot-modal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; hotZoom = 1;
-      window.__hotList = list; hotRender(list[0]);
+      window.__hotList = list;
+      // 검색기가 표·결과를 모두 보여주므로 검색기만 크게 (위쪽 탭·아래 원본 표는 숨김). 열리지 않으면 예전 표 화면으로 복귀.
+      const hm = $('hot-modal'), hd = $('hot-dx'), only = on => { ['hot-tabs', 'hot-view', 'hot-foot'].forEach(id => { $(id).style.display = on ? 'none' : ''; }); hd.style.display = on ? 'block' : 'none'; hm.querySelectorAll('[data-hot-zoom],[data-dx-open]').forEach(x => { x.style.display = on ? 'none' : ''; }); };
+      const ks0 = list.filter(t => t.key), ks = ks0.filter(t => !ks0.some(o => o !== t && o.key.length > t.key.length && o.key.startsWith(t.key))), pick = ks.find(t => t.type === 'IV') || ks[0];
+      only(true);
+      dxOpen({ embed: hd, fluid: pick ? 's' + pick.no : null }).then(ok => { if (ok && hd.querySelector('[data-dx-out]')) setTimeout(() => { const o = hd.querySelector('[data-dx-out]'); if (o) hd.scrollTop = Math.max(0, o.offsetTop - 6); }, 60); else { only(false); hotRender(list[0]); } }).catch(() => { only(false); hotRender(list[0]); });
     }
     document.addEventListener('click', e => {
       if (!e.target.closest) return;
@@ -4647,13 +4674,13 @@ svg.leaflet-image-layer.leaflet-interactive path {
         const w = ctx.w, ref = n.sec === 'DEST' || n.sec === 'ALTN' ? { ms: w.eta, label: 'ETA' } : n.sec === 'FIR' && win[2] === 'FIR 통과' ? { ms: win[0] + 30 * 6e4, label: '진입' } : { ms: w.etd, label: 'ETD' };
         try { return buildFlightWindowBadge(n, { etd: win[0], eta: win[1] }, notamIsActive(n, win[0], win[1]), { s: ref, e: ref }).badgeHtml; } catch (e) { return ''; }
       };
-      // 퀵턴(복편): 목적지 = 복편 ETD ±1h, 출발지 = 복편 ETA -30분~+1h 에 유효한지
+      // 퀵턴(Return flight): 목적지 = Return ETD ±1h, 출발지 = Return ETA -30분~+1h 에 유효한지
       const qtOn = typeof quickturnActive !== 'undefined' && quickturnActive && quickturnReturnEtdMin != null && quickturnReturnEtaMin != null && info.flightDate;
       let qB = 0; if (qtOn) { const [y, m, d] = info.flightDate.split('-').map(Number); qB = Date.UTC(y, m - 1, d); }
       const qtRet = n => {
         if (!qtOn) return null;
-        if (n.sec === 'DEST') { const rE = qB + quickturnReturnEtdMin * 6e4; return notamIsActive(n, rE - 36e5, rE + 36e5) ? `복편 출발 ${formatMinutes(quickturnReturnEtdMin)}Z 유효` : null; }
-        if (n.sec === 'DEP') { const rA = qB + quickturnReturnEtaMin * 6e4; return notamIsActive(n, rA - 30 * 6e4, rA + 36e5) ? `복편 도착 ${formatMinutes(quickturnReturnEtaMin)}Z 유효` : null; }
+        if (n.sec === 'DEST') { const rE = qB + quickturnReturnEtdMin * 6e4; return notamIsActive(n, rE - 36e5, rE + 36e5) ? `Return 출발 ${formatMinutes(quickturnReturnEtdMin)}Z 유효` : null; }
+        if (n.sec === 'DEP') { const rA = qB + quickturnReturnEtaMin * 6e4; return notamIsActive(n, rA - 30 * 6e4, rA + 36e5) ? `Return 도착 ${formatMinutes(quickturnReturnEtaMin)}Z 유효` : null; }
         return null;
       };
       // 원문 강조 기준: 구간별 시간대 (출발 ETD-10분~+1h · 도착 ETA-30분~+1h · 교체 ETA~교체도착+1h · FIR 통과)
@@ -5507,7 +5534,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       return null;
     }
     async function refreshLiveWx(force) {
-      const ids = [info.dep, info.dest, pdfFlt && pdfFlt.altn || info.altn].filter(Boolean);
+      const ids = [...new Set([info.dep, info.dest, pdfFlt && pdfFlt.altn || info.altn, jbQT && jbQT.meta && jbQT.meta.altn, jbQT && jbQT.meta && jbQT.meta.dep, jbQT && jbQT.meta && jbQT.meta.dest].filter(Boolean))];
       if (!ids.length || wxLiveBusy) return;
       if (!force && wxLiveAt && Date.now() - wxLiveAt < 10 * 6e4 && ids.every(i => wxLive[i])) return;
       if (typeof navigator !== 'undefined' && navigator.onLine === false) { ids.forEach(i => wxLive[i] = Object.assign(wxLive[i] || {}, { status: 'offline' })); renderFlightInfo(); return; }
@@ -5771,6 +5798,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
     // Joint Brief: 출발 Gate(Spot) · 도착 Spot (자동 조회 값 또는 직접 입력 값)
     function jbStandTxt(blank) {
+      if (window.__jbQTMode) return `( ${blank} )`;
       const one = role => {
         let man = ''; try { man = standManualGet(role); } catch (e) { }
         const d = typeof standLive !== 'undefined' && standLive && standLive[role];
@@ -5782,7 +5810,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       if (!dep && !dest) return `( ${blank} )`;
       return `<b>${dep || `( ${blank} )`}</b>${dep ? ` <span class="jb-mono">${esc(info.dep || '')}</span>` : ''}${dest ? ` · 도착 ${esc(info.dest || '')} ${dest}` : ''}`;
     }
-    function buildJointBrief() {
+    function buildJointBrief(qt) {
       const p = pdfFlt || {}, fpl = $('fpl-input').value, w = flightWindow();
       const cs = p.callsign || (fpl.match(/\(FPL-([A-Z0-9]+)-/) || [])[1] || '';
       const type = p.type || (fpl.match(/\n\s*-([A-Z][A-Z0-9]{2,3})\/[HLMJ]/) || [])[1] || '';
@@ -5802,7 +5830,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const li = t => `<li>${t}</li>`;
       const blank = '<span class="jb-blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>';
       const h = [];
-      h.push(`<h1>JOINT BRIEFING</h1><p class="jb-sub">${esc(jbFlightNo(cs))} · ${esc(info.dep || '')} → ${esc(info.dest || '')} · ${esc(info.flightDate || '')} · 작성 ${new Date().toISOString().slice(0, 16).replace('T', ' ')}Z</p>`);
+      h.push(qt ? `<h1>QUICK TURN BRIEFING</h1><p class="jb-sub">${esc(jbFlightNo(cs))} · ${esc(info.dep || '')} → ${esc(info.dest || '')} · ${esc(info.flightDate || '')} · Return flight OFP 기준</p>`
+        : `<h1>JOINT BRIEFING</h1><p class="jb-sub">${esc(jbFlightNo(cs))} · ${esc(info.dep || '')} → ${esc(info.dest || '')} · ${esc(info.flightDate || '')} · 작성 ${new Date().toISOString().slice(0, 16).replace('T', ' ')}Z</p>`);
       h.push(`<h2>1. Flight Information: CREW</h2><ul>
         ${li(`<b>가. Flight Number / Flight Leg :</b> ${esc(cs || '--')} / ${esc(aptKoEn(info.dep))} → ${esc(aptKoEn(info.dest))}`)}
         ${li(`<b>나. Type of Aircraft / Reg. Number :</b> ${esc(type ? (AC_NAMES[type] || type) : '--')} / ${esc(p.reg || '--')}`)}
@@ -5827,6 +5856,15 @@ svg.leaflet-image-layer.leaflet-interactive path {
           ${li(`도착 방송 (비행시간 5시간 기준 실시)${trip != null ? ` : 이번 비행 ${hmTxt(trip)} → ${trip >= 300 ? '실시' : '해당 없음'}` : ''}`)}
           ${li('App PA : TOD 부근 or (비행시간 2시간 전후) 30분 전 (상호확인)')}</ul>`)}
       </ul>`);
+      if (qt) {   // 퀵턴(Return flight) 브리핑: 보안·승무원 협조만 간단히
+        h.push(`<h2>3. Security · Crew Coordination</h2><ul>
+          ${li(`<b>가. Alert Level :</b> ( ${blank} ) — 5(평시), 4(관심), 3(주의), 2(경계), 1(심각)`)}
+          ${li(`<b>나. Taxi Time &amp; Ready Signal :</b> ${blank}`)}
+          ${li(`<b>다. CABIN LOG :</b> 특이사항 여부 ${blank}`)}
+          ${li(`<b>라. Timing of In-flight services (in consultation with the Purser) :</b> ${blank}`)}
+        </ul>`);
+        return h.join('\n');
+      }
       h.push(`<h2>3. Security</h2><ul>
         ${li(`<b>가. Alert Level :</b> ( ${blank} ) — 5(평시), 4(관심), 3(주의), 2(경계), 1(심각)`)}
         ${li('<b>나. Emphasize that all crew are security staff :</b><ul>' + li('전 승무원은 보안 요원임을 주지하고 의심스러운 승객이나 물품 발견 시 기장에게 보고 (필요한 경우 해당 공항 관계기관에 신고)') + '</ul>')}
@@ -5857,6 +5895,180 @@ svg.leaflet-image-layer.leaflet-interactive path {
       h1{font-size:18pt;margin:0 0 2pt}h2{font-size:13pt;margin:14pt 0 4pt;border-bottom:1px solid #999;padding-bottom:2pt}
       ul{margin:2pt 0 2pt 0;padding-left:20pt}li{margin:1pt 0}.jb-sub{color:#555;font-size:9pt;margin:0 0 8pt}
       .jb-mono{font-family:Menlo,Consolas,monospace;font-size:9.5pt}.jb-blank{display:inline-block;min-width:60pt;border-bottom:1px solid #888}`;
+
+    // ===== 퀵턴: 돌아오는 편 OFP를 Joint Brief에만 반영 (노탐 분석·지도·2번 칸은 그대로) =====
+    let jbQT = null;
+    async function jbLoadQT(file) {
+      showToast('Return flight OFP 읽는 중…');
+      const pdf = await openPdf(new Uint8Array(await file.arrayBuffer()));
+      const L = [], E = [];
+      for (let i = 1; i <= pdf.numPages; i++) { const c = await (await pdf.getPage(i)).getTextContent(); L.push(layoutTextFromItems(c.items)); E.push(textFromItemsEol(c.items)); }
+      const a = L.join('\n'), b = E.join('\n'), text = parseNavlog(b).length > parseNavlog(a).length ? b : a;
+      const fpl = (text.match(/\(FPL-[\s\S]*?\)/) || [''])[0];
+      if (!fpl) throw new Error('FPL을 찾지 못했습니다 — OFP가 맞는지 확인하세요');
+      const nav = parseNavlog(text);
+      jbQT = { text, fpl, nav: nav.length >= 2 ? nav : [], name: file.name };
+      return jbQT;
+    }
+    function jbWithQT(fn) {
+      const S = { info, pdfFlt, pdfNav, pdfTaf, pdfExtras, ofp: window.__ofpText, fpl: $('fpl-input').value };
+      try {
+        const q = jbQT, n = q.fpl.replace(/[Ø]/g, '0');
+        const dof = n.match(/DOF\/(\d{2})(\d{2})(\d{2})/), apt = [...n.matchAll(/-([A-Z]{4})(\d{4})(?:\s+([A-Z]{4})(?=\s|$))?/g)];
+        const mm = x => +x.slice(0, 2) * 60 + +x.slice(2, 4), etd = apt[0] ? mm(apt[0][2]) : 0, eet = apt[1] ? mm(apt[1][2]) : 0;
+        const al = (q.text.match(/ALTN\/([A-Z]{4})/) || [])[1] || (apt[1] && apt[1][3]) || '';
+        info = { dep: apt[0] ? apt[0][1] : '', dest: apt[1] ? apt[1][1] : '', altn: al, era: [], etdMinutes: etd, etaMinutes: etd + eet, plannedEtdMinutes: etd, eetMinutes: eet, flightDate: dof ? `20${dof[1]}-${dof[2]}-${dof[3]}` : S.info.flightDate };
+        pdfNav = q.nav; $('fpl-input').value = q.fpl; window.__ofpText = q.text; window.__jbQTMode = true;
+        pdfFlt = parseFlightInfo(q.text, q.fpl); pdfTaf = parseTafs(q.text); pdfExtras = parseOfpExtras(q.text);
+        return fn();
+      } finally {
+        info = S.info; pdfFlt = S.pdfFlt; pdfNav = S.pdfNav; pdfTaf = S.pdfTaf; pdfExtras = S.pdfExtras; window.__ofpText = S.ofp; $('fpl-input').value = S.fpl; window.__jbQTMode = false;
+      }
+    }
+
+    // ===== Return flight OFP (퀵턴): Joint Brief + 2번 운항정보 + 3번 Pkg1 Return flight 교체공항 노탐 =====
+    function qtParseMeta(q) {
+      const n = q.fpl.replace(/[Ø]/g, '0');
+      const dof = n.match(/DOF\/(\d{2})(\d{2})(\d{2})/), apt = [...n.matchAll(/-([A-Z]{4})(\d{4})(?:\s+([A-Z]{4})(?=\s|$))?/g)];
+      const mm = x => +x.slice(0, 2) * 60 + +x.slice(2, 4);
+      const etd = apt[0] ? mm(apt[0][2]) : 0, eet = apt[1] ? mm(apt[1][2]) : 0;
+      const altn = (q.text.match(/ALTN\/([A-Z]{4})/) || [])[1] || (apt[1] && apt[1][3]) || '';
+      const date = dof ? `20${dof[1]}-${dof[2]}-${dof[3]}` : (info.flightDate || '');
+      // 1번 OFP 비행일 기준 분(날짜가 다르면 1440 배수 보정, 같으면 정비시간 뒤로 가장 가까운 시각)
+      let etdAbs = etd;
+      if (info.flightDate && date) {
+        const d0 = Date.UTC(...info.flightDate.split('-').map((v, i) => i === 1 ? v - 1 : +v)), d1 = Date.UTC(...date.split('-').map((v, i) => i === 1 ? v - 1 : +v));
+        const dd = Math.round((d1 - d0) / 864e5);
+        etdAbs = dd === 0 && info.etaMinutes != null ? qtAbsFromHHMM(String(Math.floor(etd / 60)).padStart(2, '0') + String(etd % 60).padStart(2, '0'), info.etaMinutes + qtTurnMin) : dd * 1440 + etd;
+      }
+      return { dep: apt[0] ? apt[0][1] : '', dest: apt[1] ? apt[1][1] : '', altn, etd, eet, eta: etd + eet, etdAbs, etaAbs: etdAbs + eet, flightDate: date };
+    }
+    function qtReattach() {
+      package1AirportNotams = (package1AirportNotams || []).filter(n => !n._ret);
+      if (jbQT && jbQT.altnNotams) package1AirportNotams.push(...jbQT.altnNotams);
+      qtSyncTabs();
+    }
+    function qtSyncTabs() {
+      const on = !!(jbQT && jbQT.meta);
+      document.querySelectorAll('[data-pkg1-tab="RALTN"]').forEach(b => { b.style.display = on ? '' : 'none'; });
+      if (!on && currentPkg1Tab === 'RALTN') { currentPkg1Tab = 'DEST'; document.querySelectorAll('[data-pkg1-tab]').forEach(b => { b.className = b.dataset.pkg1Tab === 'DEST' ? 'flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-sky-600 text-white shadow' : 'flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-slate-200'; }); }
+      const lb = $('ret-pdf-label'), sb = $('ret-pdf-sub'), cl = $('btn-ret-clear');
+      if (lb) lb.textContent = on ? `✔ Return flight OFP · ${jbFlightNo((jbQT.fpl.match(/\(FPL-([A-Z0-9]+)-/) || [])[1] || '')} ${jbQT.meta.dep}→${jbQT.meta.dest}` : '🔄 Return flight OFP 첨부 (퀵턴·선택)';
+      if (sb) sb.textContent = on ? `교체공항 ${jbQT.meta.altn || '--'} · 노탐 ${(jbQT.altnNotams || []).length}건 · 다른 파일을 올리면 교체됩니다` : '돌아오는 편 OFP를 추가하면 2번 운항정보·3번 노탐·Joint Brief에 반영됩니다';
+      if (cl) cl.style.display = on ? '' : 'none';
+    }
+    function qtClearReturn() {
+      jbQT = null; package1AirportNotams = (package1AirportNotams || []).filter(n => !n._ret);
+      document.querySelectorAll('[data-jb-qt]').forEach(x => x.remove()); try { jbQTBtn(); } catch (e) { }
+      qtSyncTabs();
+    }
+    async function qtAddReturnOfp(file) {
+      const prev = jbQT;
+      try {
+        const q = await jbLoadQT(file);
+        q.meta = qtParseMeta(q);
+        if (info.dest && q.meta.dep && q.meta.dep !== info.dest && !confirm(`Return flight OFP 출발(${q.meta.dep})이 현재 OFP 도착(${info.dest})과 다릅니다. 그래도 넣을까요?`)) { jbQT = prev; return false; }
+        q.flt = parseFlightInfo(q.text, q.fpl);
+        const parsed = parseOfpNotams(q.text);
+        q.altnNotams = (parsed.airport || []).filter(n => n.pkg !== 2 && n.airport === q.meta.altn).map(n => ({ ...n, _ret: true }));
+        // Return flight 교체공항이 OFP 노탐에 없으면(같은 공항 등) 이유를 알림
+        jbQT = q;
+        qtReattach();
+        if (info.dep) {   // 퀵턴 시각 연동: Return flight OFP 시각을 그대로 사용
+          quickturnActive = true; const c = $('chk-quickturn'); if (c) c.checked = true;
+          const ti = $('quickturn-time-inputs'); if (ti) ti.style.display = 'flex';
+          qtReturnEet = q.meta.eet || null; const te = $('qt-return-eet'); if (te && qtReturnEet) te.value = qtReturnEet;
+          qtEtdManual = true; qtEtaManual = true; quickturnReturnEtdMin = q.meta.etdAbs; quickturnReturnEtaMin = q.meta.etaAbs;
+          const e1 = $('qt-return-etd'), e2 = $('qt-return-eta');
+          if (e1) e1.value = formatMinutes(((q.meta.etdAbs % 1440) + 1440) % 1440).replace(':', '');
+          if (e2) e2.value = formatMinutes(((q.meta.etaAbs % 1440) + 1440) % 1440).replace(':', '');
+        }
+        try { refreshLiveWx(true); } catch (e) { }
+        refreshAll(false);
+        const ov = $('jb-doc');
+        if (ov) { ov.querySelectorAll('[data-jb-qt]').forEach(x => x.remove()); ov.insertAdjacentHTML('beforeend', jbQTHtml()); }
+        try { jbQTBtn(); } catch (e) { }
+        showToast(`Return flight OFP 추가 — 교체공항 ${q.meta.altn || '--'} 노탐 ${q.altnNotams.length}건`);
+        return true;
+      } catch (e) { jbQT = prev; qtReattach(); alert('Return flight OFP를 읽지 못했습니다: ' + (e.message || e)); return false; }
+    }
+    function qtPickReturnOfp() { const inp = $('ret-pdf-input'); if (inp) inp.click(); }
+    // Return flight OFP 기준 데이터 + 기상 카드 (퀵턴 합친 화면용)
+    function qtRetData() {
+      const q = jbQT; if (!q || !q.meta) return null;
+      const gap = quickturnReturnEtdMin != null && info.etaMinutes != null ? quickturnReturnEtdMin - info.etaMinutes : null;
+      try {
+        return jbWithQT(() => {
+          const p = pdfFlt || {}, w = flightWindow(), altn = p.altn || info.altn || '';
+          const fu = (p.unit || '').replace(/^100/, '').replace(/KGS?$/, 'KG'), fuel = v => v == null ? '--' : (/^100/.test(p.unit || '') ? v * 100 : v).toLocaleString() + (fu ? ' ' + fu : '');
+          return { gap, p, w, dep: info.dep, dest: info.dest, etdMin: info.etdMinutes, etaMin: info.etaMinutes, altn, altnMin: p.altnMin, altnFuel: p.altnFuel != null ? fuel(p.altnFuel) : '', tripMin: p.tripMin ?? info.eetMinutes, pax: p.pax,
+            cDep: renderWxCard(info.dep, 'Return ETD', w ? w.etd : null, 'text-emerald-300'), cDest: renderWxCard(info.dest, 'Return ETA', w ? w.eta : null, 'text-emerald-300'),
+            cAltn: altn ? renderWxCard(altn, 'ETA', w && p.altnMin != null ? w.eta + p.altnMin * 6e4 : (w ? w.eta : null), 'text-purple-300') : '',
+            raw: renderWxRaw([info.dep, info.dest, altn]) };
+        });
+      } catch (e) { console.warn(e); return null; }
+    }
+    // 2번 운항정보 아래 Return 카드 (Return flight OFP 기준)
+    function qtRetCardHtml() {
+      const q = jbQT; if (!q || !q.meta) return '';
+      const o = info, gap = quickturnReturnEtdMin != null && o.etaMinutes != null ? quickturnReturnEtdMin - o.etaMinutes : null;
+      try {
+        return jbWithQT(() => {
+          const p = pdfFlt || {}, w = flightWindow(), type = p.type || '', altn = p.altn || info.altn || '';
+          const hm = m => m == null ? '--' : `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+          const ko = c => { const n = getAirportNameInfo(c); return n && n.ko ? n.ko : ''; };
+          const lt = (c, ms) => { const l = localTime(c, ms); return l ? `${l.md} ${l.hm} L` : ''; };
+          const pt = (c, ms, min, cls, al) => `<div class="flex flex-col ${al} gap-0.5 min-w-0"><div class="text-xl font-bold mono ${cls} leading-none">${esc(c || '--')}</div><div class="text-sm text-slate-100 leading-tight">${esc(ko(c) || '-')}</div><div class="mono text-sm font-bold text-white mt-1">${min != null ? formatMinutes(min % 1440) + 'Z' : '--'}</div><div class="mono text-[12px] font-bold text-amber-200">${esc(lt(c, ms))}</div></div>`;
+          const tile = (l, v, sub, cls = 'text-slate-100') => `<div class="rounded-lg border border-slate-800 bg-slate-900/70 px-2 py-1.5 min-w-0"><div class="flex items-baseline justify-between gap-1.5 flex-wrap"><span class="text-[10px] text-slate-400">${l}</span><span class="font-bold mono text-sm ${cls}">${v}</span></div>${sub ? `<div class="text-[10px] text-slate-500 mono">${sub}</div>` : ''}</div>`;
+          const fls = pdfNav.map(x => x.fl).filter(v => typeof v === 'number'), steps = []; fls.forEach(v => { if (steps[steps.length - 1] !== v) steps.push(v); });
+          const toc = pdfNav.find(x => x.name === 'TOC'), tocFl = toc && typeof toc.fl === 'number' ? toc.fl : (fls.length ? fls[0] : null);
+          const fu = (p.unit || '').replace(/^100/, '').replace(/KGS?$/, 'KG'), fuel = v => v == null ? '--' : (/^100/.test(p.unit || '') ? v * 100 : v).toLocaleString() + (fu ? ' ' + fu : '');
+          const px = p.pax, FL = v => 'FL' + String(v).padStart(3, '0');
+          const rM = q.fpl.match(/-[NKM]\d{3,4}[FSAM]\d{3,4}\s+([\s\S]*?)\n?\s*-[A-Z]{4}\d{4}/), route = rM ? rM[1].replace(/\s+/g, ' ').trim() : '';
+          const ed = (() => { try { return parseEdto(q.text); } catch (e) { return null; } })();
+          const mel = (() => { try { return parseOfpMel(q.text).items || []; } catch (e) { return []; } })();
+          const tb = (() => { try { return jbTurb(w && w.etd, p.tripMin ?? info.eetMinutes); } catch (e) { return []; } })();
+          const dn = (pdfExtras && pdfExtras.turb || []).map(g => `${g.sev}${g.lvl ? ' ' + g.lvl : ''}${g.segs.length ? ' · ' + g.segs.map(x => x[0] + '→' + x[1]).join(', ') : ''}`);
+          const row = (l, v) => `<div class="flex gap-2 text-[12px] leading-snug"><span class="shrink-0 w-[4.6rem] text-slate-400">${l}</span><span class="min-w-0 text-slate-100 break-words">${v}</span></div>`;
+          const extra = `<div class="grid grid-cols-2 gap-2">
+              ${tile('TRIP', hm(p.tripMin), p.tripFuel != null ? fuel(p.tripFuel) + (p.tripDist ? ' · ' + p.tripDist + 'NM' : '') : '')}
+              ${tile('TOF', fuel(p.tof), p.altnFuel != null ? 'ALTN ' + fuel(p.altnFuel) + (p.altnMin != null ? ' · ' + hm(p.altnMin) : '') : '')}
+              ${tile('화물', pdfExtras && pdfExtras.cargoLbs != null ? Math.round(pdfExtras.cargoLbs).toLocaleString() + ' LBS' : '--', '')}
+              ${tile('EDTO', ed ? `<span class="text-amber-300">${ed.minutes ? ed.minutes + '분' : 'Y'}</span>` : '아님', ed && ed.alts && ed.alts.length ? ed.alts.map(a => a.code).join(' ') : '')}
+            </div>
+            <div class="flex flex-col gap-1 rounded-lg border border-slate-800 bg-slate-900/50 p-2">
+              ${route ? row('경로', `<span class="mono text-[11px] text-slate-300">${esc(route)}</span>`) : ''}
+              ${row('예상 난기류', tb.length ? tb.map(x => esc(x)).join('<br>') : '<span class="text-slate-500">SR 6 이상 구간 없음</span>')}
+              ${dn.length ? row('디스패치 노트', dn.map(x => esc(x)).join('<br>')) : ''}
+              ${row('MEL/CDL', mel.length ? mel.map(x => `<span class="inline-block mono text-[11px] px-1 rounded border border-amber-700/60 text-amber-200 mr-1 mb-0.5">${esc(x.kind)} ${esc(x.no)}</span>`).join('') : '<span class="text-slate-500">없음</span>')}
+            </div>`;
+          const turn = gap == null ? '' : `<span class="px-1.5 py-0.5 rounded border text-[10px] font-bold ${gap < 30 ? 'bg-rose-950/60 border-rose-800/60 text-rose-300' : 'bg-emerald-950/40 border-emerald-800/50 text-emerald-300'}">지상 ${gap >= 120 ? Math.floor(gap / 60) + 'h ' + (gap % 60) + 'm' : gap + '분'}${gap < 30 ? ' ⚠' : ''}</span>`;
+          return `<div class="mt-3 rounded-xl border border-indigo-700/60 bg-indigo-950/20 p-3 flex flex-col gap-3" data-qt-ret-card>
+            <div class="flex items-center flex-wrap gap-x-2.5 gap-y-1">
+              <span class="text-[11px] font-bold px-1.5 py-0.5 rounded bg-indigo-600 text-white">🔄 Return flight · QUICK TURN</span>
+              <span class="text-lg font-bold mono text-white">${esc(p.callsign || '--')}</span>
+              <span class="text-sm font-bold text-sky-300">${esc(type ? (AC_NAMES[type] || type) : '--')}</span>
+              <span class="text-[11px] text-slate-400 mono">${esc(p.reg || '')}</span>${turn}
+            </div>
+            <div class="text-[10px] text-slate-400">출발·도착·교체공항, 비행시간, 기상, 예약 현황은 위 운항정보에 가는편과 함께 표시됩니다.</div>
+            <div class="grid grid-cols-2 gap-2">
+              ${tile('순항고도', tocFl ? FL(tocFl) : '--', steps.length > 1 ? 'STEP ' + steps.map(FL).join(' → ') : '')}
+              ${tile('RAMP OUT', fuel(p.ramp), '')}
+            </div>
+            ${extra}
+            <div class="text-[10px] text-slate-400">Return flight 교체공항(${esc(altn || '--')}) 노탐은 3번 Package 1의 「Return 교체」 탭 · Joint Brief는 Return 포함하여 생성됩니다.</div>
+          </div>`;
+        });
+      } catch (e) { console.warn(e); return ''; }
+    }
+    const jbQTHtml = () => jbQT ? `<div data-jb-qt><div style="page-break-before:always;border-top:3px dashed #6366f1;margin:28px 0 10px"></div>${jbWithQT(() => buildJointBrief(true))}</div>` : '';
+    const jbFull = () => buildJointBrief() + jbQTHtml();
+    function jbQTBtn() { const b = document.querySelector('[data-jb="qt"]'); if (!b) return; const cs = jbQT ? ((jbQT.fpl.match(/\(FPL-([A-Z0-9]+)-/) || [])[1] || '') : ''; b.innerHTML = jbQT ? `↩ Return ${esc(jbFlightNo(cs))} ✕` : '↩ Return flight OFP 추가'; }
+    async function jbQTClick() {
+      const docEl = $('jb-doc');
+      if (jbQT) { if (!confirm('Return flight(퀵턴) OFP를 빼시겠습니까? (3번 Return 교체 노탐·Return 카드도 함께 빠집니다)')) return; qtClearReturn(); refreshAll(false); return; }
+      qtPickReturnOfp();
+    }
     function openJointBrief() {
       let ov = $('jb-overlay');
       if (!ov) {
@@ -5877,6 +6089,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
           <div class="flex items-center gap-2 flex-wrap px-3 py-2 border-b border-slate-700 bg-slate-900">
             <span class="font-bold text-white">📝 Joint Brief</span><span class="text-[11px] text-slate-400">문서를 바로 눌러 수정할 수 있습니다</span>
             <span class="ml-auto flex gap-1.5 flex-wrap">
+              <button type="button" data-jb="qt" class="px-2.5 py-1.5 rounded-lg bg-indigo-700 text-[12px] font-bold text-white">↩ Return flight OFP 추가</button>
               <button type="button" data-jb="regen" class="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-[12px] text-slate-200">↻ 다시 생성</button>
               <button type="button" data-jb="copy" class="px-2.5 py-1.5 rounded-lg bg-sky-700 text-[12px] font-bold text-white">📋 복사 (구글 문서에 붙여넣기)</button>
               <button type="button" data-jb="doc" class="px-2.5 py-1.5 rounded-lg bg-emerald-700 text-[12px] font-bold text-white">⬇️ 문서 파일 저장 (.doc)</button>
@@ -5889,8 +6102,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
         ov.addEventListener('click', e => {
           const b = e.target.closest('[data-jb]'); if (!b) return;
           const k = b.dataset.jb, doc = $('jb-doc');
+          if (k === 'qt') { jbQTClick(); return; }
           if (k === 'close') { ov.classList.add('hidden'); document.body.style.overflow = ''; }
-          else if (k === 'regen') { if (confirm('수정한 내용이 사라지고 OFP 기준으로 다시 생성됩니다. 계속할까요?')) doc.innerHTML = buildJointBrief(); }
+          else if (k === 'regen') { if (confirm('수정한 내용이 사라지고 OFP 기준으로 다시 생성됩니다. 계속할까요?')) doc.innerHTML = jbFull(); try { jbQTBtn(); } catch (e) { } }
           else if (k === 'copy') {
             const html = `<html><head><meta charset="utf-8"><style>${JB_DOC_CSS}</style></head><body>${doc.innerHTML}</body></html>`;
             const done = () => showToast('복사됨 — Google 문서에 붙여넣으세요');
@@ -5913,7 +6127,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       }
       function selCopy(el) { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand('copy'); } catch (e) { } s.removeAllRanges(); }
       window.selCopy = selCopy;
-      $('jb-doc').innerHTML = buildJointBrief();
+      $('jb-doc').innerHTML = jbFull(); jbQTBtn();
       ov.classList.remove('hidden'); document.body.style.overflow = 'hidden';
     }
 
@@ -6922,7 +7136,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const flTxt = v => { const m = mLv.find(mm => Math.abs(mm * 3.28084 / 100 - v) <= 2.5); return 'FL' + String(v).padStart(3, '0') + (m ? ` (${m.toLocaleString()}m)` : ''); };
       // ETD/ETA (조정 반영) + 현지시각
       const w = flightWindow();
-      const endpoint = (role, icao, ms, minutes, alignRight, codeCls = 'text-emerald-300', noTime = false) => {
+      const endpoint = (role, icao, ms, minutes, alignRight, codeCls = 'text-emerald-300', noTime = false, compact = false) => {
         const slot = role === 'DEP' || role === 'DEST' ? `<div class="mt-1" data-stand-role="${role}"></div>` : '';
         const nm = getAirportNameInfo(icao), lt = localTime(icao, ms);
         const al = alignRight === 'center' ? 'items-center text-center' : alignRight ? 'items-end text-right' : 'items-start text-left';
@@ -6934,8 +7148,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
         return `<div class="flex flex-col ${al} gap-0.5 min-w-0">
           ${tri ? `<div class="flex items-start gap-2 ${alignRight === 'center' ? 'justify-center' : alignRight ? 'justify-end' : ''}">${names}${tri}</div>` : names}
           ${noTime ? '<div class="mt-1 h-[3.25rem]"></div>' : `<div class="mono text-sm font-bold text-white mt-1">${minutes != null ? formatMinutes(minutes) + 'Z' : '--'}</div>
-          <div class="mono text-[11px] text-amber-200 whitespace-nowrap">${lt ? `${lt.md} ${lt.hm} L` : '<span class="text-slate-500">현지시각 없음</span>'}</div>
-          ${lt ? `<div class="mono text-[10px] text-slate-400">${lt.utc}</div>` : ''}`}
+          <div class="mono text-[11px] text-amber-200 whitespace-nowrap">${lt ? (compact ? `${lt.hm} L` : `${lt.md} ${lt.hm} L`) : '<span class="text-slate-500">현지시각 없음</span>'}</div>
+          ${lt ? `<div class="mono text-[10px] text-slate-400">${compact ? lt.md + ' ' + lt.utc : lt.utc}</div>` : ''}`}
           ${slot}
         </div>`;
       };
@@ -6948,6 +7162,27 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const altnNm = getAirportNameInfo(altnCode);
       const adjusted = !!etdOverride || !!etaOverride;
       { const hf = $('hdr-flt'); if (hf) hf.innerHTML = cs ? `<b>${esc(cs)}</b><span>${esc(info.dep || '')}</span><i>→</i><span>${esc(info.dest || '')}</span>${info.flightDate ? `<em>${esc(info.flightDate)}</em>` : ''}${p.reg ? `<em>${esc(p.reg)}</em>` : ''}` : ''; }
+      const Q = (() => { try { return qtRetData(); } catch (e) { return null; } })();
+      const legMid = (t, lb) => `<div class="flex flex-col items-center gap-1 px-0.5" style="align-self:end;margin-bottom:1.6rem"><div class="text-[10px] text-slate-400">${lb}</div><div class="flex items-center gap-1"><span class="w-3 sm:w-6 border-t border-dashed border-slate-600"></span><span class="text-sky-300">✈︎</span><span class="w-3 sm:w-6 border-t border-dashed border-slate-600"></span></div><div class="mono font-bold text-sky-200">${t}</div></div>`;
+      const altBox = (lb, code, min, fuelTxt2) => { const nm = getAirportNameInfo(code); return `<div class="rounded-lg border border-purple-800/60 bg-purple-950/20 px-2 py-1.5 min-w-0"><div class="text-[10px] text-purple-300">${lb}</div><div class="flex items-baseline gap-2 flex-wrap"><span class="text-lg font-bold mono text-purple-200 leading-none">${esc(code || '--')}</span><span class="text-[12px] text-slate-100">${esc(nm && nm.ko ? nm.ko : '')}</span></div><div class="mono text-[11px] text-purple-100">교체 ${min != null ? hm(min) : '--'}${fuelTxt2 ? ' · ' + esc(fuelTxt2) : ''}</div></div>`; };
+      const turnBadge = Q && Q.gap != null ? `<span class="px-1.5 py-0.5 rounded border text-[11px] font-bold ${Q.gap < 30 ? 'bg-rose-950/60 border-rose-800/60 text-rose-300' : 'bg-emerald-950/40 border-emerald-800/50 text-emerald-300'}">지상 ${Q.gap >= 120 ? Math.floor(Q.gap / 60) + 'h ' + (Q.gap % 60) + 'm' : Q.gap + '분'}${Q.gap < 30 ? ' ⚠' : ''}</span>` : '';
+      const qtRoute = !Q ? '' : `<div class="flex items-center flex-wrap gap-x-2 gap-y-1 rounded-lg border border-indigo-700/60 bg-indigo-950/30 px-2 py-1">
+          <span class="text-[11px] font-bold px-1.5 py-0.5 rounded bg-indigo-600 text-white">🔄 QUICK TURN</span>
+          <span class="mono text-sm font-bold text-white">${esc(cs || '--')} <span class="text-slate-500">→</span> ${esc((Q.p && Q.p.callsign) || '--')}</span>${turnBadge}
+          <span class="mono text-[11px] text-slate-300">Return ETD ${Q.etdMin != null ? formatMinutes(Q.etdMin % 1440) + 'Z' : '--'}${Q.w ? ' · ' + ((localTime(Q.dep, Q.w.etd) || {}).hm || '') + ' L' : ''}</span>
+          <button type="button" data-qt-ret-remove class="ml-auto text-[10px] text-slate-400 underline">Return flight OFP 빼기</button></div>
+        <div class="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-start gap-1.5" style="align-items:start">
+          ${endpoint('DEP', info.dep, w ? w.etd : null, info.etdMinutes, false, 'text-emerald-300', false, true)}
+          ${legMid(hm(p.tripMin ?? info.eetMinutes), '가는편')}
+          ${endpoint('DEST', info.dest, w ? w.eta : null, info.etaMinutes, 'center', 'text-emerald-300', false, true)}
+          ${legMid(hm(Q.tripMin), 'Return')}
+          ${endpoint('RET', Q.dest, Q.w ? Q.w.eta : null, Q.etaMin != null ? Q.etaMin % 1440 : null, true, 'text-emerald-300', false, true)}
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          ${altBox('교체공항 · 가는편', altnCode, p.altnMin, p.altnFuel != null ? fuelTxt(p.altnFuel) : '')}
+          ${altBox('교체공항 · Return', Q.altn, Q.altnMin, Q.altnFuel)}
+        </div>`;
+      const paxTile = (lb, px) => tile(lb, px ? `${px.f + px.c + px.y}명` : '--', px ? `F ${px.f}/${px.fc} · C ${px.c}/${px.cc} · Y ${px.y}/${px.yc}` : 'OFP에 예약 정보 없음', 'text-emerald-300');
       box.innerHTML = `<div class="rounded-xl border border-slate-800 bg-slate-950/70 p-3 flex flex-col gap-3">
         <div class="flex items-center flex-wrap gap-x-2.5 gap-y-1">
           <span class="text-lg font-bold mono text-white">${esc(cs || '--')}</span>
@@ -6958,7 +7193,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
             <span class="inline-flex items-center gap-1 text-cyan-300 font-bold"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>위치·출도착</span><span class="text-cyan-300">›</span></button>`
             : `<span class="ml-auto px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-slate-100 mono text-xs font-bold">--</span>`}
         </div>
-        <div class="grid ${altnCode ? 'grid-cols-[1fr_auto_1fr_auto_1fr]' : 'grid-cols-[1fr_auto_1fr]'} items-center gap-1.5">
+        ${Q ? qtRoute : `<div class="grid ${altnCode ? 'grid-cols-[1fr_auto_1fr_auto_1fr]' : 'grid-cols-[1fr_auto_1fr]'} items-center gap-1.5">
           ${endpoint('DEP', info.dep, w ? w.etd : null, info.etdMinutes, false)}
           <div class="flex flex-col items-center gap-1 px-0.5">
             <div class="text-[10px] text-slate-400">비행시간</div>
@@ -6973,23 +7208,42 @@ svg.leaflet-image-layer.leaflet-interactive path {
             <div class="mono font-bold text-purple-200">${p.altnMin != null ? hm(p.altnMin) : '--'}</div>
           </div>
           ${endpoint('ALTN', altnCode, null, null, true, 'text-purple-300', true)}` : ''}
-        </div>
+        </div>`}
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-[11px] font-bold text-slate-300">🌤️ 기상 · 기온</span><span class="flex items-center gap-2 text-[10px] text-slate-500">${wxLiveAt ? '실시간 ' + new Date(wxLiveAt).toISOString().slice(11, 16) + 'Z 조회' : ''}<button type="button" data-wx-refresh class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-sky-300 font-bold">🔄 실시간 조회</button></span></div>
-          <div class="grid ${altnCode ? 'grid-cols-3' : 'grid-cols-2'} gap-2">
+          ${Q ? `<div class="text-[10px] text-slate-400">가는편 → Return 순서 (공항 · 시각)</div>
+          <div class="grid gap-2" style="grid-template-columns:repeat(auto-fit,minmax(148px,1fr))">
+            ${renderWxCard(info.dep, '가는편 ETD', w ? w.etd : null, 'text-emerald-300')}
+            ${renderWxCard(info.dest, '가는편 ETA', w ? w.eta : null, 'text-emerald-300')}
+            ${Q.cDep}${Q.cDest}
+          </div>
+          <div class="text-[10px] text-purple-300">교체공항 기상</div>
+          <div class="grid gap-2" style="grid-template-columns:repeat(auto-fit,minmax(148px,1fr))">
+            ${altnCode ? renderWxCard(altnCode, '가는편 교체 ETA', w && p.altnMin != null ? w.eta + p.altnMin * 6e4 : (w ? w.eta : null), 'text-purple-300') : ''}
+            ${Q.cAltn}
+          </div>
+          ${renderWxRaw([info.dep, info.dest, altnCode])}${Q.raw}` : `<div class="grid ${altnCode ? 'grid-cols-3' : 'grid-cols-2'} gap-2">
             ${renderWxCard(info.dep, 'ETD', w ? w.etd : null, 'text-emerald-300')}
             ${renderWxCard(info.dest, 'ETA', w ? w.eta : null, 'text-emerald-300')}
             ${altnCode ? renderWxCard(altnCode, 'ETA', w && p.altnMin != null ? w.eta + p.altnMin * 6e4 : (w ? w.eta : null), 'text-purple-300') : ''}
           </div>
-          ${renderWxRaw([info.dep, info.dest, altnCode])}
+          ${renderWxRaw([info.dep, info.dest, altnCode])}`}
         </div>
-        <div class="grid grid-cols-3 gap-2">
+        ${Q ? `<div class="grid grid-cols-2 gap-2">
+          ${paxTile('예약 현황 · 가는편 ' + esc(cs), pax)}
+          ${paxTile('예약 현황 · Return ' + esc((Q.p && Q.p.callsign) || ''), Q.pax)}
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          ${tile('순항고도 (가는편)', tocFl ? flTxt(tocFl) : '--', steps.length > 1 ? 'STEP ' + steps.map(flTxt).join(' → ') : '')}
+          ${tile('RAMP OUT (가는편)', fuelTxt(p.ramp), '')}
+        </div>` : `<div class="grid grid-cols-3 gap-2">
           ${tile('순항고도', tocFl ? flTxt(tocFl) : '--', steps.length > 1 ? 'STEP ' + steps.map(flTxt).join(' → ') : '')}
           ${tile('예약 현황', pax ? `${pax.f + pax.c + pax.y}명` : '--', pax ? `F ${pax.f}/${pax.fc} · C ${pax.c}/${pax.cc} · Y ${pax.y}/${pax.yc}` : (pdfFlt ? 'OFP에 예약 정보 없음' : ''), 'text-emerald-300')}
           ${tile('RAMP OUT', fuelTxt(p.ramp), '')}
-        </div>
+        </div>`}
         <div class="grid grid-cols-[2fr_1fr] gap-2"><button type="button" data-jb-open class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg">📝 JOINT BRIEF 생성</button><button type="button" data-arr-open class="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm shadow-lg">📢 도착 방송</button></div>
       </div>`;
+      try { const qh = qtRetCardHtml(); if (qh) box.insertAdjacentHTML('beforeend', qh); } catch (e) { console.warn(e); }
       try { renderAcLive(); } catch (e) { }
       try { renderStands(); maybeFetchStands(); } catch (e) { console.warn(e); }
       try { renderCrew(); } catch (e) { console.warn(e); }
@@ -7456,6 +7710,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       $('pdf-sub').textContent = '클릭하거나 PDF를 끌어다 놓으세요';
       info = { dep:'', dest:'', altn:'', era:[], etdMinutes:null, etaMinutes:null, eetMinutes:null, flightDate:'' };
       pdfFlt = null; etdOverride = null; etaOverride = null; package1AirportNotams = []; package2AirportNotams = []; package2AreaNotams = []; era2Selected.clear();
+      try { qtClearReturn(); } catch (e) { console.warn(e); }
       routeCoordinates = []; routeTokens = []; routeElapsed = []; routeFir = []; routeSource = '없음';
       firNotams = []; airNotams = []; otherNotams = []; ofpOrdered = []; pdfEtp = []; pdfEdto = null; renderEdtoBanner();
       pdfNav = []; pdfFirCode = null; pdfFirList = []; pdfAltn = null; pdfEra = []; { const fw = document.getElementById('fms-wind'); if (fw) fw.innerHTML = ''; }
@@ -7484,7 +7739,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const INACTIVE_CLS = "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-slate-200";
       const selectPkg1Tab = tab => {
         currentPkg1Tab = tab;
-        [['btn-pkg1-tab-dep', 'DEP'], ['btn-pkg1-tab-dest', 'DEST'], ['btn-pkg1-tab-altn', 'ALTN']].forEach(([id, t]) => { const b = $(id); if (b) b.className = t === tab ? ACTIVE_CLS : INACTIVE_CLS; });
+        [['btn-pkg1-tab-dep', 'DEP'], ['btn-pkg1-tab-dest', 'DEST'], ['btn-pkg1-tab-altn', 'ALTN'], ['btn-pkg1-tab-ret', 'RALTN']].forEach(([id, t]) => { const b = $(id); if (b) b.className = t === tab ? ACTIVE_CLS : INACTIVE_CLS; });
         document.querySelectorAll('[data-pkg1-tab]').forEach(b => { b.className = b.dataset.pkg1Tab === tab ? ACTIVE_CLS : INACTIVE_CLS; });
         renderPackage1Notams();
       };
@@ -7495,6 +7750,13 @@ svg.leaflet-image-layer.leaflet-interactive path {
     }
     $('chk-pkg1-time-filter').addEventListener('change', e => { pkg1TimeFilterActive = e.target.checked; renderPackage1Notams(); });
     $('pkg1-sort-select').addEventListener('change', e => { pkg1SortMode = e.target.value; renderPackage1Notams(); });
+    $('ret-pdf-input').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) qtAddReturnOfp(f); });
+    { const rd = $('ret-dropzone');
+      rd.addEventListener('dragover', e => { e.preventDefault(); rd.classList.add('border-indigo-400'); });
+      rd.addEventListener('dragleave', () => rd.classList.remove('border-indigo-400'));
+      rd.addEventListener('drop', e => { e.preventDefault(); rd.classList.remove('border-indigo-400'); const f = e.dataTransfer.files[0]; if (f) qtAddReturnOfp(f); }); }
+    $('btn-ret-clear').addEventListener('click', () => { if (jbQT && confirm('Return flight OFP를 빼시겠습니까?')) { qtClearReturn(); refreshAll(false); } });
+    document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-qt-ret-remove]')) { if (confirm('Return flight OFP를 빼시겠습니까?')) { qtClearReturn(); refreshAll(false); } } });
     $('chk-quickturn').addEventListener('change', e => {
       quickturnActive = e.target.checked;
       $('quickturn-time-inputs').style.display = quickturnActive ? 'flex' : 'none';
@@ -7514,7 +7776,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       $('qt-return-eet').addEventListener('change', e => { const v = parseInt(e.target.value, 10); qtReturnEet = (!isNaN(v) && v > 0 && v < 900) ? v : null; resetManualAndRender(); });
       $('btn-qt-suggest').addEventListener('click', resetManualAndRender);
     }
-    // 퀵턴 입력이 바뀌면 3번 노탐 브리핑의 복편 배지도 갱신 (위 핸들러가 복편 시각을 먼저 계산)
+    // 퀵턴 입력이 바뀌면 3번 노탐 브리핑의 Return 배지도 갱신 (위 핸들러가 Return 시각을 먼저 계산)
     [['chk-quickturn', 'change'], ['qt-return-etd', 'input'], ['qt-return-eta', 'input'], ['qt-turn-min', 'change'], ['qt-return-eet', 'change'], ['btn-qt-suggest', 'click']]
       .forEach(([id, ev]) => { const el = $(id); if (el) el.addEventListener(ev, () => { try { renderBriefing(); } catch (er) { console.warn(er); } }); });
     $('era2-chips').addEventListener('change', e => {
