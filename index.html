@@ -919,7 +919,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <div id="fpl-global-alert" style="display:none;position:sticky;top:0;z-index:60;background:#b91c1c;color:#fff;font-weight:800;font-size:14px;text-align:center;padding:9px 12px;cursor:pointer;border-bottom:2px solid #fecaca"></div>
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v137 ↻</button>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v138 ↻</button>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button type="button" data-ctc-open title="Cold Temperature 고도보정 계산 — FOM 4.4.2.2" class="px-2.5 py-1.5 rounded-lg border text-[12px] font-bold hover:opacity-90 whitespace-nowrap" style="border-color:#a78bfa;background:rgba(76,29,149,.35);color:#ddd6fe">🥶 Cold Temp</button>
       <button id="btn-wind" type="button" title="바람 제한치 계산 · 활주로 상태(Braking Action) — FOM 4.5/5.8 · FCRM 1.17 · FCOM RCAM" class="px-2.5 py-1.5 rounded-lg border border-sky-600/70 bg-sky-950/40 text-[12px] font-bold text-sky-200 hover:bg-sky-900/50">🌬 Wind</button>
@@ -1048,7 +1048,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
             <option value="b042">기준: 운영기준 B042 승인공항</option>
             <option value="ofp">기준: OFP ERA 목록</option>
           </select>
-          <span id="thr-info" class="text-slate-400"></span>
+          <span id="thr-info" class="text-slate-400" style="display:none"></span>
         </div>
         <!-- 좌표 입력 · FMS 변환 (항상 펼침) -->
         <div id="mm-panel" class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col gap-2">
@@ -1193,8 +1193,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
           </div>
         </div>
 
-        <!-- 공항 탭 (3번 섹션 복제, 같은 동작) -->
-        <div class="flex items-center gap-2 border-b border-slate-800 pb-2">
+        <!-- 공항 탭 (3번 섹션 복제, 같은 동작) — 노탐 브리핑에서 전환 가능해 숨김 -->
+        <div style="display:none" class="flex items-center gap-2 border-b border-slate-800 pb-2">
           <button data-pkg1-tab="DEP" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-slate-200"><span data-tab-label="dep">출발 (DEP: --)</span></button>
           <button data-pkg1-tab="DEST" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-sky-600 text-white shadow"><span data-tab-label="dest">목적 (DEST: --)</span></button>
           <button data-pkg1-tab="ALTN" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-slate-200"><span data-tab-label="altn">교체 (ALTN: --)</span></button>
@@ -7460,14 +7460,13 @@ svg.leaflet-image-layer.leaflet-interactive path {
             <table class="mono text-[13px] mt-1 w-full max-w-[340px]"><tr class="text-[10.5px] text-slate-400"><td>FL</td><td>WIND</td><td>TEMP</td></tr>
             ${p.levels.map(l => `<tr class="${l.fl === p.cru ? 'text-sky-200 font-bold' : 'text-slate-200'}"><td>${l.fl}${l.fl === p.cru ? ' ◀' : ''}</td><td>${fmtW(l)}</td><td>${fmtT(l.tmp)}</td></tr>`).join('')}</table></div>`;
         const all = P.rows.map(r => `<tr class="${r.pick ? 'text-amber-200 font-bold' : 'text-slate-300'}"><td>${r.pick ? '▶ ' : ''}${esc(r.name)}</td><td>${r.cru}</td><td>${fmtW(r.cur)}${r.cur.interp ? '*' : ''}</td><td>${fmtT(r.cur.tmp)}</td><td>${r.d ? `${r.d.dir}° / ${r.d.spd > 0 ? '+' : ''}${r.d.spd}KT / ${r.d.tmp > 0 ? '+' : ''}${r.d.tmp}°C` : '—'}</td></tr>`).join('');
-        return `<div class="rounded-xl border-2 border-sky-700 bg-slate-950/40 p-2.5 flex flex-col gap-2">
-          <div class="flex items-center gap-2 flex-wrap"><span class="text-[14px] font-bold text-sky-200">🧭 FMS 순항 바람 입력 (CRZ WIND)</span><span class="text-[11px] text-slate-400">${P.picks.length}곳 · 기준 풍향 &gt;30° · 풍속 &gt;30KT · 기온 &gt;5°C (Airbus)</span></div>
-          <div class="grid gap-2 sm:grid-cols-2">${P.picks.map(card).join('')}</div>
+        return `<details id="fms-wind-box" class="group rounded-xl border-2 border-sky-700 bg-slate-950/40 p-2.5"><summary class="cursor-pointer select-none list-none flex items-center gap-2 flex-wrap"><span class="text-sky-300 text-[12px]"><span class="group-open:hidden">▸</span><span class="hidden group-open:inline">▾</span></span><span class="text-[14px] font-bold text-sky-200">🧭 FMS 순항 바람 입력 (CRZ WIND)</span><span class="text-[11px] text-slate-400">${P.picks.length}곳 · 기준 풍향 &gt;30° · 풍속 &gt;30KT · 기온 &gt;5°C (Airbus)</span><span class="ml-auto text-[11px] text-slate-500 group-open:hidden">눌러서 펼치기</span></summary>
+          <div class="flex flex-col gap-2 mt-2"><div class="grid gap-2 sm:grid-cols-2">${P.picks.map(card).join('')}</div>
           <details><summary class="cursor-pointer select-none text-[11.5px] text-slate-300">전체 웨이포인트 비교 (순항 고도, 마지막 입력값 대비)</summary>
             <table class="mono text-[11.5px] mt-1 w-full"><tr class="text-slate-500"><td>WPT</td><td>FL</td><td>WIND</td><td>TEMP</td><td>변화 (풍향/풍속/기온)</td></tr>${all}</table>
             <div class="text-[10px] text-slate-500 mt-0.5">* 표의 고도 사이를 보간한 값 (비교용)</div></details>
-          <div class="text-[10.5px] text-slate-500">◀ 순항 고도. FMS는 입력한 바람을 다음 입력 지점까지 그대로 씁니다. OFP 바람 요약이 기준이며, 순항 고도가 바뀌면 다시 확인하세요.</div>
-        </div>`;
+          <div class="text-[10.5px] text-slate-500">◀ 순항 고도. FMS는 입력한 바람을 다음 입력 지점까지 그대로 씁니다. OFP 바람 요약이 기준이며, 순항 고도가 바뀌면 다시 확인하세요.</div></div>
+        </details>`;
       }
 
       function render(text, nav, el) {
