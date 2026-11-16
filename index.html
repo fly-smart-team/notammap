@@ -919,7 +919,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <div id="fpl-global-alert" style="display:none;position:sticky;top:0;z-index:60;background:#b91c1c;color:#fff;font-weight:800;font-size:14px;text-align:center;padding:9px 12px;cursor:pointer;border-bottom:2px solid #fecaca"></div>
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v138 ↻</button>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v139 ↻</button>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button type="button" data-ctc-open title="Cold Temperature 고도보정 계산 — FOM 4.4.2.2" class="px-2.5 py-1.5 rounded-lg border text-[12px] font-bold hover:opacity-90 whitespace-nowrap" style="border-color:#a78bfa;background:rgba(76,29,149,.35);color:#ddd6fe">🥶 Cold Temp</button>
       <button id="btn-wind" type="button" title="바람 제한치 계산 · 활주로 상태(Braking Action) — FOM 4.5/5.8 · FCRM 1.17 · FCOM RCAM" class="px-2.5 py-1.5 rounded-lg border border-sky-600/70 bg-sky-950/40 text-[12px] font-bold text-sky-200 hover:bg-sky-900/50">🌬 Wind</button>
@@ -949,7 +949,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <!-- 1. OFP 첨부 & 경로 -->
       <section id="sec-ofp" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
         <div class="flex items-center gap-2">
-          <h2 class="sec-h"><span class="sec-no">01</span><span class="sec-t">OFP &amp; ROUTE</span><span class="sec-k">OFP 첨부 · 비행경로</span><span id="fpl-chip" style="display:none"></span></h2>
+          <h2 class="sec-h"><span class="sec-no">01</span><span class="sec-t">OFP &amp; ROUTE</span><span id="fpl-chip" style="display:none"></span></h2>
           <button id="btn-reset" type="button" style="margin-left:auto;background:#1e293b;border:1px solid #475569;color:#cbd5e1;border-radius:10px;padding:5px 11px;font-size:12px;font-weight:700;white-space:nowrap">↺ 초기화</button>
         </div>
 
@@ -972,7 +972,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
         <div id="fpl-chk-panel" style="display:flex;flex-direction:column;gap:8px"></div>
 
-        <details><summary style="cursor:pointer;font-size:12px;color:#94a3b8">FPL 전문 직접 입력 (선택)</summary>
+        <details style="display:none"><summary style="cursor:pointer;font-size:12px;color:#94a3b8">FPL 전문 직접 입력 (선택)</summary>
           <textarea id="fpl-input" rows="3" placeholder="FPL 전문을 직접 붙여넣을 수도 있습니다 (선택)"
             class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs mono text-slate-200 focus:outline-none focus:border-sky-500" style="margin-top:6px"></textarea>
           <button id="btn-apply" type="button" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 rounded-xl text-xs" style="margin-top:6px">경로 적용 & 노탐 매칭</button>
@@ -984,7 +984,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
       <!-- 2. Flight Information -->
       <section id="sec-flt" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
-        <h2 class="sec-h"><span class="sec-no">02</span><span class="sec-t">FLIGHT INFORMATION</span><span class="sec-k">비행 정보</span></h2>
+        <h2 class="sec-h"><span class="sec-no">02</span><span class="sec-t">FLIGHT INFORMATION</span></h2>
 
         <!-- 출발 / 목적 / 교체 공항 이름 (한글 · English) -->
         <div id="flt-info"></div>
@@ -1006,7 +1006,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <div id="col-right" class="lg:col-span-6">
       <section id="sec-map" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h2 class="sec-h"><span class="sec-no">03</span><span class="sec-t">ROUTE MAP</span><span class="sec-k">비행경로 · FIR 공역 노탐 지도</span></h2>
+          <h2 class="sec-h"><span class="sec-no">03</span><span class="sec-t">ROUTE MAP</span></h2>
           <div class="flex items-center gap-3 flex-wrap">
             <label class="flex items-center gap-1 text-[11px] text-slate-400 cursor-pointer">
               <input id="map-fir" type="checkbox" class="w-3 h-3" /> FIR 구간 표시
@@ -1094,7 +1094,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <!-- 3. 노탐 브리핑 (OFP 순서) -->
       <section id="sec-brf" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-2">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h2 class="sec-h"><span class="sec-no">04</span><span class="sec-t">NOTAM BRIEFING</span><span class="sec-k">노탐 브리핑 · OFP 순서</span></h2>
+          <h2 class="sec-h"><span class="sec-no">04</span><span class="sec-t">NOTAM BRIEFING</span></h2>
           <div id="brf-controls" class="flex items-center gap-2 flex-wrap text-[11px] text-slate-300">
             <label class="flex items-center gap-1 cursor-pointer"><input id="brf-white" type="checkbox" class="w-3 h-3" /> ⚪ 참고 펼치기</label>
             <label class="flex items-center gap-1">한글 요약 <select id="ko-mode" class="bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[11px] text-sky-200"><option value="literal">직역 (원문 충실)</option><option value="template">템플릿 (자연스러운 문장)</option></select></label>
@@ -1247,7 +1247,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <!-- 5. FIR 통과 NOTAM & FMS -->
       <section id="sec-fir" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <h2 class="sec-h"><span class="sec-no">05</span><span class="sec-t">FIR NOTAM &amp; FMS</span><span class="sec-k">FIR 통과 노탐 · FMS 좌표</span></h2>
+          <h2 class="sec-h"><span class="sec-no">05</span><span class="sec-t">FIR NOTAM &amp; FMS</span></h2>
           <button id="btn-copy-all" class="text-[10px] font-bold text-emerald-300 bg-emerald-950/60 border border-emerald-800/60 px-2 py-1 rounded">표시 중 FMS 전체 복사</button>
         </div>
         <div class="flex items-center justify-between text-[11px]">
@@ -1263,7 +1263,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
       <!-- 6. 조종실 교대 근무 (3P · 2SET · 5P) -->
       <section id="sec-crew" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
-        <h2 class="sec-h"><span class="sec-no">06</span><span class="sec-t">CREW REST</span><span class="sec-k">조종실 교대 근무 · 비행시간 균등</span></h2>
+        <h2 class="sec-h"><span class="sec-no">06</span><span class="sec-t">CREW REST</span></h2>
         <div id="crew-box" class="flex flex-col gap-3"></div>
       </section>
     </div>
