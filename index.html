@@ -919,7 +919,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <div id="fpl-global-alert" style="display:none;position:sticky;top:0;z-index:60;background:#b91c1c;color:#fff;font-weight:800;font-size:14px;text-align:center;padding:9px 12px;cursor:pointer;border-bottom:2px solid #fecaca"></div>
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v134 ↻</button>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v135 ↻</button>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button type="button" data-ctc-open title="Cold Temperature 고도보정 계산 — FOM 4.4.2.2" class="px-2.5 py-1.5 rounded-lg border text-[12px] font-bold hover:opacity-90 whitespace-nowrap" style="border-color:#a78bfa;background:rgba(76,29,149,.35);color:#ddd6fe">🥶 Cold Temp</button>
       <button id="btn-wind" type="button" title="바람 제한치 계산 · 활주로 상태(Braking Action) — FOM 4.5/5.8 · FCRM 1.17 · FCOM RCAM" class="px-2.5 py-1.5 rounded-lg border border-sky-600/70 bg-sky-950/40 text-[12px] font-bold text-sky-200 hover:bg-sky-900/50">🌬 Wind</button>
@@ -4763,6 +4763,16 @@ svg.leaflet-image-layer.leaflet-interactive path {
               const x2 = c2.getContext('2d'); await p2.render({ canvasContext: x2, viewport: vp2 }).promise; ul(x2, R.npage, vp2.width / w0.width);
               const cap = document.createElement('div'); cap.style.cssText = 'font-size:11px;color:#475569;padding:4px 6px'; cap.textContent = `↓ ${R.npage}쪽 NOTES (빨간 밑줄 = 해당 각주)`;
               box.appendChild(cap); box.appendChild(c2);
+            }
+            // 선택한 제빙액 자기 표(예: Table 43)도 함께 보여줌 — 서리처럼 계산에 다른 표(Table 1)를 쓸 때도 제품 표를 바로 볼 수 있게
+            const f2 = dxData.fluids.find(x => x.id === dxS.fluid), pp = f2 && (dxS.adj ? f2.pa : f2.p);
+            if (!R.at && f2 && f2.type !== 'I' && pp && pp !== R.page) {
+              const cap2 = document.createElement('div'); cap2.style.cssText = 'font-size:12px;font-weight:700;color:#0e7490;padding:8px 6px 4px;border-top:2px dashed #94a3b8;margin-top:6px';
+              cap2.textContent = `↓ 선택한 제빙액의 표 — ${dxS.adj ? 'Table Adj-' + f2.t : 'Table ' + f2.t} (${pp}쪽)${/^Table (Adj-)?1\b/.test(R.table || '') ? ' · 서리는 제품 표에 열이 없어 위 Table 1의 공통 값을 씁니다' : ''}`;
+              box.appendChild(cap2);
+              const p3 = await doc.getPage(pp), w3 = p3.getViewport({ scale: 1 }), vp3 = p3.getViewport({ scale: cssW * dpr / w3.width }), c3 = document.createElement('canvas');
+              c3.width = vp3.width; c3.height = vp3.height; c3.style.width = cssW + 'px';
+              await p3.render({ canvasContext: c3.getContext('2d'), viewport: vp3 }).promise; box.appendChild(c3);
             }
             const kd = document.createElement('div'); kd.style.cssText = 'background:#0b1220;padding:2px 8px 10px;border-radius:0 0 8px 8px';
             kd.innerHTML = R.at ? dxAtKoHtml(R) : (['snow', 'snfg', 'snra'].includes(dxS.precip) ? dxKoHtml(74, false).replace(/<div style="margin-top:10px;padding:10px 12px;border-radius:8px;border:1px solid #334155[\s\S]*$/, '') : '') + dxKoHtml(R.page, !!dxS.adj, R.notes);
