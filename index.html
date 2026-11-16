@@ -919,7 +919,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <div id="fpl-global-alert" style="display:none;position:sticky;top:0;z-index:60;background:#b91c1c;color:#fff;font-weight:800;font-size:14px;text-align:center;padding:9px 12px;cursor:pointer;border-bottom:2px solid #fecaca"></div>
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v131 ↻</button>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v132 ↻</button>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button type="button" data-ctc-open title="Cold Temperature 고도보정 계산 — FOM 4.4.2.2" class="px-2.5 py-1.5 rounded-lg border text-[12px] font-bold hover:opacity-90 whitespace-nowrap" style="border-color:#a78bfa;background:rgba(76,29,149,.35);color:#ddd6fe">🥶 Cold Temp</button>
       <button id="btn-wind" type="button" title="바람 제한치 계산 · 활주로 상태(Braking Action) — FOM 4.5/5.8 · FCRM 1.17 · FCOM RCAM" class="px-2.5 py-1.5 rounded-lg border border-sky-600/70 bg-sky-950/40 text-[12px] font-bold text-sky-200 hover:bg-sky-900/50">🌬 Wind</button>
@@ -948,31 +948,35 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
       <!-- 1. OFP 첨부 & 경로 -->
       <section id="sec-ofp" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
-        <h2 class="sec-h"><span class="sec-no">01</span><span class="sec-t">OFP &amp; ROUTE</span><span class="sec-k">OFP 첨부 · 비행경로</span><span id="fpl-chip" style="display:none"></span></h2>
+        <div class="flex items-center gap-2">
+          <h2 class="sec-h"><span class="sec-no">01</span><span class="sec-t">OFP &amp; ROUTE</span><span class="sec-k">OFP 첨부 · 비행경로</span><span id="fpl-chip" style="display:none"></span></h2>
+          <button id="btn-reset" type="button" style="margin-left:auto;background:#1e293b;border:1px solid #475569;color:#cbd5e1;border-radius:10px;padding:5px 11px;font-size:12px;font-weight:700;white-space:nowrap">↺ 초기화</button>
+        </div>
 
-        <label id="dropzone" class="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-sky-700/60 hover:border-sky-400 rounded-xl p-4 cursor-pointer bg-slate-950/60 text-center">
-          <span id="pdf-label" class="text-xs font-bold text-sky-300">OFP PDF 파일 첨부</span>
-          <span id="pdf-sub" class="text-[10px] text-slate-400">클릭하거나 PDF를 끌어다 놓으세요</span>
-          <input id="pdf-input" type="file" accept="application/pdf,.pdf" class="hidden" />
-        </label>
-        <div id="pdf-progress" class="hidden text-[11px] text-sky-400 mono">PDF 분석 중...</div>
-        <div id="fpl-chk-panel" style="display:flex;flex-direction:column;gap:8px"></div>
-        <div class="flex items-stretch gap-2">
-          <label id="ret-dropzone" class="flex-1 flex flex-col items-center justify-center gap-0.5 border-2 border-dashed border-indigo-700/60 hover:border-indigo-400 rounded-xl p-3 cursor-pointer bg-indigo-950/20 text-center">
-            <span id="ret-pdf-label" class="text-xs font-bold text-indigo-300">🔄 Return flight OFP 첨부 (퀵턴·선택)</span>
-            <span id="ret-pdf-sub" class="text-[10px] text-slate-400">돌아오는 편 OFP를 추가하면 2번 운항정보·3번 노탐·Joint Brief에 반영됩니다</span>
-            <input id="ret-pdf-input" type="file" accept="application/pdf,.pdf" class="hidden" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch">
+          <label id="dropzone" class="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-sky-700/60 hover:border-sky-400 rounded-xl p-3 cursor-pointer bg-slate-950/60 text-center" style="min-height:92px;min-width:0;padding:26px 8px 8px">
+            <span id="pdf-label" class="text-xs font-bold text-sky-300" style="font-size:13px;overflow-wrap:anywhere">OFP PDF 파일 첨부</span>
+            <span id="pdf-sub" class="text-[10px] text-slate-400" style="overflow-wrap:anywhere">클릭하거나 PDF를 끌어다 놓으세요</span>
+            <input id="pdf-input" type="file" accept="application/pdf,.pdf" class="hidden" />
           </label>
-          <button id="btn-ret-clear" type="button" style="display:none" class="px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold">✕ 빼기</button>
+          <div style="position:relative;min-width:0;display:flex">
+            <label id="ret-dropzone" class="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-indigo-700/60 hover:border-indigo-400 rounded-xl p-3 cursor-pointer bg-indigo-950/20 text-center" style="flex:1;min-height:92px;min-width:0;padding:26px 8px 8px">
+              <span id="ret-pdf-label" class="text-xs font-bold text-indigo-300" style="font-size:13px;overflow-wrap:anywhere">🔄 Return flight OFP 첨부 (퀵턴·선택)</span>
+              <span id="ret-pdf-sub" class="text-[10px] text-slate-400" style="overflow-wrap:anywhere">돌아오는 편 OFP를 추가하면 2번 운항정보·3번 노탐·Joint Brief에 반영됩니다</span>
+              <input id="ret-pdf-input" type="file" accept="application/pdf,.pdf" class="hidden" />
+            </label>
+            <button id="btn-ret-clear" type="button" title="Return OFP 빼기" style="display:none;position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:9999px;background:#1e293b;border:1px solid #475569;color:#e2e8f0;font-size:13px;font-weight:700;line-height:1">✕</button>
+          </div>
         </div>
+        <div id="pdf-progress" class="hidden text-[11px] text-sky-400 mono">PDF 분석 중...</div>
 
-        <textarea id="fpl-input" rows="3" placeholder="FPL 전문을 직접 붙여넣을 수도 있습니다 (선택)"
-          class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs mono text-slate-200 focus:outline-none focus:border-sky-500"></textarea>
+        <div id="fpl-chk-panel" style="display:flex;flex-direction:column;gap:8px"></div>
 
-        <div class="flex gap-2">
-          <button id="btn-apply" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 rounded-xl text-xs">경로 적용 & 노탐 매칭</button>
-          <button id="btn-reset" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 px-3 rounded-xl text-xs border border-slate-700">초기화</button>
-        </div>
+        <details><summary style="cursor:pointer;font-size:12px;color:#94a3b8">FPL 전문 직접 입력 (선택)</summary>
+          <textarea id="fpl-input" rows="3" placeholder="FPL 전문을 직접 붙여넣을 수도 있습니다 (선택)"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs mono text-slate-200 focus:outline-none focus:border-sky-500" style="margin-top:6px"></textarea>
+          <button id="btn-apply" type="button" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 rounded-xl text-xs" style="margin-top:6px">경로 적용 & 노탐 매칭</button>
+        </details>
 
         <div id="route-summary" class="bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-[11px] text-slate-400 mono whitespace-pre-wrap">경로 정보 없음</div>
         <div id="diag" class="hidden bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 text-[11px] text-slate-300 mono flex flex-col gap-0.5">PDF를 첨부하면 인식 단계별 결과가 표시됩니다.</div>
