@@ -919,7 +919,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <div id="fpl-global-alert" style="display:none;position:sticky;top:0;z-index:60;background:#b91c1c;color:#fff;font-weight:800;font-size:14px;text-align:center;padding:9px 12px;cursor:pointer;border-bottom:2px solid #fecaca"></div>
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v132 ↻</button>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v133 ↻</button>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button type="button" data-ctc-open title="Cold Temperature 고도보정 계산 — FOM 4.4.2.2" class="px-2.5 py-1.5 rounded-lg border text-[12px] font-bold hover:opacity-90 whitespace-nowrap" style="border-color:#a78bfa;background:rgba(76,29,149,.35);color:#ddd6fe">🥶 Cold Temp</button>
       <button id="btn-wind" type="button" title="바람 제한치 계산 · 활주로 상태(Braking Action) — FOM 4.5/5.8 · FCRM 1.17 · FCOM RCAM" class="px-2.5 py-1.5 rounded-lg border border-sky-600/70 bg-sky-950/40 text-[12px] font-bold text-sky-200 hover:bg-sky-900/50">🌬 Wind</button>
@@ -4514,6 +4514,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
               }
               const ob = e.target.closest('[data-dx-oat],[data-dx-oatset]');
               if (ob) { const inp = m.querySelector('[name="oat"]'); inp.value = ob.dataset.dxOatset != null ? ob.dataset.dxOatset : (Number(inp.value) || 0) + Number(ob.dataset.dxOat); dxFromForm({ target: inp }); m.querySelectorAll('[data-dx-oatset]').forEach(b => { const on = +b.dataset.dxOatset === +inp.value; b.className = `px-2 h-8 rounded-md border text-[12.5px] mono ${on ? 'border-cyan-400 bg-cyan-700 text-white font-bold' : 'border-slate-600 bg-slate-900 text-slate-200'}`; }); return; }
+              const rf = e.target.closest('[data-dx-ref]'); if (rf) { dxRefShow(+rf.dataset.dxRef, 0); return; }
+              const rpg = e.target.closest('[data-dx-refpg]'); if (rpg && dxRefS) { dxRefShow(dxRefS.i, dxRefS.pg + +rpg.dataset.dxRefpg); return; }
               const pk = e.target.closest('[data-dx-pick]');
               if (pk) { dxS.fluid = pk.dataset.dxPick; const fq = m.querySelector('[name="fq"]'); fq.value = ''; dxSuggest(''); m.querySelector('[name="fluid"]').value = dxS.fluid; dxDraw(false); const o = m.querySelector('[data-dx-out]'); o && o.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
             });
@@ -4524,10 +4526,69 @@ svg.leaflet-image-layer.leaflet-interactive path {
           dxDraw(true);
           return true;
         }
+        // ===== 참고 표 (Table 53~65 · 부록) — 원본 쪽을 그대로 보여줌 =====
+        let dxRefS = null;
+        const dxRefPages = r => r[3][0] === r[3][1] ? `${r[3][0]}쪽` : `${r[3][0]}~${r[3][1]}쪽`;
+        const dxRefIdx = id => (dxData.refs || []).findIndex(r => r[0] === id);
+        function dxRefList(sel) {
+          return (dxData.refs || []).map((r, i) => `<button type="button" data-dx-ref="${i}" class="text-left px-2 py-1.5 rounded-lg border ${sel === i ? 'border-cyan-400 bg-cyan-900/50' : 'border-slate-700 bg-slate-900'}"><div class="text-[12.5px] font-bold text-cyan-200">${dxEsc(r[1])} <span class="text-[11px] font-normal text-slate-400">· ${dxRefPages(r)}</span></div><div class="text-[12px] text-slate-100">${dxEsc(r[2])}</div><div class="text-[11px] text-slate-400">${dxEsc(r[4])}</div></button>`).join('');
+        }
+        function dxRefPanel() {
+          return `<details data-dx-refs class="mt-3 rounded-xl border border-slate-700 bg-slate-900/70"><summary class="px-3 py-2 text-[13px] font-bold text-cyan-200 cursor-pointer">📑 참고 표 — Table 53~65 · 부록 A~C (원본 쪽 보기)</summary><div data-dx-reflist style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:6px;padding:8px">${dxRefList(-1)}</div><div data-dx-refview style="padding:0 8px 8px"></div></details>`;
+        }
+        async function dxRefShow(i, pg) {
+          const m = document.getElementById('dx-modal'), r = (dxData.refs || [])[i]; if (!m || !r) return;
+          pg = Math.min(r[3][1], Math.max(r[3][0], pg || r[3][0])); dxRefS = { i, pg };
+          const det = m.querySelector('[data-dx-refs]'), v = m.querySelector('[data-dx-refview]'), ls = m.querySelector('[data-dx-reflist]'); if (!v) return;
+          det.open = true; ls.innerHTML = dxRefList(i);
+          const long = r[3][1] - r[3][0] > 9, nb = (d, t) => `<button type="button" data-dx-refpg="${d}" class="px-2 h-8 rounded-md border border-slate-600 bg-slate-800 text-[12.5px] text-slate-100">${t}</button>`;
+          v.innerHTML = `<div class="flex items-center gap-1.5 flex-wrap py-2"><b class="text-[13px] text-cyan-200">${dxEsc(r[1])} · ${dxEsc(r[2])}</b><span class="ml-auto flex items-center gap-1">${long ? nb(-10, '−10') : ''}${nb(-1, '◀')}<span class="mono text-[12px] text-slate-200 px-1">${pg}쪽 <span class="text-slate-500">/ ${r[3][0]}~${r[3][1]}</span></span>${nb(1, '▶')}${long ? nb(10, '+10') : ''}</span></div><div data-dx-refcv class="rounded-lg bg-white p-1" style="min-height:120px"><div class="text-[12px] text-slate-500 p-2">원본 표 불러오는 중… (${pg}쪽)</div></div>`;
+          v.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const box = v.querySelector('[data-dx-refcv]');
+          try {
+            const doc = await dxPdf(), page = await doc.getPage(pg), v0 = page.getViewport({ scale: 1 });
+            const cssW = Math.max(320, box.clientWidth - 8), dpr = window.devicePixelRatio || 1, vp = page.getViewport({ scale: cssW * dpr / v0.width }), cv = document.createElement('canvas');
+            cv.width = vp.width; cv.height = vp.height; cv.style.width = cssW + 'px';
+            await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+            if (!dxRefS || dxRefS.i !== i || dxRefS.pg !== pg) return;
+            box.innerHTML = ''; box.appendChild(cv);
+          } catch (e) { box.innerHTML = `<div class="text-[12px] text-rose-600 p-2">원본 표를 열지 못했습니다: ${dxEsc(e.message || e)}</div>`; }
+        }
+        // 검색창: 표 번호(53~65)·제목 단어로 참고 표 찾기
+        function dxRefHits(qs, toks) {
+          const num = /^\d+$/.test(qs);
+          const hit = (dxData.refs || []).map((r, i) => [r, i]).filter(([r]) => num ? r[0] === qs : toks.some(t => t.length >= 2) && toks.every(t => `${r[1]} ${r[2]} ${r[4]}`.toUpperCase().includes(t))).slice(0, 5);
+          return hit.map(([r, i]) => `<button type="button" data-dx-ref="${i}" class="px-2 py-1 rounded-md border border-slate-500 bg-slate-800 text-[12.5px] text-slate-100">📑 <b>${dxEsc(r[1])}</b> · ${dxEsc(r[2])} <span class="text-slate-400">(${dxRefPages(r)})</span></button>`).join('');
+        }
+        // ===== LOUT(최저 사용 온도) · 시험 유효기간 — Table 59·60·61 (제조사 자료 기반) =====
+        function dxLoutHtml(S, f) {
+          const D = dxData, L = D.lout && D.lout[f.id], tb = { II: '59', III: '60', IV: '61', I: '58' }[f.type];
+          const lnk = n => { const i = dxRefIdx(n); return i < 0 ? `Table ${n}` : `<button type="button" data-dx-ref="${i}" class="underline text-cyan-300 font-bold">Table ${n} (${dxRefPages(D.refs[i])})</button>`; };
+          const box = (cls, inner) => `<div class="mt-2 rounded-lg border ${cls} px-2.5 py-2 text-[12.5px] text-slate-200 leading-snug">${inner}</div>`;
+          const OK = 'border-cyan-800/70 bg-cyan-950/30', BAD = 'border-rose-600 bg-rose-950/50', WARN = 'border-amber-600 bg-amber-950/40';
+          if (f.type === 'I') return box(OK, `<b class="text-cyan-200">🌡 LOUT</b> — Type I은 제품마다 다릅니다. ${lnk('58')}에서 제품의 고속기(high speed) 값을 확인하세요. (Type I은 어는점 + 10 °C 완충이며, 희석하면 보통 더 높은(더 제한적인) 값이 됩니다.)`);
+          if (!L) return box(OK, `<b class="text-cyan-200">🌡 LOUT·만료일</b> — '제품 모를 때' 공통 표에는 제품별 LOUT와 시험 유효기간이 없습니다. 실제 제품을 골라 확인하거나 ${lnk(tb)}에서 찾으세요.`);
+          const oat = +S.oat, row = L.r[S.conc], out = [];
+          if (f.type === 'III') {
+            const r = L.r['100/0'];
+            out.push(`<b class="text-cyan-200">🌡 LOUT</b> (${lnk('60')}, 희석하지 않은 100/0) — ` + [['low', '저속'], ['mid', '중속'], ['high', '고속']].map(([k, n]) => `${n} <b class="mono ${k === 'high' ? 'text-cyan-100' : ''}">${r[k][0]} °C</b> (${r[k][1]} °F)`).join(' · ') + ` <span class="text-slate-400">— 회사 기종은 고속</span>`);
+            const c = r.high[0]; out.push(oat < c ? `<div class="text-rose-300 font-bold mt-1">⛔ 외기온도 ${oat} °C가 고속 LOUT ${c} °C보다 낮습니다 — 이 제빙액은 쓰지 않습니다.</div>` : `<div class="text-emerald-300 mt-1">✔ 외기온도 ${oat} °C ≥ 고속 LOUT ${c} °C (여유 ${+(oat - c).toFixed(1)} °C)</div>`);
+          } else if (row) {
+            const c = row.high[0];
+            out.push(`<b class="text-cyan-200">🌡 LOUT</b> (${lnk(tb)}, ${dxEsc(S.conc)}) — 고속 <b class="mono text-cyan-100">${c} °C</b> (${row.high[1]} °F) <span class="text-slate-400">· 중속기 시험은 표에 'Not tested'</span>`);
+            out.push(oat < c ? `<div class="text-rose-300 font-bold mt-1">⛔ 외기온도 ${oat} °C가 LOUT ${c} °C보다 낮습니다 — 이 제빙액·희석(${dxEsc(S.conc)})은 쓰지 않습니다.</div>` : `<div class="text-emerald-300 mt-1">✔ 외기온도 ${oat} °C ≥ LOUT ${c} °C (여유 ${+(oat - c).toFixed(1)} °C)</div>`);
+          } else out.push(`<b class="text-cyan-200">🌡 LOUT</b> — ${lnk(tb)}에서 이 제품의 ${dxEsc(S.conc)}는 <b class="text-amber-300">Dilution Not Applicable</b>(적용 안 됨)입니다. 쓸 수 있는 희석: ${Object.keys(L.r).map(k => `<b>${k}</b>`).join(' · ')}`);
+          const days = Math.floor((Date.parse(L.e + 'T23:59:59Z') - Date.now()) / 864e5), glyc = { PG: 'PG(프로필렌글리콜)', EG: 'EG(에틸렌글리콜)' }[L.g] || L.g;
+          let ex;
+          if (days < 0) ex = `<div class="mt-1 px-2 py-1 rounded-md border ${BAD} text-rose-200 font-bold">⛔ 시험 유효기간 만료: ${L.e} (${-days}일 지남)${L.n === '9' ? ' — 표에 이탤릭·각주 9 표시' : ''}<div class="font-normal text-[12px]">방빙·공력 시험 자료가 만료됐습니다. 이 제품을 계속 써도 되는지 제조사·회사 절차로 확인하세요 (Table 58~61 각주 2·9: 만료 후 4년이 지나면 목록에서 삭제).</div></div>`;
+          else if (days <= 60) ex = `<div class="mt-1 px-2 py-1 rounded-md border ${WARN} text-amber-200">⚠ 시험 유효기간 ${L.e} — ${days}일 남음</div>`;
+          else ex = `<div class="mt-1 text-slate-300">시험 유효기간: ${L.e} (${days}일 남음)</div>`;
+          return box(OK, `${out.join('')}<div class="mt-1 text-slate-300">글리콜: ${dxEsc(glyc)}</div>${ex}<div class="mt-1 text-[11px] text-slate-400">LOUT는 제조사 자료이며 확인 책임은 사용자에게 있습니다 (표 주의 사항). 만료일은 표 발행일(2026-08-11) 기준 값입니다.</div>`);
+        }
         // 제빙액 검색: 단어 앞글자(여러 단어 가능) 또는 표 번호
         function dxSuggest(q) {
           const box = document.querySelector('#dx-modal [data-dx-fq]'); if (!box) return;
-          const qs = String(q || '').toUpperCase().replace(/[^A-Z0-9\- ]/g, ' ').trim();
+          const qs = String(q || '').toUpperCase().replace(/[^A-Z0-9\-가-힣 ]/g, ' ').trim();
           if (!qs) { box.innerHTML = ''; return; }
           const toks = qs.split(/[\s\-]+/).filter(Boolean);
           const hit = dxData.fluids.filter(f => {
@@ -4535,7 +4596,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
             const words = (f.name.toUpperCase().replace(/[^A-Z0-9\- ]/g, ' ') + ' TYPE ' + f.type).split(/[\s\-]+/).filter(Boolean);
             return toks.every(t => words.some(w => w.startsWith(t)));
           }).slice(0, 10);
-          box.innerHTML = hit.length ? hit.map(f => `<button type="button" data-dx-pick="${f.id}" class="px-2 py-1 rounded-md border text-[12.5px] ${f.type === 'IV' ? 'border-emerald-600 bg-emerald-950/50 text-emerald-100' : f.type === 'II' ? 'border-sky-600 bg-sky-950/50 text-sky-100' : f.type === 'III' ? 'border-violet-500 bg-violet-950/50 text-violet-100' : 'border-amber-600 bg-amber-950/50 text-amber-100'}"><b>Type ${f.type}</b> · ${dxEsc(dxFluidLabel(f))}</button>`).join('') : '<span class="text-[12px] text-slate-500">찾는 제빙액이 없습니다 — HOT 표에 없는 제품이면 같은 Type의 공통 표를 쓰세요</span>';
+          const rh = dxRefHits(qs, toks);
+          box.innerHTML = rh + (hit.length ? hit.map(f => `<button type="button" data-dx-pick="${f.id}" class="px-2 py-1 rounded-md border text-[12.5px] ${f.type === 'IV' ? 'border-emerald-600 bg-emerald-950/50 text-emerald-100' : f.type === 'II' ? 'border-sky-600 bg-sky-950/50 text-sky-100' : f.type === 'III' ? 'border-violet-500 bg-violet-950/50 text-violet-100' : 'border-amber-600 bg-amber-950/50 text-amber-100'}"><b>Type ${f.type}</b> · ${dxEsc(dxFluidLabel(f))}</button>`).join('') : (rh ? '' : '<span class="text-[12px] text-slate-500">찾는 제빙액이 없습니다 — HOT 표에 없는 제품이면 같은 Type의 공통 표를 쓰세요</span>'));
         }
         function dxFromForm(e) {
           const m = document.getElementById('dx-modal'), q = n => m.querySelector(`[name="${n}"]`);
@@ -4556,8 +4618,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
             <div data-dx-src class="text-[11px] text-slate-400 mb-2"></div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px" class="rounded-xl border border-slate-700 bg-slate-900/70 p-3">
               ${lab('기종', dxSel('ac', DX_AC.map(a => [a[0], `${a[1]} — 날개 ${a[2] === 'comp' ? '복합재' : '알루미늄'}`]), S.ac))}
-              <div style="grid-column:1/-1"><div class="text-[11px] text-slate-400 mb-0.5">🔎 제빙액 직접 검색 (앞글자만 · 예: kil, safe mp iv, polar, aero, 43)</div>
-                <input name="fq" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="제조사·제품명 앞글자 또는 표 번호" class="w-full bg-slate-950 border border-cyan-700 rounded-md px-2.5 py-2 text-[14px] text-slate-100">
+              <div style="grid-column:1/-1"><div class="text-[11px] text-slate-400 mb-0.5">🔎 제빙액 직접 검색 (앞글자만 · 예: kil, safe mp iv, polar, aero, 43, 61)</div>
+                <input name="fq" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="제조사·제품명 앞글자 또는 표 번호(1~65)" class="w-full bg-slate-950 border border-cyan-700 rounded-md px-2.5 py-2 text-[14px] text-slate-100">
                 <div data-dx-fq class="flex flex-wrap gap-1.5 mt-1.5"></div></div>
               ${lab('제빙액', `<select name="fluid" class="w-full bg-slate-900 border border-slate-600 rounded-md px-2 py-1.5 text-[13px] text-slate-100">${dxFluidOpts(S.fluid)}</select>`)}
               ${lab('희석 비율 (제빙액/물 %)', dxSel('conc', [['100/0', '100/0'], ['75/25', '75/25'], ['50/50', '50/50']], S.conc))}
@@ -4578,7 +4640,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
               <label class="flex items-center gap-2 text-[12px] text-amber-200" style="grid-column:1/-1"><input type="checkbox" name="adj" style="width:18px;height:18px" ${S.adj ? 'checked' : ''}> 플랩·슬랫을 미리 내리고 제방빙 (76% 조정표)</label>
               ${dxAdjBasisHtml(false)}
             </div>
-            <div data-dx-out class="mt-3"></div></div>`;
+            ${dxRefPanel()}<div data-dx-out class="mt-3"></div></div>`;
           // 필드 표시 조건
           const q = n => m.querySelector(`[name="${n}"]`);
           q('conc').closest('label').style.display = f.type === 'I' ? 'none' : 'block';
@@ -4599,6 +4661,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
               ${head}
               <div class="text-[12px] text-slate-300 mt-2">${[R.table && `${dxEsc(R.table)} (${R.page}쪽)`, R.band && `기온 구간: ${dxEsc(R.band)}`, R.conc && `희석: ${dxEsc(R.conc)}`, R.col && `열: ${dxEsc(R.col)}`, R.int && `강설 강도: ${DX_INT[R.int]}`, `기종: ${dxAcOf(S.ac)[1]}${(dxData.fluids.find(x => x.id === S.fluid) || {}).type === 'I' ? ` → Type I ${S.surf === 'comp' ? '복합재' : '알루미늄'} 표${S.surf !== dxAcOf(S.ac)[2] ? ' (기종 기본과 다르게 선택함)' : ''}` : ''}`].filter(Boolean).join(' · ')}</div>
               ${R.msgs.map(t => `<div class="text-[12.5px] text-amber-200 mt-1">• ${dxEsc(t)}</div>`).join('')}
+              ${dxLoutHtml(S, f)}
               ${noteHtml}
               ${R.at ? '' : ''}<div class="text-[11px] text-slate-500 mt-2">회사 기종은 모두 고속 항공기(회전 속도 약 100KT 이상) 기준입니다 — LOUT는 수용 목록(Table 58~61)의 고속 항공기 값을 봅니다. 참고용 계산입니다. 아래 원본 표의 빨간 테두리 칸으로 값을 다시 확인하고, 회사 절차·LOUT·제품 목록(Table 58~61)을 따르세요.</div>
             </div>
