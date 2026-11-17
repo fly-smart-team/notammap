@@ -817,6 +817,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
     .brand-mark::after { content: ""; position: absolute; inset: 3px; background: var(--amber); border-radius: 1px; }
     .hdr-flt { display: flex; align-items: center; gap: 6px; margin-left: 14px; padding-left: 14px; border-left: 1px solid var(--line2); font: 600 12px/1 var(--mono); color: var(--tx2); }
     .hdr-flt b { color: var(--tx); font-weight: 700; }
+    /* 헤더: 좁은 화면에서 배지·날짜·버전이 세로로 깨지지 않게 한 줄 유지, 넘치면 줄바꿈 */
+    header > div { flex-wrap: wrap; row-gap: 6px; }
+    header #offline-badge, header #app-ver, header .hdr-flt, header button, header h1 { white-space: nowrap; flex-shrink: 0; }
     .hdr-flt i { color: var(--cyan); font-style: normal; }
     .hdr-flt em { font-style: normal; color: var(--tx3); margin-left: 6px; }
     @media (max-width: 640px) { .hdr-flt em { display: none; } .hdr-flt { margin-left: 8px; padding-left: 8px; } }
@@ -919,7 +922,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <div id="fpl-global-alert" style="display:none;position:sticky;top:0;z-index:60;background:#b91c1c;color:#fff;font-weight:800;font-size:14px;text-align:center;padding:9px 12px;cursor:pointer;border-bottom:2px solid #fecaca"></div>
   <header class="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
     <div class="max-w-[1800px] mx-auto flex items-center gap-2">
-      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v140 ↻</button>
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>NOTAM<b>BRIEF</b></h1><span id="hdr-flt" class="hdr-flt"></span><button type="button" id="app-ver" class="text-[10px] text-slate-400 font-mono-code" title="눌러서 최신 버전으로 업데이트" style="padding:2px 7px;border:1px solid #475569;border-radius:6px;background:transparent;cursor:pointer">v141 ↻</button>
       <button type="button" data-dx-open title="제방빙액 지속시간(HOT) 검색 · FAA HOT 표" class="ml-auto px-2.5 py-1 rounded-lg border border-cyan-600/70 bg-cyan-950/40 text-[12px] font-bold text-cyan-200 hover:bg-cyan-900/50 whitespace-nowrap">🧊 제방액 검색기</button>
       <button type="button" data-ctc-open title="Cold Temperature 고도보정 계산 — FOM 4.4.2.2" class="px-2.5 py-1.5 rounded-lg border text-[12px] font-bold hover:opacity-90 whitespace-nowrap" style="border-color:#a78bfa;background:rgba(76,29,149,.35);color:#ddd6fe">🥶 Cold Temp</button>
       <button id="btn-wind" type="button" title="바람 제한치 계산 · 활주로 상태(Braking Action) — FOM 4.5/5.8 · FCRM 1.17 · FCOM RCAM" class="px-2.5 py-1.5 rounded-lg border border-sky-600/70 bg-sky-950/40 text-[12px] font-bold text-sky-200 hover:bg-sky-900/50">🌬 Wind</button>
@@ -2821,8 +2824,20 @@ svg.leaflet-image-layer.leaflet-interactive path {
         return anyOn || !win ? out : `<span style="opacity:.55">${out}</span>`;
       }).join('\n');
     }
+    // PDF 원문의 고정폭 줄바꿈(약 60자)을 문단 단위로 이어 붙임 — 번호·항목(E) 등)·표·문장 끝에서만 줄바꿈 유지
+    function nmReflow(t) {
+      const MARK = /^\s*(?:\d{1,2}[.)]\s*[A-Z(]|\(?[A-G]\)|[-•*▪●◼]|\/\/|--|[A-Z][A-Z ]{3,}:|[A-Z]{1,3}\s*\d{0,2}\s*(?:\/|:)\s*$)/;
+      const out = [];
+      String(t || '').split('\n').forEach(l => {
+        const prev = out.length ? out[out.length - 1] : null;
+        if (prev === null || !l.trim()) { out.push(l); return; }
+        const brk = !prev.trim() || MARK.test(l) || /[.:;]\s*$/.test(prev) || /\s{3,}\S/.test(prev.trim()) || /\S\s{3,}\S/.test(l.trim());
+        if (brk) out.push(l); else out[out.length - 1] = prev.replace(/\s+$/, '') + ' ' + l.trim();
+      });
+      return out.join('\n');
+    }
     function highlightRaw(raw, pass, flight, active, strong, light) {
-      const txt = String(raw || '');
+      const txt = nmReflow(String(raw || ''));
       const hiP = 'color:#fecdd3;background:rgba(225,29,72,.35);font-weight:800;border-radius:3px;padding:0 2px;';
       const hiF = light ? 'color:#7c2d12;background:#fed7aa;font-weight:800;border-radius:3px;padding:0 2px;' : 'color:#fde68a;background:rgba(217,119,6,.28);font-weight:800;border-radius:3px;padding:0 2px;';
       const dm = txt.match(/(^|\n)\s*D\)\s*/);
