@@ -3454,8 +3454,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
     // 핵심: 기번(REG)과 경로가 같은지. RMK·19번 항목(보충 정보)은 무시. 안 맞으면 눈에 띄게 경고.
     const fplChk = { 1: null, 2: null };
     const fplNorm = t => String(t || '').replace(/[Ø]/g, '0').replace(/\s+/g, ' ').trim().toUpperCase();
+    const fplNoise = t => String(t || '').replace(/\bPAGE\s*-?\s*\d+\s*(?:OF\s*\d+)?\b/gi, ' ');   // PDF 페이지 경계 꼬리말 제거
     function parseAtsFpl(raw) {
-      const m = String(raw || '').replace(/[Ø]/g, '0').match(/\(\s*FPL\s*-[\s\S]*?\)/); if (!m) return null;
+      const m = fplNoise(String(raw || '').replace(/[Ø]/g, '0')).match(/\(\s*FPL\s*-[\s\S]*?\)/); if (!m) return null;
       const s = fplNorm(m[0]).replace(/^\(\s*/, '').replace(/\)\s*$/, '');
       const parts = s.split('-').map(x => x.trim());
       if (parts.length < 8 || parts[0] !== 'FPL') return null;
@@ -3466,7 +3467,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const d2 = (dst[0] || '').match(/^([A-Z]{4})(\d{4})/) || [];
       const route = (parts[6] || '').split(' ').filter(Boolean);
       return { acid: parts[1], type: (parts[3] || '').split('/')[0], equip: (parts[4] || ''), dep: dep[1] || '', eobt: dep[2] || '', dest: d2[1] || '', eet: d2[2] || '', altn: dst.slice(1).filter(Boolean).join(' '),
-        route, reg: (kv.REG || '').replace(/[^A-Z0-9]/g, ''), dof: kv.DOF || '', eetFir: kv.EET || '', pbn: kv.PBN || '', dat: kv.DAT || '', sur: kv.SUR || '', sel: kv.SEL || '', raw: m[0] };
+        route, reg: (kv.REG || '').split(/\s+/)[0].replace(/[^A-Z0-9]/g, ''), dof: kv.DOF || '', eetFir: kv.EET || '', pbn: kv.PBN || '', dat: kv.DAT || '', sur: kv.SUR || '', sel: kv.SEL || '', raw: m[0] };
     }
     function fplTokDiff(a, b) {   // 토큰 배열 LCS 비교 → 서로 다른 토큰 표시
       const n = a.length, m = b.length, L = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
