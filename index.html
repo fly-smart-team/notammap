@@ -17,6 +17,7 @@
   .amm-tw { display: none; } .amm-z14 .amm-tw { display: block; } .amm-z14 .amm-tw2 { display: none; } .amm-z15 .amm-tw2 { display: block; }
   .amm-hs { display: none; } .amm-z14 .amm-hs { display: block; }
   .amm-rw { background: #b91c1c; color: #fff; font: 800 12px/1 ui-monospace, monospace; padding: 6px 5px; border: 2px solid #fecaca; border-radius: 50%; white-space: nowrap; transform: translate(-50%, -50%); pointer-events: none; }
+  .twy-stn.twy-tx { display: none; } .twy-stn.twy-tx.twy-on { display: block; }
   .twy-stn { transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none; } .twy-stn span { color: #fff; font: 800 11px/1 ui-monospace, monospace; padding: 2px 4px; border-radius: 4px; border: 1px solid #fff; box-shadow: 0 0 3px #000; }
   .amm-st { color: #cbd5e1; font: 600 10px/1 ui-monospace, monospace; white-space: nowrap; transform: translate(-50%, -50%); display: none; pointer-events: none; text-shadow: 0 0 2px #000; } .amm-z16 .amm-st { display: block; }
   .amm-hs { background: #ea580c; color: #fff; font: 800 11px/1 ui-monospace, monospace; padding: 2px 4px; border-radius: 2px; transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none; }
@@ -8229,7 +8230,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
     const TWY_WHOLE = new RegExp(`\\b(?:TWY|TXL|TAXIWAY|TAXILANE)S?\\s+((?:${TWY_ID}(?:\\s*(?:,|AND|&)\\s*(?=(?:TWY\\s+)?[A-Z]{1,2}\\d{0,2}\\b))?)+)`, 'g');
     // 노탐 → { kind, items:[{ref,a,b}] , partial }  (유도로 노탐이 아니면 null)
     function twyClauses(n) {
-      const u = String(n.etext || n.rawText || '').toUpperCase().replace(/\s+/g, ' ');
+      let u = String(n.etext || n.rawText || '').toUpperCase().replace(/\s+/g, ' ');
+      // 'TWY C1 THRU C14' → 'TWY C1, C2, … C14' (같은 글자의 번호 구간만 펼침)
+      u = u.replace(/\b([A-Z]{1,2})(\d{1,2})\s+(?:THRU|THROUGH)\s+\1?(\d{1,2})\b/g, (m, L, a, b) => { a = +a; b = +b; if (b <= a || b - a > 40) return m; const o = []; for (let v = a; v <= b; v++) o.push(L + v); return o.join(', '); });
       const hasTwy = /\b(?:TWY|TXL|TAXIWAY|TAXILANE)S?\b/.test(u);
       if (!hasTwy && !new RegExp(TWY_STP).test(u)) return null;
       const closed = /\b(CLSD|CLOSED)\b/.test(u);
@@ -8712,7 +8715,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
         const grp = L.featureGroup();
         R.segs.forEach(s => { L.polyline(s, { color: '#000', weight: R.rwy ? 20 : 13, opacity: .35, interactive: false }).addTo(grp); L.polyline(s, { color, weight: R.rwy ? (amm ? 16 : 12) : (amm ? 11 : 9), opacity: R.rwy ? .8 : .95, dashArray: dash, lineCap: R.rwy ? 'butt' : 'round' }).addTo(grp); });
         (R.faint || []).forEach(sg => L.polyline(sg, { color, weight: 5, opacity: .4, interactive: false }).addTo(grp));
-        (R.lbl || []).forEach(([p, t]) => L.marker(p, { interactive: false, icon: L.divIcon({ className: 'twy-stn', html: t === '✕' ? `<span style="background:${color};font-size:15px;padding:0 5px">✕</span>` : `<span style="background:${color}">${esc(t)}</span>`, iconSize: null }) }).addTo(grp));
+        const tlm = [];
+        (R.lbl || []).forEach(([p, t]) => { const mk = L.marker(p, { interactive: false, icon: L.divIcon({ className: 'twy-stn' + (t === '✕' ? '' : ' twy-tx'), html: t === '✕' ? `<span style="background:${color};font-size:15px;padding:0 5px">✕</span>` : `<span style="background:${color}">${esc(t)}</span>`, iconSize: null }) }).addTo(grp); if (t !== '✕') tlm.push(mk); });
+        { const showTx = on => tlm.forEach(mk => { const el = mk.getElement && mk.getElement(); if (el) el.classList.toggle('twy-on', on); }); grp.on('popupopen', () => showTx(true)); grp.on('popupclose', () => showTx(false)); }
         const pop = `<b>${esc(n.notamId)}</b> · ${esc(K[0])}${act ? '' : near ? ' · <span style="color:#9333ea;font-weight:700">시간대 아님 · ±2h 내 유효 (지연 시 해당)</span>' : ' · <span style="color:#2563eb">비행 시간대 아님</span>'}<br>${twyDescHtml(R)}<div style="font-size:11.5px;line-height:1.35;max-height:210px;overflow:auto;margin:4px 0;padding:4px 6px;background:#f1f5f9;border-radius:6px;color:#0f172a;-webkit-overflow-scrolling:touch">${twyTextHtml(n)}</div><span style="font-size:12.5px;color:#334155;font-weight:600">🕒 ${esc((n.validFrom || '') + ' ~ ' + (n.validTo || 'PERM'))}${n.schedule ? ' · ' + esc(n.schedule) : ''}</span>${when ? `<br><span style="font-size:12.5px;font-weight:800;color:#0369a1">✈ ${esc(when)}</span>` : ''}`;
         R.pts.forEach(p => { L.circle([p[0], p[1]], { radius: 22, color, weight: 3, fillColor: color, fillOpacity: act ? .45 : .2 }).addTo(grp); L.marker([p[0], p[1]], { icon: L.divIcon({ className: 'twy-stn', html: `<span style="background:${color}">${esc(p[2])}</span>`, iconSize: null }) }).addTo(grp); });
         const idx = TWY.items.length;
